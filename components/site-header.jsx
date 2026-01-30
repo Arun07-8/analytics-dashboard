@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ModeToggle } from "@/components/mode-toggle"
+import { Bell } from "lucide-react"
 
 export function SiteHeader() {
   return (
@@ -13,6 +14,13 @@ export function SiteHeader() {
         <h1 className="text-base font-medium">Documents</h1>
         <div className="ml-auto flex items-center gap-2">
           <ModeToggle />
+          <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full border border-border shadow-sm transition-all duration-300 hover:shadow-md">
+            <Bell className="h-5 w-5" />
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-semibold text-white">
+              3
+            </span>
+          </Button>
+
         </div>
       </div>
     </header>

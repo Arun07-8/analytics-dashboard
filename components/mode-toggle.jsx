@@ -30,6 +30,7 @@ export function ModeToggle() {
         focus-visible:ring-ring
         focus-visible:ring-offset-2
         focus-visible:ring-offset-background
+        mb-1
       "
     >
       {/* Track depth */}
@@ -82,8 +83,8 @@ export function ModeToggle() {
 
       {/* Background icons */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-3">
-        <Sun className="h-4 w-4 text-foreground/60" />
-        <Moon className="h-4 w-4 text-foreground/60" />
+        <Sun className="h-4 w-4 text-foreground/70" />
+        <Moon className="h-4 w-4 text-foreground/70" />
       </div>
     </button>
   )
