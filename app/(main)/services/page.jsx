@@ -3,16 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil, Trash2, Search, Package, CheckCircle2, XCircle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+    IconPackage,
+    IconCircleCheckFilled,
+    IconCircleXFilled,
+    IconAlertTriangle,
+    IconTrendingUp,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
+import { getAllServices, createService, updateService, deleteService } from "@/lib/firebaseCollections";
+
+// Reusable components
+import { ServiceModal } from "@/components/services/service-modal";
+import { ServicesTable } from "@/components/services/services-table";
 
 // Mark this page as dynamic to prevent static generation
 export const dynamic = 'force-dynamic';
@@ -23,9 +28,13 @@ export default function ServicesPage() {
 
     const [services, setServices] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState('all');
+    const [isLoadingData, setIsLoadingData] = useState(true);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [editingService, setEditingService] = useState(null);
+    const [deletingServiceId, setDeletingServiceId] = useState(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -45,65 +54,41 @@ export default function ServicesPage() {
         }
     }, [user, loading, router]);
 
-    // Load services from localStorage on mount
+    // Load services from Firestore on mount
     useEffect(() => {
-        const savedServices = localStorage.getItem('services');
-        if (savedServices) {
-            setServices(JSON.parse(savedServices));
-        } else {
-            // Initialize with sample data
-            const sampleServices = [
-                {
-                    id: 1,
-                    name: 'Web Development',
-                    description: 'Custom website development with modern technologies',
-                    isActive: true,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                {
-                    id: 2,
-                    name: 'Mobile App Development',
-                    description: 'Native and cross-platform mobile applications',
-                    isActive: true,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                },
-                {
-                    id: 3,
-                    name: 'UI/UX Design',
-                    description: 'User interface and experience design services',
-                    isActive: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }
-            ];
-            setServices(sampleServices);
-            localStorage.setItem('services', JSON.stringify(sampleServices));
-        }
-    }, []);
+        const fetchServices = async () => {
+            try {
+                setIsLoadingData(true);
+                const data = await getAllServices();
+                const formattedData = data.map(service => ({
+                    ...service,
+                    createdAt: service.createdAt?.toDate ? service.createdAt.toDate().toISOString() : service.createdAt,
+                    updatedAt: service.updatedAt?.toDate ? service.updatedAt.toDate().toISOString() : service.updatedAt
+                }));
+                setServices(formattedData);
+            } catch (error) {
+                console.error("Error fetching services:", error);
+                toast.error("Failed to load services");
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
 
-    // Save services to localStorage whenever they change
-    useEffect(() => {
-        if (services.length > 0) {
-            localStorage.setItem('services', JSON.stringify(services));
+        if (user) {
+            fetchServices();
         }
-    }, [services]);
+    }, [user]);
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (setFn) => (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
+        setFn(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
     };
 
-    const handleEditInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setEditFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+    const handleCheckedChange = (setFn) => (checked) => {
+        setFn(prev => ({ ...prev, isActive: checked }));
     };
 
     const resetForm = () => {
@@ -114,7 +99,7 @@ export default function ServicesPage() {
         });
     };
 
-    const handleAddService = (e) => {
+    const handleAddService = async (e) => {
         e.preventDefault();
 
         if (!formData.name.trim()) {
@@ -122,22 +107,35 @@ export default function ServicesPage() {
             return;
         }
 
-        const newService = {
-            id: Date.now(),
-            name: formData.name,
-            description: formData.description || '',
-            isActive: formData.isActive,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        try {
+            const serviceId = await createService({
+                name: formData.name,
+                description: formData.description || '',
+                isActive: formData.isActive
+            });
 
-        setServices(prev => [...prev, newService]);
-        toast.success('Service added successfully!');
-        setIsAddDialogOpen(false);
-        resetForm();
+            const newService = {
+                id: serviceId,
+                name: formData.name,
+                description: formData.description || '',
+                isActive: formData.isActive,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            setServices(prev => [...prev, newService]);
+            toast.success('Service added successfully!', {
+                description: `${formData.name} has been added to your services.`
+            });
+            setIsAddDialogOpen(false);
+            resetForm();
+        } catch (error) {
+            console.error("Error adding service:", error);
+            toast.error("Failed to add service");
+        }
     };
 
-    const handleEditService = (e) => {
+    const handleEditService = async (e) => {
         e.preventDefault();
 
         if (!editFormData.name.trim()) {
@@ -145,27 +143,53 @@ export default function ServicesPage() {
             return;
         }
 
-        setServices(prev => prev.map(service =>
-            service.id === editingService.id
-                ? {
-                    ...service,
-                    name: editFormData.name,
-                    description: editFormData.description || '',
-                    isActive: editFormData.isActive,
-                    updatedAt: new Date().toISOString()
-                }
-                : service
-        ));
+        try {
+            await updateService(editingService.id, {
+                name: editFormData.name,
+                description: editFormData.description || '',
+                isActive: editFormData.isActive
+            });
 
-        toast.success('Service updated successfully!');
-        setIsEditDialogOpen(false);
-        setEditingService(null);
+            setServices(prev => prev.map(service =>
+                service.id === editingService.id
+                    ? {
+                        ...service,
+                        name: editFormData.name,
+                        description: editFormData.description || '',
+                        isActive: editFormData.isActive,
+                        updatedAt: new Date().toISOString()
+                    }
+                    : service
+            ));
+
+            toast.info('Service updated successfully!', {
+                description: `${editFormData.name} has been updated.`
+            });
+            setIsEditDialogOpen(false);
+            setEditingService(null);
+        } catch (error) {
+            console.error("Error updating service:", error);
+            toast.error("Failed to update service");
+        }
     };
 
-    const handleDeleteService = (id) => {
-        if (window.confirm('Are you sure you want to delete this service?')) {
-            setServices(prev => prev.filter(service => service.id !== id));
-            toast.success('Service deleted successfully!');
+    const openDeleteDialog = (id) => {
+        setDeletingServiceId(id);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleDeleteService = async () => {
+        try {
+            await deleteService(deletingServiceId);
+            setServices(prev => prev.filter(service => service.id !== deletingServiceId));
+            toast.warning('Service deleted successfully!', {
+                description: 'The service has been removed from your list.'
+            });
+            setIsDeleteDialogOpen(false);
+            setDeletingServiceId(null);
+        } catch (error) {
+            console.error("Error deleting service:", error);
+            toast.error("Failed to delete service");
         }
     };
 
@@ -179,19 +203,23 @@ export default function ServicesPage() {
         setIsEditDialogOpen(true);
     };
 
-    const filteredServices = services.filter(service =>
-        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (service.description && service.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredServices = services.filter(service => {
+        const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (service.description && service.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        if (activeTab === 'active') return matchesSearch && service.isActive;
+        if (activeTab === 'inactive') return matchesSearch && !service.isActive;
+        return matchesSearch;
+    });
 
     // Show loading state
-    if (loading) {
+    if (loading || isLoadingData) {
         return (
             <div className="@container/main flex flex-1 flex-col gap-2">
                 <div className="flex items-center justify-center h-screen">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p className="text-muted-foreground">Loading...</p>
+                        <p className="text-muted-foreground">Loading services...</p>
                     </div>
                 </div>
             </div>
@@ -204,317 +232,142 @@ export default function ServicesPage() {
     }
 
     return (
-        <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-6 py-4 md:py-6">
-                {/* Header Section */}
-                <div className="px-4 lg:px-6">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Services Management</h1>
-                            <p className="text-muted-foreground">
-                                Manage your services and their availability
-                            </p>
+        <div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
+            {/* Stats Cards - Matching Dashboard SectionCards style */}
+            <div
+                className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
+                <Card className="@container/card relative overflow-hidden">
+                    <CardHeader>
+                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total Services</CardDescription>
+                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                            {services.length}
+                        </CardTitle>
+                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-primary/10">
+                            <IconPackage className="size-6 text-primary" />
                         </div>
-                        <Button
-                            onClick={() => setIsAddDialogOpen(true)}
-                            className="shadow-lg hover:shadow-xl transition-all duration-300 gap-2"
-                        >
-                            <Package className="h-4 w-4" />
-                            Add Service
-                        </Button>
-                    </div>
-                </div>
+                    </CardHeader>
+                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
+                        <div className="line-clamp-1 flex gap-2 font-medium">
+                            Full catalog <IconPackage className="size-4" />
+                        </div>
+                        <div className="text-muted-foreground">
+                            All registered service offerings
+                        </div>
+                    </CardContent>
+                </Card>
 
-                {/* Stats Cards */}
-                <div className="px-4 lg:px-6">
-                    <div className="grid gap-4 md:grid-cols-3">
-                        <Card className="border-l-4 border-l-primary shadow-md hover:shadow-lg transition-all duration-300">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Services</CardTitle>
-                                <Package className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{services.length}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    All service offerings
-                                </p>
-                            </CardContent>
-                        </Card>
+                <Card className="@container/card relative overflow-hidden">
+                    <CardHeader>
+                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Active Services</CardDescription>
+                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-green-600">
+                            {services.filter(s => s.isActive).length}
+                        </CardTitle>
+                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-green-500/10">
+                            <IconCircleCheckFilled className="size-6 text-green-600" />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
+                        <div className="line-clamp-1 flex gap-2 font-medium">
+                            Currently live <IconTrendingUp className="size-4 text-green-600" />
+                        </div>
+                        <div className="text-muted-foreground">
+                            Available for customers
+                        </div>
+                    </CardContent>
+                </Card>
 
-                        <Card className="border-l-4 border-l-green-500 shadow-md hover:shadow-lg transition-all duration-300">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Active Services</CardTitle>
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-green-600">
-                                    {services.filter(s => s.isActive).length}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Currently available
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-l-4 border-l-orange-500 shadow-md hover:shadow-lg transition-all duration-300">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Inactive Services</CardTitle>
-                                <XCircle className="h-4 w-4 text-orange-600" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-orange-600">
-                                    {services.filter(s => !s.isActive).length}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Not available
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-
-                {/* Services Table */}
-                <div className="px-4 lg:px-6">
-                    <Card className="shadow-lg">
-                        <CardHeader>
-                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                                <div>
-                                    <CardTitle>All Services</CardTitle>
-                                    <CardDescription className="mt-1">
-                                        View and manage all your service offerings
-                                    </CardDescription>
-                                </div>
-                                <div className="relative w-full md:w-72">
-                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search services..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="pl-9 transition-all duration-200 focus:ring-2"
-                                    />
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/50">
-                                            <TableHead className="font-semibold">Service Name</TableHead>
-                                            <TableHead className="font-semibold">Description</TableHead>
-                                            <TableHead className="font-semibold">Status</TableHead>
-                                            <TableHead className="font-semibold">Created At</TableHead>
-                                            <TableHead className="text-right font-semibold">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {filteredServices.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center py-12">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <Package className="h-12 w-12 text-muted-foreground/50" />
-                                                        <p className="text-muted-foreground">
-                                                            {searchTerm ? 'No services found matching your search' : 'No services yet. Add your first service!'}
-                                                        </p>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            filteredServices.map((service) => (
-                                                <TableRow
-                                                    key={service.id}
-                                                    className="hover:bg-muted/50 transition-colors duration-200"
-                                                >
-                                                    <TableCell className="font-medium">{service.name}</TableCell>
-                                                    <TableCell className="max-w-xs truncate">
-                                                        {service.description || '-'}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge
-                                                            variant={service.isActive ? 'default' : 'secondary'}
-                                                            className={service.isActive
-                                                                ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900'
-                                                                : 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300'
-                                                            }
-                                                        >
-                                                            {service.isActive ? 'Active' : 'Inactive'}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-sm text-muted-foreground">
-                                                        {new Date(service.createdAt).toLocaleDateString()}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => openEditDialog(service)}
-                                                                className="hover:bg-blue-50 dark:hover:bg-blue-950 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleDeleteService(service.id)}
-                                                                className="hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Add Service Dialog */}
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                    <DialogContent className="sm:max-w-[500px]">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                                <Package className="h-5 w-5" />
-                                Add New Service
-                            </DialogTitle>
-                            <DialogDescription>
-                                Create a new service offering
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleAddService} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="add-name">
-                                    Service Name <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="add-name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g., Web Development"
-                                    required
-                                    className="transition-all duration-200 focus:ring-2"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="add-description">Description</Label>
-                                <Input
-                                    id="add-description"
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleInputChange}
-                                    placeholder="Brief description of the service"
-                                    className="transition-all duration-200 focus:ring-2"
-                                />
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="add-isActive"
-                                    checked={formData.isActive}
-                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
-                                />
-                                <Label htmlFor="add-isActive" className="cursor-pointer">
-                                    Active Service
-                                </Label>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <Button type="submit" className="flex-1 shadow-md hover:shadow-lg transition-all duration-300">
-                                    Add Service
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setIsAddDialogOpen(false);
-                                        resetForm();
-                                    }}
-                                    className="flex-1"
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Edit Service Dialog */}
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                    <DialogContent className="sm:max-w-[500px]">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                                <Pencil className="h-5 w-5" />
-                                Edit Service
-                            </DialogTitle>
-                            <DialogDescription>
-                                Update the service details below
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleEditService} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-name">
-                                    Service Name <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="edit-name"
-                                    name="name"
-                                    value={editFormData.name}
-                                    onChange={handleEditInputChange}
-                                    placeholder="e.g., Web Development"
-                                    required
-                                    className="transition-all duration-200 focus:ring-2"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-description">Description</Label>
-                                <Input
-                                    id="edit-description"
-                                    name="description"
-                                    value={editFormData.description}
-                                    onChange={handleEditInputChange}
-                                    placeholder="Brief description of the service"
-                                    className="transition-all duration-200 focus:ring-2"
-                                />
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="edit-isActive"
-                                    checked={editFormData.isActive}
-                                    onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, isActive: checked }))}
-                                />
-                                <Label htmlFor="edit-isActive" className="cursor-pointer">
-                                    Active Service
-                                </Label>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <Button type="submit" className="flex-1 shadow-md hover:shadow-lg transition-all duration-300">
-                                    Update Service
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setIsEditDialogOpen(false);
-                                        setEditingService(null);
-                                    }}
-                                    className="flex-1"
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                <Card className="@container/card relative overflow-hidden">
+                    <CardHeader>
+                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Inactive Services</CardDescription>
+                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-orange-600">
+                            {services.filter(s => !s.isActive).length}
+                        </CardTitle>
+                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-orange-500/10">
+                            <IconCircleXFilled className="size-6 text-orange-600" />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
+                        <div className="line-clamp-1 flex gap-2 font-medium">
+                            Service pause <IconCircleXFilled className="size-4 text-orange-600" />
+                        </div>
+                        <div className="text-muted-foreground">
+                            Hidden from public view
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
+
+            {/* Services Table Content - Using REUSABLE Components */}
+            <ServicesTable
+                data={filteredServices}
+                onEdit={openEditDialog}
+                onDelete={openDeleteDialog}
+                onAdd={() => setIsAddDialogOpen(true)}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                servicesCount={{
+                    active: services.filter(s => s.isActive).length,
+                    inactive: services.filter(s => !s.isActive).length
+                }}
+            />
+
+            {/* Reusable Modals */}
+            <ServiceModal
+                isOpen={isAddDialogOpen}
+                onOpenChange={setIsAddDialogOpen}
+                mode="add"
+                formData={formData}
+                onInputChange={handleInputChange(setFormData)}
+                onCheckedChange={handleCheckedChange(setFormData)}
+                onSubmit={handleAddService}
+                onCancel={() => {
+                    setIsAddDialogOpen(false);
+                    resetForm();
+                }}
+            />
+
+            <ServiceModal
+                isOpen={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
+                mode="edit"
+                formData={editFormData}
+                onInputChange={handleInputChange(setEditFormData)}
+                onCheckedChange={handleCheckedChange(setEditFormData)}
+                onSubmit={handleEditService}
+                onCancel={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingService(null);
+                }}
+            />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <IconAlertTriangle className="h-5 w-5 text-destructive" />
+                            Delete Service
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this service? This action cannot be undone.
+                            The service will be permanently removed from your list.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingServiceId(null)}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteService}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -9,24 +9,28 @@ const protectedRoutes = [
 // Public routes (accessible without authentication)
 const publicRoutes = [
   '/login',
-  '/setup',
 ];
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Check if the route is protected
-  const isProtectedRoute = protectedRoutes.some(route => 
+  const isProtectedRoute = protectedRoutes.some(route =>
     pathname === route || pathname.startsWith(route + '/')
   );
 
-  const isPublicRoute = publicRoutes.some(route => 
+  const isPublicRoute = publicRoutes.some(route =>
     pathname === route || pathname.startsWith(route + '/')
   );
 
   // Get the auth token from cookies
   const token = request.cookies.get('authToken')?.value;
   const hasAuth = request.cookies.get('firebase-auth')?.value || token;
+
+  // Handle root route specifically: auth -> /dashboard, !auth -> /login
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL(hasAuth ? '/dashboard' : '/login', request.url));
+  }
 
   // If accessing protected route without auth, redirect to login
   if (isProtectedRoute && !hasAuth) {
@@ -35,9 +39,9 @@ export function middleware(request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // If accessing public route (login) while authenticated, redirect to home
+  // If accessing public route (login) while authenticated, redirect to dashboard
   if (isPublicRoute && hasAuth && pathname === '/login') {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();

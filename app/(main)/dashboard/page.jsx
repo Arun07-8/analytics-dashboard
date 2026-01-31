@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
+import { DashboardTable } from "@/components/dashboard/sections-table"
 import { SectionCards } from "@/components/section-cards"
 import data from "../data.json"
 
@@ -48,7 +48,7 @@ export default function Page() {
         <div className="px-4 lg:px-6">
           <ChartAreaInteractive />
         </div>
-        <DataTable data={data} />
+        <DashboardTable data={data} />
       </div>
     </div>
   )

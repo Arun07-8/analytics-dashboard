@@ -17,6 +17,7 @@ export const metadata = {
 };
 
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "sonner"
 
 // ... imports
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           {children}
+          <Toaster position="bottom-right" richColors closeButton duration={2000} />
         </ThemeProvider>
       </body>
     </html>
