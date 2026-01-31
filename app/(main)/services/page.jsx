@@ -13,7 +13,7 @@ import {
     IconTrendingUp,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { getAllServices, createService, updateService, deleteService } from "@/lib/firebaseCollections";
+import { getAllServices, createService, updateService, deleteService } from "@/lib/firebase";
 
 // Reusable components
 import { ServiceModal } from "@/components/services/service-modal";
