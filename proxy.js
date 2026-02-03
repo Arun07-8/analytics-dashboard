@@ -11,7 +11,7 @@ const publicRoutes = [
   '/login',
 ];
 
-export default function proxy(request) {
+export function proxy(request) {
   const { pathname } = request.nextUrl;
 
   // Check if the route is protected
