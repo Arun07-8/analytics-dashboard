@@ -65,6 +65,10 @@ export function ServiceModal({
                         />
                     </div>
 
+                    <div className="space-y-4">
+                        {/* Price field removed as services use flexible pricing */}
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor={`${mode}-status`}>Status</Label>
                         <Select

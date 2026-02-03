@@ -148,10 +148,20 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5 mb-2">
               <a href="#">
                 <IconInnerShadowTop className="!size-5" />
                 <span className="text-base font-semibold">FoxonHub</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground justify-center shadow-md"
+            >
+              <a href="/sales/create">
+                <span className="font-semibold">Create Sale</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

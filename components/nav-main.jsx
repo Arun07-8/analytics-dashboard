@@ -22,11 +22,11 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton 
+              <SidebarMenuButton
                 tooltip={item.title}
                 asChild
                 isActive={pathname === item.url}
-                className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground">
+                className="data-[active=true]:bg-zinc-200 dark:data-[active=true]:bg-zinc-700 data-[active=true]:text-foreground">
                 <a href={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
