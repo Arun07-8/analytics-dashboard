@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, use } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-    IconPlus,
     IconTrash,
+    IconPlus,
     IconUserPlus,
     IconDownload,
     IconSearch,
@@ -30,7 +30,7 @@ import {
 } from "@tabler/icons-react";
 import { getAllCustomers } from '@/lib/firebase/collections/customer';
 import { getActiveServices } from '@/lib/firebase/collections/service';
-import { createSale } from '@/lib/firebase/collections/sale';
+import { updateSale, getSale } from '@/lib/firebase/collections/sale';
 import { CustomerModal } from '@/components/customers/customer-modal';
 import { ServiceModal } from '@/components/services/service-modal';
 import { createCustomer } from '@/lib/firebase/collections/customer';
@@ -39,8 +39,10 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from "@/lib/utils";
 
-export default function CreateSalePage() {
+export default function EditSalePage() {
     const router = useRouter();
+    const params = useParams();
+    const saleId = params.id;
     const { user } = useAuth();
 
     // Data states
@@ -68,22 +70,30 @@ export default function CreateSalePage() {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [saleId]);
 
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [customersData, servicesData] = await Promise.all([
+            const [customersData, servicesData, saleData] = await Promise.all([
                 getAllCustomers(),
-                getActiveServices()
+                getActiveServices(),
+                getSale(saleId)
             ]);
+
             setCustomers(customersData);
             setServices(servicesData);
 
-            const date = new Date();
-            const year = date.getFullYear();
-            const random = Math.floor(1000 + Math.random() * 9000);
-            setSalesRefId(`INV-${year}-${random}`);
+            if (saleData) {
+                const customer = customersData.find(c => c.id === saleData.customerId);
+                setSelectedCustomer(customer || { id: saleData.customerId, name: 'Unknown Customer' });
+                setSelectedServices(saleData.services || []);
+                setPaidAmount(saleData.paidAmount?.toString() || '0');
+                setSalesRefId(saleData.salesRefId?.[0] || '');
+            } else {
+                toast.error("Sale not found");
+                router.push('/sales');
+            }
         } catch (error) {
             toast.error("Failed to load data");
             console.error(error);
@@ -151,7 +161,6 @@ export default function CreateSalePage() {
         setCurrentServiceId(item.serviceId);
         setCustomPrice(item.price.toString());
         setEditingIndex(index);
-        // Scroll to form if needed
         window.scrollTo({ top: 300, behavior: 'smooth' });
     };
 
@@ -167,7 +176,7 @@ export default function CreateSalePage() {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!selectedCustomer) {
             toast.error("Please select a customer");
             return;
@@ -179,33 +188,23 @@ export default function CreateSalePage() {
 
         setIsSubmitting(true);
         try {
-            // Attempt to resolve staff ID from Admins collection using email
-            let staffId = user?.uid || 'anonymous';
-            try {
-                if (user?.email) {
-                    const { getAdminByEmail } = await import('@/lib/firebase/collections/admin');
-                    const adminDoc = await getAdminByEmail(user.email);
-                    if (adminDoc) {
-                        staffId = adminDoc.id;
-                    }
-                }
-            } catch (err) {
-                console.warn("Could not resolve admin profile for staffId resolution", err);
-            }
+            const finalTotal = Number(totalAmount);
+            const finalPaid = Number(paidAmount) || 0;
+            const isClosed = finalPaid >= finalTotal;
 
-            const saleData = {
+            const updateData = {
                 customerId: selectedCustomer.id,
-                staffId: staffId,
                 services: selectedServices,
-
-                totalAmount: Number(totalAmount),
-                paidAmount: Number(paidAmount) || 0,
-                excessAmount: Number(totalAmount) - (Number(paidAmount) || 0),
+                totalAmount: finalTotal,
+                paidAmount: finalPaid,
+                excessAmount: finalTotal - finalPaid,
+                closed: isClosed,
+                status: isClosed ? 'Closed' : 'Pending',
                 salesRefId: [salesRefId],
             };
 
-            await createSale(saleData);
-            toast.success("Sale completed successfully");
+            await updateSale(saleId, updateData);
+            toast.success("Sale updated successfully");
             router.push('/sales');
         } catch (error) {
             toast.error(error.message);
@@ -245,10 +244,6 @@ export default function CreateSalePage() {
         }
     };
 
-    const handleDownloadInvoice = () => {
-        window.print();
-    };
-
     if (isLoading) {
         return (
             <div className="h-screen w-full flex flex-col items-center justify-center bg-background">
@@ -262,7 +257,7 @@ export default function CreateSalePage() {
 
     return (
         <div className="min-h-screen bg-background transition-colors duration-300">
-            {/* Professional Navigation - Theme Aware */}
+            {/* Professional Navigation */}
             <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm px-4 py-4 sm:px-10">
                 <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-6">
@@ -280,25 +275,17 @@ export default function CreateSalePage() {
                                 <IconLayoutDashboard className="h-4 w-4 text-primary" />
                                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sales Terminal</span>
                             </div>
-                            <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Create Sale</h1>
+                            <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Edit Sale</h1>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden lg:flex flex-col items-end px-4 py-1 border-r border-border">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Session</span>
-                            <span className="text-sm font-bold text-foreground">{user?.displayName || user?.email?.split('@')[0] || 'Operator'}</span>
-                        </div>
-                        <Button variant="ghost" onClick={handleDownloadInvoice} className="h-11 px-5 text-muted-foreground hover:text-foreground font-semibold gap-2 transition-colors">
-                            <IconDownload className="h-4 w-4" />
-                            Draft
-                        </Button>
                         <Button
                             onClick={handleSubmit}
                             className="h-11 px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider gap-2 shadow-lg shadow-primary/20 transition-all rounded-lg active:scale-95"
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? "Syncing..." : "Finish Sale"}
+                            {isSubmitting ? "Updating..." : "Update Sale"}
                         </Button>
                     </div>
                 </div>
@@ -306,12 +293,9 @@ export default function CreateSalePage() {
 
             <main className="max-w-[1600px] mx-auto px-4 py-8 sm:px-10">
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-4 gap-10">
-
-                    {/* Primary Content Area */}
                     <div className="xl:col-span-3 space-y-10">
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            {/* 1. Customer Section */}
+                            {/* Customer Section */}
                             <Card className="border-border shadow-md bg-card rounded-2xl hover:shadow-lg transition-all duration-300 relative z-10">
                                 <CardHeader className="bg-muted/30 border-b border-border pb-6 pt-6 rounded-t-2xl">
                                     <div className="flex items-center gap-4">
@@ -408,7 +392,6 @@ export default function CreateSalePage() {
                                                         <h4 className="font-black text-xl text-foreground leading-none mb-1.5">{selectedCustomer.name}</h4>
                                                         <div className="flex items-center gap-2">
                                                             <Badge variant="outline" className="bg-background text-[10px] font-mono border-border uppercase">{selectedCustomer.mobile}</Badge>
-                                                            <span className="text-[10px] text-muted-foreground truncate max-w-[120px] font-medium italic">{selectedCustomer.email}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -427,7 +410,7 @@ export default function CreateSalePage() {
                                 </CardContent>
                             </Card>
 
-                            {/* 2. Transaction Metadata */}
+                            {/* Order Metadata */}
                             <Card className="border-border shadow-md bg-card rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
                                 <CardHeader className="bg-muted/30 border-b border-border pb-6 pt-6">
                                     <div className="flex items-center gap-4">
@@ -453,18 +436,11 @@ export default function CreateSalePage() {
                                             />
                                         </div>
                                     </div>
-                                    <Separator className="bg-border/50" />
-                                    <div className="flex items-center justify-between text-[10px] px-2">
-                                        <span className="font-black text-muted-foreground uppercase tracking-widest">Entry Timestamp</span>
-                                        <span className="font-bold text-foreground bg-muted px-2 py-1 rounded-md uppercase tracking-tighter">
-                                            {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                        </span>
-                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
 
-                        {/* 3. Service Entry (Separate Card) */}
+                        {/* Service Entry */}
                         <Card className="border-border shadow-md bg-card rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
                             <CardHeader className="bg-muted/30 border-b border-border py-6 px-8 flex flex-row items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -526,24 +502,13 @@ export default function CreateSalePage() {
                                             disabled={!currentServiceId}
                                         >
                                             {editingIndex !== null ? (
-                                                <>
-                                                    <IconUserCheck className="h-4 w-4" />
-                                                    Update Item
-                                                </>
+                                                <><IconUserCheck className="h-4 w-4" /> Update Item</>
                                             ) : (
-                                                <>
-                                                    <IconPlus className="h-4 w-4" />
-                                                    Append Item
-                                                </>
+                                                <><IconPlus className="h-4 w-4" /> Append Item</>
                                             )}
                                         </Button>
                                         {editingIndex !== null && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                className="h-12 w-12 rounded-xl border-border"
-                                                onClick={cancelEdit}
-                                            >
+                                            <Button type="button" variant="outline" className="h-12 w-12 rounded-xl border-border" onClick={cancelEdit}>
                                                 <IconX className="h-4 w-4" />
                                             </Button>
                                         )}
@@ -552,8 +517,8 @@ export default function CreateSalePage() {
                             </CardContent>
                         </Card>
 
-                        {/* 4. Cart Table */}
-                        <Card className="border-border shadow-md bg-card rounded-2xl overflow-hidden shadow-slate-200/5 dark:shadow-none">
+                        {/* Cart Table */}
+                        <Card className="border-border shadow-md bg-card rounded-2xl overflow-hidden">
                             <CardHeader className="bg-muted/30 border-b border-border py-4 px-8">
                                 <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                                     <IconReceipt2 className="h-4 w-4" />
@@ -571,58 +536,30 @@ export default function CreateSalePage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {selectedServices.length > 0 ? (
-                                                selectedServices.map((service, index) => (
-                                                    <TableRow key={index} className={cn(
-                                                        "group transition-all border-b border-border last:border-0",
-                                                        editingIndex === index ? "bg-orange-500/5" : "hover:bg-muted/30"
-                                                    )}>
-                                                        <TableCell className="py-6 px-8">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-base font-black text-foreground leading-none mb-1.5">{service.name}</span>
-                                                                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">ID: {service.serviceId.substring(0, 8).toUpperCase()}</span>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-right py-6 px-8">
-                                                            <span className="text-lg font-black text-foreground tracking-tighter">₹{service.price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                                                        </TableCell>
-                                                        <TableCell className="px-8 flex justify-end gap-2 py-6">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-muted-foreground/60 hover:text-foreground transition-colors"
-                                                                onClick={() => handleEditService(index)}
-                                                            >
-                                                                <IconPencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
-                                                                onClick={() => handleRemoveService(index)}
-                                                            >
-                                                                <IconTrash className="h-4 w-4" />
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
-                                            ) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={3} className="h-64 text-center">
-                                                        <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
-                                                            <div className="h-20 w-20 rounded-3xl bg-muted flex items-center justify-center">
-                                                                <IconClipboardList className="h-10 w-10 text-muted-foreground" />
-                                                            </div>
-                                                            <div className="space-y-1">
-                                                                <p className="text-base font-black text-foreground uppercase tracking-widest">Cart is Empty</p>
-                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Add items using the entry form above</p>
-                                                            </div>
+                                            {selectedServices.map((service, index) => (
+                                                <TableRow key={index} className={cn(
+                                                    "border-b border-border last:border-0",
+                                                    editingIndex === index ? "bg-orange-500/5" : "hover:bg-muted/30"
+                                                )}>
+                                                    <TableCell className="py-6 px-8">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-base font-black text-foreground mb-1.5">{service.name}</span>
+                                                            <span className="text-[10px] font-mono font-bold text-muted-foreground">ID: {service.serviceId.substring(0, 8).toUpperCase()}</span>
                                                         </div>
                                                     </TableCell>
+                                                    <TableCell className="text-right py-6 px-8">
+                                                        <span className="text-lg font-black tracking-tighter">₹{service.price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                    </TableCell>
+                                                    <TableCell className="px-8 flex justify-end gap-2 py-6">
+                                                        <Button type="button" variant="ghost" size="icon" onClick={() => handleEditService(index)}>
+                                                            <IconPencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveService(index)}>
+                                                            <IconTrash className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
-                                            )}
+                                            ))}
                                         </TableBody>
                                     </Table>
                                 </div>
@@ -643,71 +580,43 @@ export default function CreateSalePage() {
                                             <IconCreditCard className="h-4 w-4" />
                                             <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em]">Settlement Logic</CardTitle>
                                         </div>
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-xs font-bold opacity-40 italic uppercase tracking-widest">Final Ledger</span>
-                                            <div className="h-[1px] flex-1 bg-background/20" />
-                                        </div>
                                         <div className="mt-6 flex items-baseline gap-1">
                                             <span className="text-2xl font-black text-primary">₹</span>
-                                            <span className="text-6xl font-black tracking-tighter">
-                                                {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                            </span>
-                                            <span className="text-2xl font-black opacity-30">.{((totalAmount % 1) * 100).toFixed(0).padStart(2, '0')}</span>
+                                            <span className="text-6xl font-black tracking-tighter">{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                         </div>
                                     </div>
                                 </CardHeader>
 
                                 <CardContent className="pt-10 px-8 pb-10 space-y-10">
-                                    <div className="space-y-8">
-
-
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1">
-                                                <Label htmlFor="paid">Paid Amount</Label>
-                                            </div>
-                                            <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">₹</div>
-                                                <Input
-                                                    id="paid"
-                                                    type="number"
-                                                    className="h-14 pl-10 border-border rounded-2xl font-black text-2xl text-foreground focus-visible:ring-emerald-500/20 bg-emerald-500/5"
-                                                    value={paidAmount}
-                                                    onChange={(e) => setPaidAmount(e.target.value)}
-                                                    placeholder="0.00"
-                                                />
-                                            </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Paid Amount</Label>
+                                        <div className="relative">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xl">₹</div>
+                                            <Input
+                                                id="paid"
+                                                type="number"
+                                                className="h-14 pl-10 border-border rounded-2xl font-black text-2xl text-foreground bg-emerald-500/5"
+                                                value={paidAmount}
+                                                onChange={(e) => setPaidAmount(e.target.value)}
+                                            />
                                         </div>
                                     </div>
 
-                                    <div className="bg-muted p-6 rounded-3xl border border-border relative overflow-hidden">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] whitespace-nowrap px-1">Net Balance</span>
-                                            {(totalAmount - Number(paidAmount)) === 0 && totalAmount > 0 && (
-                                                <Badge className="bg-emerald-500 text-white border-0 text-[10px] font-black uppercase py-0.5 px-3 animate-pulse">CLEARED</Badge>
-                                            )}
-                                        </div>
-                                        <div className={cn(
-                                            "text-3xl font-black tracking-tighter px-1 transition-colors duration-500",
-                                            totalAmount - Number(paidAmount) > 0 ? "text-destructive" : "text-emerald-500"
-                                        )}>
+                                    <div className="bg-muted p-6 rounded-3xl border border-border">
+                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Net Balance</span>
+                                        <div className={cn("text-3xl font-black tracking-tighter mt-2", totalAmount - Number(paidAmount) > 0 ? "text-destructive" : "text-emerald-500")}>
                                             ₹{(totalAmount - Number(paidAmount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </div>
                                     </div>
 
                                     <Button
                                         type="submit"
-                                        className="w-full h-16 bg-foreground text-background hover:bg-foreground/90 text-sm font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 overflow-hidden group"
+                                        className="w-full h-16 bg-foreground text-background hover:bg-foreground/90 text-sm font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all"
                                         disabled={isSubmitting}
-                                        onClick={handleSubmit}
                                     >
-                                        {isSubmitting ? "Processing..." : "Add Sale"}
-                                        <IconChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                        {isSubmitting ? "Updating..." : "Update Sale"}
+                                        <IconChevronRight className="h-5 w-5 ml-2" />
                                     </Button>
-
-                                    <div className="flex flex-col items-center gap-2 opacity-20 text-[8px] font-black uppercase tracking-[0.4em] text-muted-foreground">
-                                        <div className="h-[1px] w-full bg-border" />
-                                        <span>Terminal Secure Link Alpha</span>
-                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -734,27 +643,6 @@ export default function CreateSalePage() {
                 onSubmit={handleServiceSubmit}
                 onCancel={() => setIsServiceModalOpen(false)}
             />
-
-            <style jsx global>{`
-                @media print {
-                    .min-h-screen { background: white !important; }
-                    .max-w-\[1600px\] { max-width: 100% !important; margin: 0 !important; }
-                    .sticky, button, .badges, nav, footer, .xl\:col-span-1 { display: none !important; }
-                    .xl\:col-span-3 { width: 100% !important; grid-column: span 4 / span 4 !important; }
-                    .Card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; margin-bottom: 2rem !important; }
-                    .bg-primary, .bg-slate-900, .bg-foreground { background: none !important; color: black !important; }
-                    * { color: black !important; border-color: #e2e8f0 !important; }
-                }
-
-                input::-webkit-outer-spin-button,
-                input::-webkit-inner-spin-button {
-                  -webkit-appearance: none;
-                  margin: 0;
-                }
-                input[type=number] {
-                  -moz-appearance: textfield;
-                }
-            `}</style>
         </div>
     );
 }

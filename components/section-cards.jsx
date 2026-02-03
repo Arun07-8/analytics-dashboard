@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export function SectionCards({ stats = {} }) {
+export function SectionCards({ stats = {}, labels = {}, prefixes = {}, suffixes = {} }) {
   const {
     totalRevenue = 0,
     revenueGrowth = 0,
@@ -27,51 +27,56 @@ export function SectionCards({ stats = {} }) {
       className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
+          <CardDescription>{labels.totalRevenue || "Total Revenue"}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {prefixes.totalRevenue ?? "₹"}{totalRevenue.toLocaleString(undefined, {
+              minimumFractionDigits: prefixes.totalRevenue === "" ? 0 : 2,
+              maximumFractionDigits: prefixes.totalRevenue === "" ? 0 : 2
+            })}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
+              {revenueGrowth >= 0 ? <IconTrendingUp /> : <IconTrendingDown />}
               {revenueGrowth >= 0 ? "+" : ""}{revenueGrowth}%
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month <IconTrendingUp className="size-4" />
+            {revenueGrowth >= 0 ? "Trending up this month" : "Trending down this month"}
+            {revenueGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            Visitors for the last 6 months
+            Analysis for the current period
           </div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>{labels.newCustomers || "New Customers"}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {newCustomers.toLocaleString()}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingDown />
+              {customerGrowth >= 0 ? <IconTrendingUp /> : <IconTrendingDown />}
               {customerGrowth >= 0 ? "+" : ""}{customerGrowth}%
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period <IconTrendingDown className="size-4" />
+            {customerGrowth >= 0 ? "Growth in acquisitions" : "Acquisitions decreased"}
+            {customerGrowth >= 0 ? <IconTrendingUp className="size-4" /> : <IconTrendingDown className="size-4" />}
           </div>
           <div className="text-muted-foreground">
-            Acquisition needs attention
+            Compared to last month
           </div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
+          <CardDescription>{labels.activeAccounts || "Active Accounts"}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {activeAccounts.toLocaleString()}
           </CardTitle>
@@ -86,14 +91,14 @@ export function SectionCards({ stats = {} }) {
           <div className="line-clamp-1 flex gap-2 font-medium">
             Strong user retention <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
+          <div className="text-muted-foreground">Engagement metrics</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
+          <CardDescription>{labels.growthRate || "Retention Rate"}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {growthRate}%
+            {prefixes.growthRate}{growthRate}{suffixes.growthRate || (prefixes.growthRate ? "" : "%")}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
@@ -104,9 +109,9 @@ export function SectionCards({ stats = {} }) {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <IconTrendingUp className="size-4" />
+            Steady performance <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="text-muted-foreground">{labels.growthRateDescription || "Customer loyalty"}</div>
         </CardFooter>
       </Card>
     </div>

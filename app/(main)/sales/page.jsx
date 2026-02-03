@@ -8,6 +8,7 @@ import { SectionCards } from "@/components/section-cards"
 import { Button } from "@/components/ui/button";
 import { IconUserPlus, IconPlus } from "@tabler/icons-react";
 import { CustomerModal } from "@/components/customers/customer-modal";
+import { SaleDetailsModal } from "@/components/sales/sale-details-modal";
 import { createCustomer, getCustomerByEmail, getCustomerByMobile, getAllSales, getAllCustomers, getAllAdmins } from "@/lib/firebase/collections";
 import { toast } from "sonner";
 
@@ -40,6 +41,12 @@ export default function Page() {
   const [customers, setCustomers] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Sale Modal States
+  const [selectedSale, setSelectedSale] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const resetCustomerForm = () => {
     setCustomerFormData(initialCustomerFormData);
@@ -86,13 +93,48 @@ export default function Page() {
     return sales.map(sale => ({
       ...sale,
       customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
-      staffName: adminMap.get(sale.staffId) || 'Unknown Staff'
+      staffName: adminMap.get(sale.staffId) || 'Unknown Staff',
+      status: sale.status || (sale.closed ? "Closed" : "Pending")
     })).sort((a, b) => {
       const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
       const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
       return dateB - dateA; // Descending
     });
   }, [sales, customers, admins]);
+
+  const filteredSales = useMemo(() => {
+    return salesWithDetails.filter(sale => {
+      // Tab filter
+      if (activeTab === 'closed' && sale.status !== 'Closed') return false;
+      if (activeTab === 'pending' && sale.status !== 'Pending') return false;
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          sale.customerName?.toLowerCase().includes(query) ||
+          sale.staffName?.toLowerCase().includes(query) ||
+          sale.id?.toLowerCase().includes(query)
+        );
+      }
+
+      return true;
+    });
+  }, [salesWithDetails, activeTab, searchQuery]);
+
+  const salesTabs = useMemo(() => {
+    const counts = {
+      all: salesWithDetails.length,
+      closed: salesWithDetails.filter(s => s.status === 'Closed').length,
+      pending: salesWithDetails.filter(s => s.status === 'Pending').length
+    };
+
+    return [
+      { label: "All Sales", value: "all", badge: counts.all.toString() },
+      { label: "Closed", value: "closed", badge: counts.closed.toString() },
+      { label: "Pending", value: "pending", badge: counts.pending.toString() },
+    ];
+  }, [salesWithDetails]);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -169,6 +211,15 @@ export default function Page() {
 
     return Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [sales]);
+
+  const handleViewDetails = (sale) => {
+    setSelectedSale(sale);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEditSale = (sale) => {
+    router.push(`/sales/edit/${sale.id}`);
+  };
 
 
   const handleCustomerInputChange = (e) => {
@@ -287,9 +338,26 @@ export default function Page() {
         </div>
 
         <div className="px-4 lg:px-6">
-          <SalesTable data={salesWithDetails} />
+          <SalesTable
+            data={filteredSales}
+            tabs={salesTabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search customer, staff or ref..."
+            onAddClick={() => router.push('/sales/create')}
+            onViewDetails={handleViewDetails}
+            onEditSale={handleEditSale}
+          />
         </div>
       </div>
+
+      <SaleDetailsModal
+        isOpen={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        sale={selectedSale}
+        customer={customers.find(c => c.id === selectedSale?.customerId)}
+      />
 
       <CustomerModal
         isOpen={isCustomerModalOpen}

@@ -146,6 +146,14 @@ export function ChartAreaInteractive({ data = [] }) {
                       day: "numeric",
                     });
                   }}
+                  formatter={(value, name) => (
+                    <div className="flex flex-1 items-center justify-between gap-4">
+                      <span className="text-muted-foreground">{chartConfig[name]?.label || name}</span>
+                      <span className="text-foreground font-mono font-medium tabular-nums">
+                        {name === "desktop" ? `₹${value.toLocaleString()}` : value.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                   indicator="dot" />
               } />
             <Area
