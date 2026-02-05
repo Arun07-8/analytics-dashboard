@@ -8,6 +8,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import {
     Table,
     TableBody,
@@ -28,7 +29,8 @@ import {
     IconCurrencyRupee,
     IconMapPin,
     IconDeviceMobile,
-    IconMail
+    IconMail,
+    IconDownload
 } from "@tabler/icons-react"
 
 export function SaleDetailsModal({
@@ -36,6 +38,7 @@ export function SaleDetailsModal({
     onOpenChange,
     sale,
     customer,
+    onDownloadInvoice
 }) {
     if (!sale) return null;
 
@@ -48,6 +51,17 @@ export function SaleDetailsModal({
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-none rounded-3xl overflow-hidden shadow-2xl [&>button]:text-white">
                 {/* Modern Header Section */}
                 <div className="bg-foreground text-background p-8 relative overflow-hidden">
+                    <div className="absolute right-8 top-8 z-20">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-background/10 border-background/20 text-background hover:bg-background/20 hover:text-background font-black uppercase text-[10px] tracking-widest gap-2 h-9 px-4 rounded-xl backdrop-blur-md"
+                            onClick={() => onDownloadInvoice?.(sale)}
+                        >
+                            <IconDownload className="h-4 w-4" />
+                            Download Invoice
+                        </Button>
+                    </div>
                     <div className="absolute right-0 top-0 p-8 opacity-10 -mr-12 -mt-12">
                         <IconReceipt2 className="h-48 w-48" />
                     </div>
@@ -61,7 +75,7 @@ export function SaleDetailsModal({
                                 {sale.salesRefId?.[0] || sale.id.substring(0, 12).toUpperCase()}
                             </DialogTitle>
                             <DialogDescription className="text-background/60 font-medium">
-                                Processed on {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                Processed on {date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                             </DialogDescription>
                         </DialogHeader>
                     </div>

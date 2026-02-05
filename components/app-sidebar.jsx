@@ -17,6 +17,7 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
+  IconPlus,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -153,19 +154,23 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5 mb-2">
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">FoxonHub</span>
+            <SidebarMenuButton size="lg" asChild className="h-14 mb-4 p-0 hover:bg-transparent focus-visible:ring-0">
+              <a href="/" className="flex h-full w-full items-center justify-start px-3">
+                <img
+                  src="/Foxon Final Logo-02.png"
+                  alt="FoxonHub Logo"
+                  className="h-25 pl-4 w-full object-contain object-left"
+                />
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground justify-center shadow-md"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground justify-center gap-2 shadow-md h-10"
             >
               <a href="/sales/create">
+                <IconPlus className="size-4" />
                 <span className="font-semibold">Create Sale</span>
               </a>
             </SidebarMenuButton>

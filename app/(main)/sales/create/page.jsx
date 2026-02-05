@@ -38,6 +38,9 @@ import { createService } from '@/lib/firebase/collections/service';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from "@/lib/utils";
+import { InvoiceTemplate } from '@/components/sales/invoice-template';
+import { downloadInvoice } from '@/lib/invoice-utils';
+import { getAllAdmins } from '@/lib/firebase/collections/admin';
 
 export default function CreateSalePage() {
     const router = useRouter();
@@ -65,6 +68,10 @@ export default function CreateSalePage() {
     const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
     const [customerFormData, setCustomerFormData] = useState({});
     const [serviceFormData, setServiceFormData] = useState({});
+    const [admins, setAdmins] = useState([]);
+
+    const [completedSale, setCompletedSale] = useState(null);
+    const [isInvoiceGenerating, setIsInvoiceGenerating] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -73,12 +80,14 @@ export default function CreateSalePage() {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [customersData, servicesData] = await Promise.all([
+            const [customersData, servicesData, adminsData] = await Promise.all([
                 getAllCustomers(),
-                getActiveServices()
+                getActiveServices(),
+                getAllAdmins()
             ]);
             setCustomers(customersData);
             setServices(servicesData);
+            setAdmins(adminsData);
 
             const date = new Date();
             const year = date.getFullYear();
@@ -204,13 +213,30 @@ export default function CreateSalePage() {
                 salesRefId: [salesRefId],
             };
 
-            await createSale(saleData);
+            const docId = await createSale(saleData);
+            setCompletedSale({ ...saleData, id: docId });
             toast.success("Sale completed successfully");
-            router.push('/sales');
+
+            // Re-fetch or Redirect choice? Let's stay on page to show success/download or redirect?
+            // User requested "download after place sale"
+            // router.push('/sales');
         } catch (error) {
             toast.error(error.message);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleGenerateInvoice = async () => {
+        if (!completedSale) return;
+        setIsInvoiceGenerating(true);
+        try {
+            await downloadInvoice('invoice-template', `Invoice-${completedSale.salesRefId[0]}.pdf`);
+            toast.success("Invoice downloaded");
+        } catch (error) {
+            toast.error("Failed to generate invoice");
+        } finally {
+            setIsInvoiceGenerating(false);
         }
     };
 
@@ -734,6 +760,54 @@ export default function CreateSalePage() {
                 onSubmit={handleServiceSubmit}
                 onCancel={() => setIsServiceModalOpen(false)}
             />
+
+            {/* Hidden Invoice Template for PDF generation */}
+            <div className="absolute -top-[10000px] left-0 opacity-0 pointer-events-none z-[-100]">
+                <InvoiceTemplate
+                    sale={completedSale}
+                    customer={selectedCustomer}
+                    admins={admins}
+                />
+            </div>
+
+            {/* Success Overlay instead of direct redirect */}
+            {completedSale && (
+                <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
+                    <Card className="max-w-md w-full border-border shadow-2xl rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
+                        <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto mb-6">
+                            <IconUserCheck className="h-10 w-10" />
+                        </div>
+                        <h2 className="text-2xl font-black text-foreground mb-2">Sale Completed!</h2>
+                        <p className="text-muted-foreground text-sm mb-8 italic">The transaction for <span className="text-foreground font-bold">{selectedCustomer?.name}</span> has been securely synced.</p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button
+                                variant="outline"
+                                className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
+                                onClick={() => router.push('/sales')}
+                            >
+                                <IconArrowLeft className="h-4 w-4" />
+                                Go Back
+                            </Button>
+                            <Button
+                                className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-emerald-500/20"
+                                onClick={handleGenerateInvoice}
+                                disabled={isInvoiceGenerating}
+                            >
+                                <IconDownload className="h-4 w-4" />
+                                {isInvoiceGenerating ? "Generating..." : "Get Invoice"}
+                            </Button>
+                        </div>
+                        <Button
+                            variant="link"
+                            className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-primary transition-colors"
+                            onClick={() => window.location.reload()}
+                        >
+                            Start New Transaction
+                        </Button>
+                    </Card>
+                </div>
+            )}
 
             <style jsx global>{`
                 @media print {

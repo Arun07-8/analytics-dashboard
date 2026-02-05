@@ -102,7 +102,7 @@ export function CustomersTable({
             header: "Joined Date",
             cell: ({ row }) => {
                 const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
-                return <div className="text-muted-foreground text-sm">{date.toLocaleDateString()}</div>
+                return <div className="text-muted-foreground text-sm">{date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
             },
         },
         {

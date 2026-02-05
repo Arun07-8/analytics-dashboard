@@ -7,9 +7,11 @@ import {
     IconLoader,
     IconCreditCard,
     IconUser,
-    IconEye
+    IconEye,
+    IconChevronDown
 } from "@tabler/icons-react"
 import { z } from "zod"
+import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -42,7 +44,8 @@ export function SalesTable({
     onAddClick,
     addLabel = "Create Sale",
     onViewDetails,
-    onEditSale
+    onEditSale,
+    onDownloadInvoice
 }) {
     const columns = React.useMemo(() => [
         {
@@ -66,10 +69,19 @@ export function SalesTable({
         },
         {
             accessorKey: "createdAt",
-            header: "Date",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    className="p-0 hover:bg-transparent -ml-2"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Date
+                    <IconChevronDown className={cn("ml-2 h-4 w-4 transition-transform", column.getIsSorted() === "asc" && "rotate-180")} />
+                </Button>
+            ),
             cell: ({ row }) => {
                 const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
-                return <div className="text-nowrap">{date.toLocaleDateString()}</div>
+                return <div className="text-nowrap">{date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
             },
         },
         {
@@ -93,7 +105,16 @@ export function SalesTable({
         },
         {
             accessorKey: "totalAmount",
-            header: "Total Amount",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    className="p-0 hover:bg-transparent -ml-2"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Total Amount
+                    <IconChevronDown className={cn("ml-2 h-4 w-4 transition-transform", column.getIsSorted() === "asc" && "rotate-180")} />
+                </Button>
+            ),
             cell: ({ row }) => (
                 <div className="font-medium">
                     ₹{row.original.totalAmount?.toFixed(2)}
@@ -102,7 +123,16 @@ export function SalesTable({
         },
         {
             accessorKey: "paidAmount",
-            header: "Paid",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    className="p-0 hover:bg-transparent -ml-2"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Paid
+                    <IconChevronDown className={cn("ml-2 h-4 w-4 transition-transform", column.getIsSorted() === "asc" && "rotate-180")} />
+                </Button>
+            ),
             cell: ({ row }) => (
                 <div className="font-medium text-muted-foreground">
                     ₹{row.original.paidAmount?.toFixed(2)}
@@ -111,7 +141,16 @@ export function SalesTable({
         },
         {
             accessorKey: "excessAmount",
-            header: "Balance",
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    className="p-0 hover:bg-transparent -ml-2"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Balance
+                    <IconChevronDown className={cn("ml-2 h-4 w-4 transition-transform", column.getIsSorted() === "asc" && "rotate-180")} />
+                </Button>
+            ),
             cell: ({ row }) => {
                 const balance = row.original.excessAmount ?? (row.original.totalAmount - row.original.paidAmount);
                 return (
@@ -147,19 +186,11 @@ export function SalesTable({
         },
         {
             id: "actions",
+            header: () => <div className="text-right pr-4">Action</div>,
             cell: ({ row }) => {
                 const sale = row.original;
                 return (
                     <div className="flex items-center justify-end gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8"
-                            onClick={() => onViewDetails?.(sale)}
-                        >
-                            <IconEye className="size-4" />
-                            <span className="sr-only">View Details</span>
-                        </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -170,16 +201,18 @@ export function SalesTable({
                                     <span className="sr-only">Open menu</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-32">
+                            <DropdownMenuContent align="end" className="w-40 font-bold">
                                 <DropdownMenuItem onClick={() => onViewDetails?.(sale)}>View Details</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => onEditSale?.(sale)}>Edit Sale</DropdownMenuItem>
+                                <DropdownMenuItem className="text-primary" onClick={() => onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 )
             },
         },
-    ], [onViewDetails, onEditSale]);
+    ], [onViewDetails, onEditSale, onDownloadInvoice]);
+
 
     return (
         <DataTable

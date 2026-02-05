@@ -9,8 +9,23 @@ import { Button } from "@/components/ui/button";
 import { IconUserPlus, IconPlus } from "@tabler/icons-react";
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { SaleDetailsModal } from "@/components/sales/sale-details-modal";
-import { createCustomer, getCustomerByEmail, getCustomerByMobile, getAllSales, getAllCustomers, getAllAdmins } from "@/lib/firebase/collections";
+import { createCustomer, getCustomerByEmail, getCustomerByMobile, getAllSales, getAllCustomers, getAllAdmins, subscribeToSales } from "@/lib/firebase/collections";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { InvoiceTemplate } from "@/components/sales/invoice-template";
+import { downloadInvoice } from "@/lib/invoice-utils";
+import { IconCalendar } from "@tabler/icons-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Mark this page as dynamic to prevent static generation
 export const dynamic = 'force-dynamic';
@@ -43,10 +58,15 @@ export default function Page() {
   const [loadingData, setLoadingData] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week', 'month', 'last6months', 'year', 'custom'
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   // Sale Modal States
   const [selectedSale, setSelectedSale] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isInvoiceGenerating, setIsInvoiceGenerating] = useState(false);
+  const [invoiceSaleData, setInvoiceSaleData] = useState(null);
 
   const resetCustomerForm = () => {
     setCustomerFormData(initialCustomerFormData);
@@ -59,31 +79,78 @@ export default function Page() {
     }
   }, [user, loading, router]);
 
-  // Fetch Data
+  // Fetch Customers & Admins once (or use snapshot if needed, but keeping it simple for now)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchStaticData = async () => {
       if (!user) return;
-
       try {
-        setLoadingData(true);
-        const [salesData, customersData, adminsData] = await Promise.all([
-          getAllSales(),
+        const [customersData, adminsData] = await Promise.all([
           getAllCustomers(),
           getAllAdmins()
         ]);
-        setSales(salesData);
         setCustomers(customersData);
         setAdmins(adminsData);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load dashboard data");
-      } finally {
-        setLoadingData(false);
+        console.error("Error fetching static data:", error);
       }
     };
-
-    fetchData();
+    fetchStaticData();
   }, [user]);
+
+  // Real-time Sales Subscription with Query
+  useEffect(() => {
+    if (!user) return;
+
+    let filterConstraints = {};
+    const now = new Date();
+
+    if (dateFilter === 'today') {
+      filterConstraints = { fromDate: now, toDate: now };
+    } else if (dateFilter === 'yesterday') {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      filterConstraints = { fromDate: yesterday, toDate: yesterday };
+    } else if (dateFilter === 'week') {
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      filterConstraints = { fromDate: startOfWeek };
+    } else if (dateFilter === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      filterConstraints = { fromDate: startOfMonth };
+    } else if (dateFilter === 'last6months') {
+      const last6Months = new Date();
+      last6Months.setMonth(last6Months.getMonth() - 6);
+      filterConstraints = { fromDate: last6Months };
+    } else if (dateFilter === 'year') {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      filterConstraints = { fromDate: startOfYear };
+    } else if (dateFilter === 'custom') {
+      filterConstraints = { fromDate, toDate };
+    }
+
+    setLoadingData(true);
+    const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
+      setSales(salesData);
+      setLoadingData(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, dateFilter, fromDate, toDate]);
+
+  const handleFromDateSelect = (date) => {
+    setFromDate(date);
+    if (date && toDate && date > toDate) {
+      setToDate(date);
+      toast.info("Adjusted 'To' date to match 'From' selection");
+    }
+  };
+
+  const handleToDateSelect = (date) => {
+    setToDate(date);
+    if (date && fromDate && date < fromDate) {
+      setFromDate(date);
+      toast.info("Adjusted 'From' date to match 'To' selection");
+    }
+  };
 
   // Process data for components
   const salesWithDetails = useMemo(() => {
@@ -120,7 +187,7 @@ export default function Page() {
 
       return true;
     });
-  }, [salesWithDetails, activeTab, searchQuery]);
+  }, [salesWithDetails, activeTab, searchQuery, dateFilter]);
 
   const salesTabs = useMemo(() => {
     const counts = {
@@ -146,22 +213,22 @@ export default function Page() {
     const endOfLastMonth = new Date(currentYear, currentMonth, 0);
 
     let totalRevenue = 0;
-    let currentMonthRevenue = 0;
-    let lastMonthRevenue = 0;
+    let currentPeriodRevenue = 0;
+    let lastPeriodRevenue = 0;
 
     let newCustomersCount = 0;
     let lastMonthCustomersCount = 0;
-    let activeAccountsCount = customers.length;
+    let activeAccountsCount = new Set(filteredSales.map(s => s.customerId)).size;
 
-    sales.forEach(sale => {
+    filteredSales.forEach(sale => {
       const amount = Number(sale.totalAmount) || 0;
       totalRevenue += amount;
 
       const date = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);
       if (date >= startOfCurrentMonth) {
-        currentMonthRevenue += amount;
+        currentPeriodRevenue += amount;
       } else if (date >= startOfLastMonth && date <= endOfLastMonth) {
-        lastMonthRevenue += amount;
+        lastPeriodRevenue += amount;
       }
     });
 
@@ -174,9 +241,9 @@ export default function Page() {
       }
     });
 
-    const revenueGrowth = lastMonthRevenue > 0
-      ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-      : (currentMonthRevenue > 0 ? 100 : 0);
+    const revenueGrowth = lastPeriodRevenue > 0
+      ? ((currentPeriodRevenue - lastPeriodRevenue) / lastPeriodRevenue) * 100
+      : (currentPeriodRevenue > 0 ? 100 : 0);
 
     const customerGrowth = lastMonthCustomersCount > 0
       ? ((newCustomersCount - lastMonthCustomersCount) / lastMonthCustomersCount) * 100
@@ -192,12 +259,12 @@ export default function Page() {
       growthRate: 0,
       growthRateChange: 0
     };
-  }, [sales, customers]);
+  }, [filteredSales, customers]);
 
   const chartData = useMemo(() => {
     // Aggregate sales by day
     const dailyData = {};
-    sales.forEach(sale => {
+    filteredSales.forEach(sale => {
       const dateObj = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);
       const dateStr = dateObj.toISOString().split('T')[0];
 
@@ -209,8 +276,15 @@ export default function Page() {
       dailyData[dateStr].mobile += 1; // Order count
     });
 
-    return Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [sales]);
+    const result = Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Ensure at least some data for the chart if empty
+    if (result.length === 0) {
+      return [{ date: new Date().toISOString().split('T')[0], desktop: 0, mobile: 0 }];
+    }
+
+    return result;
+  }, [filteredSales]);
 
   const handleViewDetails = (sale) => {
     setSelectedSale(sale);
@@ -219,6 +293,29 @@ export default function Page() {
 
   const handleEditSale = (sale) => {
     router.push(`/sales/edit/${sale.id}`);
+  };
+
+  const handleDownloadInvoice = async (sale) => {
+    setInvoiceSaleData(sale);
+    setIsInvoiceGenerating(true);
+    // Give state a moment to update and render the template
+    setTimeout(async () => {
+      try {
+        const refId = Array.isArray(sale.salesRefId) ? sale.salesRefId[0] : sale.salesRefId;
+        const success = await downloadInvoice('dashboard-invoice-template', `Invoice-${refId || sale.id}.pdf`);
+        if (success) {
+          toast.success("Invoice downloaded");
+        } else {
+          toast.error("Format check failed");
+        }
+      } catch (error) {
+        console.error("Dashboard invoice error:", error);
+        toast.error("Failed to generate invoice");
+      } finally {
+        setIsInvoiceGenerating(false);
+        setInvoiceSaleData(null);
+      }
+    }, 500);
   };
 
 
@@ -311,8 +408,90 @@ export default function Page() {
     <div className="@container/main flex flex-1 flex-col gap-2">
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-          <h1 className="text-2xl font-bold tracking-tight">Sales Dashboard</h1>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">Sales Dashboard</h1>
+            <p className="text-xs text-muted-foreground">Monitor and manage your business performance</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 bg-card border rounded-lg pl-3 h-10 shadow-sm">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0 border-r pr-2 h-full flex items-center">Period</span>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[120px] shadow-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="yesterday">Yesterday</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="last6months">Last 6 Months</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                    <SelectItem value="custom">Custom Range</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                {/* From Date Popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
+                        !fromDate && "text-muted-foreground"
+                      )}
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">From</span>
+                      {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={fromDate}
+                      onSelect={handleFromDateSelect}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <div className="h-4 w-[1px] bg-border" />
+
+                {/* To Date Popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
+                        !toDate && "text-muted-foreground"
+                      )}
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">To</span>
+                      {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={toDate}
+                      onSelect={handleToDateSelect}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
             <Button
               onClick={() => router.push('/sales/create')}
               className="flex items-center gap-2 w-full sm:w-auto"
@@ -348,7 +527,21 @@ export default function Page() {
             onAddClick={() => router.push('/sales/create')}
             onViewDetails={handleViewDetails}
             onEditSale={handleEditSale}
+            onDownloadInvoice={handleDownloadInvoice}
           />
+        </div>
+      </div>
+
+      {/* Hidden Invoice Template for PDF generation */}
+      <div className="absolute -top-[10000px] left-0 opacity-0 pointer-events-none z-[-100]">
+        <div id="dashboard-invoice-template">
+          {invoiceSaleData && (
+            <InvoiceTemplate
+              sale={invoiceSaleData}
+              customer={customers.find(c => c.id === invoiceSaleData.customerId)}
+              admins={admins}
+            />
+          )}
         </div>
       </div>
 
@@ -357,6 +550,7 @@ export default function Page() {
         onOpenChange={setIsDetailsModalOpen}
         sale={selectedSale}
         customer={customers.find(c => c.id === selectedSale?.customerId)}
+        onDownloadInvoice={handleDownloadInvoice}
       />
 
       <CustomerModal
