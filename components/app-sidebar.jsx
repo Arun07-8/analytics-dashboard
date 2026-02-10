@@ -18,6 +18,7 @@ import {
   IconSettings,
   IconUsers,
   IconPlus,
+  IconUserPlus,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -60,6 +61,11 @@ const data = {
       title: "Customers",
       url: "/customers",
       icon: IconUsers,
+    },
+    {
+      title: "Create Admin",
+      url: "/createAdmin",
+      icon: IconUserPlus,
     },
   ],
   navClouds: [
