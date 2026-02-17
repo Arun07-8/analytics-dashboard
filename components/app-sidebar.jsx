@@ -1,6 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { useEffect, useState } from "react"
+import { auth } from "@/lib/firebase"
+import { getFirestore, collection, query, where, getDocs } from "firebase/firestore"
+import { onAuthStateChanged } from "firebase/auth"
 import {
   IconCamera,
   IconChartBar,
@@ -35,12 +39,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
+
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -152,9 +152,37 @@ const data = {
   ],
 }
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
+  const [user, setUser] = useState(null)
+
+  const db = getFirestore()
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    if (currentUser) {
+
+      const q = query(
+        collection(db, "admins"),
+        where("email", "==", currentUser.email)
+      )
+
+      const querySnapshot = await getDocs(q)
+
+      if (!querySnapshot.empty) {
+        const adminData = querySnapshot.docs[0].data()
+
+        setUser({
+          name: adminData.name,
+          email: adminData.email,
+          avatar: "/avatars/shadcn.jpg",
+        })
+      }
+    }
+  })
+
+  return () => unsubscribe()
+}, [])
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -189,7 +217,7 @@ export function AppSidebar({
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {user && <NavUser user={user} />}
       </SidebarFooter>
     </Sidebar>
   );
