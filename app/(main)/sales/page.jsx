@@ -16,6 +16,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { InvoiceTemplate } from "@/components/sales/invoice-template";
+import { InvoicePreviewModal } from "@/components/sales/invoice-preview-modal";
 import { downloadInvoice } from "@/lib/invoice-utils";
 import { IconCalendar } from "@tabler/icons-react";
 import {
@@ -67,6 +68,8 @@ export default function Page() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isInvoiceGenerating, setIsInvoiceGenerating] = useState(false);
   const [invoiceSaleData, setInvoiceSaleData] = useState(null);
+  const [isInvoicePreviewOpen, setIsInvoicePreviewOpen] = useState(false);
+  const [previewSaleData, setPreviewSaleData] = useState(null);
 
   const resetCustomerForm = () => {
     setCustomerFormData(initialCustomerFormData);
@@ -295,18 +298,33 @@ export default function Page() {
     router.push(`/sales/edit/${sale.id}`);
   };
 
-  const handleDownloadInvoice = async (sale) => {
-    setInvoiceSaleData(sale);
+  const handleDownloadInvoice = (sale) => {
+    // Show preview modal first
+    setPreviewSaleData(sale);
+    setIsInvoicePreviewOpen(true);
+  };
+
+  const handleConfirmDownload = async () => {
+    if (!previewSaleData) return;
+
+    // Close preview modal
+    setIsInvoicePreviewOpen(false);
+
+    // Start generating PDF
+    setInvoiceSaleData(previewSaleData);
     setIsInvoiceGenerating(true);
+
     // Give state a moment to update and render the template
     setTimeout(async () => {
       try {
-        const refId = Array.isArray(sale.salesRefId) ? sale.salesRefId[0] : sale.salesRefId;
-        const success = await downloadInvoice('dashboard-invoice-template', `Invoice-${refId || sale.id}.pdf`);
+        const refId = Array.isArray(previewSaleData.salesRefId)
+          ? previewSaleData.salesRefId[0]
+          : previewSaleData.salesRefId;
+        const success = await downloadInvoice('dashboard-invoice-template', `Invoice-${refId || previewSaleData.id}.pdf`);
         if (success) {
-          toast.success("Invoice downloaded");
+          toast.success("Invoice downloaded successfully");
         } else {
-          toast.error("Format check failed");
+          toast.error("Failed to generate PDF");
         }
       } catch (error) {
         console.error("Dashboard invoice error:", error);
@@ -314,6 +332,7 @@ export default function Page() {
       } finally {
         setIsInvoiceGenerating(false);
         setInvoiceSaleData(null);
+        setPreviewSaleData(null);
       }
     }, 500);
   };
@@ -551,6 +570,18 @@ export default function Page() {
         sale={selectedSale}
         customer={customers.find(c => c.id === selectedSale?.customerId)}
         onDownloadInvoice={handleDownloadInvoice}
+      />
+
+      <InvoicePreviewModal
+        isOpen={isInvoicePreviewOpen}
+        onClose={() => {
+          setIsInvoicePreviewOpen(false);
+          setPreviewSaleData(null);
+        }}
+        sale={previewSaleData}
+        customer={customers.find(c => c.id === previewSaleData?.customerId)}
+        admins={admins}
+        onConfirmDownload={handleConfirmDownload}
       />
 
       <CustomerModal

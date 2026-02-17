@@ -39,6 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from "@/lib/utils";
 import { InvoiceTemplate } from '@/components/sales/invoice-template';
+import { InvoicePreviewModal } from '@/components/sales/invoice-preview-modal';
 import { downloadInvoice } from '@/lib/invoice-utils';
 import { getAllAdmins } from '@/lib/firebase/collections/admin';
 
@@ -72,6 +73,7 @@ export default function CreateSalePage() {
 
     const [completedSale, setCompletedSale] = useState(null);
     const [isInvoiceGenerating, setIsInvoiceGenerating] = useState(false);
+    const [isInvoicePreviewOpen, setIsInvoicePreviewOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -227,17 +229,27 @@ export default function CreateSalePage() {
         }
     };
 
-    const handleGenerateInvoice = async () => {
+    const handleGenerateInvoice = () => {
         if (!completedSale) return;
+        setIsInvoicePreviewOpen(true);
+    };
+
+    const handleConfirmDownload = async () => {
+        if (!completedSale) return;
+
+        setIsInvoicePreviewOpen(false);
         setIsInvoiceGenerating(true);
-        try {
-            await downloadInvoice('invoice-template', `Invoice-${completedSale.salesRefId[0]}.pdf`);
-            toast.success("Invoice downloaded");
-        } catch (error) {
-            toast.error("Failed to generate invoice");
-        } finally {
-            setIsInvoiceGenerating(false);
-        }
+
+        setTimeout(async () => {
+            try {
+                await downloadInvoice('invoice-template', `Invoice-${completedSale.salesRefId[0]}.pdf`);
+                toast.success("Invoice downloaded successfully");
+            } catch (error) {
+                toast.error("Failed to generate invoice");
+            } finally {
+                setIsInvoiceGenerating(false);
+            }
+        }, 500);
     };
 
     const handleCustomerSubmit = async (e) => {
@@ -759,6 +771,15 @@ export default function CreateSalePage() {
                 onCheckedChange={(isActive) => setServiceFormData({ ...serviceFormData, isActive })}
                 onSubmit={handleServiceSubmit}
                 onCancel={() => setIsServiceModalOpen(false)}
+            />
+
+            <InvoicePreviewModal
+                isOpen={isInvoicePreviewOpen}
+                onClose={() => setIsInvoicePreviewOpen(false)}
+                sale={completedSale}
+                customer={selectedCustomer}
+                admins={admins}
+                onConfirmDownload={handleConfirmDownload}
             />
 
             {/* Hidden Invoice Template for PDF generation */}
