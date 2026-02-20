@@ -42,13 +42,13 @@ export function NavUser({
   const handleLogout = async () => {
     try {
       await signOut(auth)
-      
+
       // Clear auth cookies
       document.cookie = "authToken=; path=/; max-age=0"
       document.cookie = "userId=; path=/; max-age=0"
-      
+
       toast.success("✅ Logged out successfully!")
-      
+
       setTimeout(() => {
         router.push("/login")
       }, 500)

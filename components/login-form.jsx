@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from 'sonner';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { IconEye, IconEyeOff, IconLoader2 } from "@tabler/icons-react";
 
 export function LoginForm({
   className,
@@ -24,8 +25,8 @@ export function LoginForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   // Validate email format
   const validateEmail = (email) => {
@@ -36,26 +37,24 @@ export function LoginForm({
   // Validate form inputs
   const validateForm = () => {
     const errors = {};
-    
+
     if (!email.trim()) {
       errors.email = 'Email is required';
-    } else if (!validateEmail(email)) {
+    } else if (!validateEmail(email.trim())) {
       errors.email = 'Please enter a valid email address';
     }
-    
+
     if (!password) {
       errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
     }
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setValidationErrors({});
 
     // Validate form before submission
     if (!validateForm()) {
@@ -65,51 +64,60 @@ export function LoginForm({
     setLoading(true);
 
     try {
+      // Normalize email (lowercase and trimmed) as requested for case-insensitivity
+      const normalizedEmail = email.trim().toLowerCase();
+
       // Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       const user = userCredential.user;
-      
+
       // Get Firebase ID token for JWT-like functionality
       const token = await user.getIdToken();
-      
+
       // Store token in cookie (httpOnly would be better in production)
       document.cookie = `authToken=${token}; path=/; max-age=3600`;
       document.cookie = `userId=${user.uid}; path=/; max-age=3600`;
-      
+
       toast.success('✅ Login successful!');
-      
+
       // Clear form
       setEmail('');
       setPassword('');
-      
+
       // Redirect to dashboard
       setTimeout(() => {
         router.push('/');
       }, 500);
     } catch (err) {
-      console.error('Login error:', err);
-      
       let errorMessage = 'Login failed';
-      
-      if (err.code === 'auth/user-not-found') {
-        errorMessage = 'Email not found. Please check your email or sign up.';
-      } else if (err.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
-      } else if (err.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
-      } else if (err.code === 'auth/user-disabled') {
-        errorMessage = 'This account has been disabled.';
-      } else if (err.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many login attempts. Please try again later.';
-      } else if (err.message) {
-        errorMessage = err.message;
+
+      // Map Firebase codes to user-friendly messages
+      if (err && typeof err === 'object') {
+        const code = err.code || '';
+        if (code === 'auth/user-not-found') {
+          errorMessage = 'No account found with this email.';
+        } else if (code === 'auth/wrong-password') {
+          errorMessage = 'Incorrect password.';
+        } else if (code === 'auth/invalid-email') {
+          errorMessage = 'Invalid email address.';
+        } else if (code === 'auth/user-disabled') {
+          errorMessage = 'This account has been disabled.';
+        } else if (code === 'auth/too-many-requests') {
+          errorMessage = 'Too many login attempts. Please try again later.';
+        } else if (code === 'auth/invalid-credential') {
+          errorMessage = 'Incorrect email or password.';
+        } else {
+          errorMessage = err.message || 'Authentication failed';
+        }
       }
-      
-      setError(errorMessage);
+
+      // 🛡️ Show ONLY toast, NO console.error to avoid Next.js dev box
       toast.error('❌ ' + errorMessage);
     } finally {
       setLoading(false);
     }
+
+
   };
 
   return (
@@ -121,19 +129,14 @@ export function LoginForm({
             Enter your email below to login to your account
           </p>
         </div>
-        
-        {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-        
+
+
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input 
-            id="email" 
-            type="email" 
-            placeholder="m@example.com" 
+          <Input
+            id="email"
+            type="email"
+            placeholder="m@example.com"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -148,7 +151,7 @@ export function LoginForm({
             <p className="text-xs text-destructive mt-1">{validationErrors.email}</p>
           )}
         </Field>
-        
+
         <Field>
           <div className="flex items-center">
             <FieldLabel htmlFor="password">Password</FieldLabel>
@@ -156,32 +159,49 @@ export function LoginForm({
               Forgot your password?
             </a>
           </div>
-          <Input 
-            id="password" 
-            type="password" 
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              if (validationErrors.password) {
-                setValidationErrors({ ...validationErrors, password: '' });
-              }
-            }}
-            disabled={loading}
-            className={validationErrors.password ? 'border-destructive' : ''}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (validationErrors.password) {
+                  setValidationErrors({ ...validationErrors, password: '' });
+                }
+              }}
+              disabled={loading}
+              className={cn("pr-10", validationErrors.password ? 'border-destructive' : '')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              disabled={loading}
+            >
+              {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+            </button>
+          </div>
           {validationErrors.password && (
             <p className="text-xs text-destructive mt-1">{validationErrors.password}</p>
           )}
         </Field>
-        
+
         <Field>
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <>
+                <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                Please wait
+              </>
+            ) : (
+              'Login'
+            )}
           </Button>
         </Field>
-        
+
         <FieldSeparator>Or continue with</FieldSeparator>
-        
+
         <Field>
           <Button variant="outline" type="button" disabled={loading}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

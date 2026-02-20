@@ -78,7 +78,7 @@ export function CustomerOrdersModal({
                                                 {order.salesRefId?.[0] || order.id.substring(0, 8).toUpperCase()}
                                             </TableCell>
                                             <TableCell className="text-sm font-medium">
-                                                {order.staffName}
+                                             {order.staffName || "N/A"}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-0.5">

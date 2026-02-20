@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useState } from "react"
-import { auth } from "@/lib/firebase"
+import Link from "next/link"
 import { getFirestore, collection, query, where, getDocs } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import {
@@ -38,7 +37,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
+import { useAuth } from "@/contexts/AuthContext"
 
 const data = {
   navMain: [
@@ -153,35 +152,27 @@ const data = {
 }
 
 export function AppSidebar({ ...props }) {
-  const [user, setUser] = useState(null)
-
+  const { user, loading } = useAuth()
   const db = getFirestore()
 
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-    if (currentUser) {
+ 
 
-      const q = query(
-        collection(db, "admins"),
-        where("email", "==", currentUser.email)
-      )
+    const role = user?.role?.trim().toLowerCase()
 
-      const querySnapshot = await getDocs(q)
-
-      if (!querySnapshot.empty) {
-        const adminData = querySnapshot.docs[0].data()
-
-        setUser({
-          name: adminData.name,
-          email: adminData.email,
-          avatar: "/avatars/shadcn.jpg",
-        })
-      }
+  // Filter navigation based on role
+  const filteredNavMain = data.navMain.filter((item) => {
+    // Hide Dashboard for staff & viewer
+    if (item.title === "Dashboard" && role !== "admin") {
+      return false
     }
-  })
 
-  return () => unsubscribe()
-}, [])
+    // Hide Create Admin for non-admin
+    if (item.title === "Create Admin" && role !== "admin") {
+      return false
+    }
+
+    return true
+  })
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -189,13 +180,13 @@ useEffect(() => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="h-14 mb-4 p-0 hover:bg-transparent focus-visible:ring-0">
-              <a href="/" className="flex h-full w-full items-center justify-start px-3">
+              <Link href="/" className="flex h-full w-full items-center justify-start px-3">
                 <img
                   src="/Foxon Final Logo-02.png"
                   alt="FoxonHub Logo"
                   className="h-25 pl-4 w-full object-contain object-left"
                 />
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -203,21 +194,27 @@ useEffect(() => {
               asChild
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground justify-center gap-2 shadow-md h-10"
             >
-              <a href="/sales/create">
+              <Link href="/sales/create">
                 <IconPlus className="size-4" />
                 <span className="font-semibold">Create Sale</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={filteredNavMain} />
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        {user && <NavUser user={user} />}
+        {loading ? (
+          <div className="h-14 px-4 flex items-center text-sm text-muted-foreground">
+            Loading profile...
+          </div>
+        ) : user ? (
+          <NavUser user={user} />
+        ) : null}
       </SidebarFooter>
     </Sidebar>
   );

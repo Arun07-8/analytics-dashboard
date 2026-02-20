@@ -28,20 +28,23 @@ import {
     IconLayoutDashboard,
     IconPencil
 } from "@tabler/icons-react";
-import { getAllCustomers } from '@/lib/firebase/collections/customer';
-import { getActiveServices } from '@/lib/firebase/collections/service';
-import { createSale } from '@/lib/firebase/collections/sale';
+
+import {
+    createCustomer,
+    getAllCustomers,
+    createService,
+    getActiveServices,
+    getAllAdmins,
+    createSale
+} from '@/lib/firebase/collections';
 import { CustomerModal } from '@/components/customers/customer-modal';
 import { ServiceModal } from '@/components/services/service-modal';
-import { createCustomer } from '@/lib/firebase/collections/customer';
-import { createService } from '@/lib/firebase/collections/service';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from "@/lib/utils";
 import { InvoiceTemplate } from '@/components/sales/invoice-template';
 import { InvoicePreviewModal } from '@/components/sales/invoice-preview-modal';
 import { downloadInvoice } from '@/lib/invoice-utils';
-import { getAllAdmins } from '@/lib/firebase/collections/admin';
 
 export default function CreateSalePage() {
     const router = useRouter();
@@ -190,23 +193,25 @@ export default function CreateSalePage() {
 
         setIsSubmitting(true);
         try {
-            // Attempt to resolve staff ID from Admins collection using email
-            let staffId = user?.uid || 'anonymous';
-            try {
-                if (user?.email) {
-                    const { getAdminByEmail } = await import('@/lib/firebase/collections/admin');
-                    const adminDoc = await getAdminByEmail(user.email);
-                    if (adminDoc) {
-                        staffId = adminDoc.id;
-                    }
-                }
-            } catch (err) {
-                console.warn("Could not resolve admin profile for staffId resolution", err);
+            // Strictly use Auth UID as staffId per requirements
+            const staffId = user?.uid;
+
+            if (!staffId) {
+                toast.error("Authentication error: User ID missing");
+                setIsSubmitting(false);
+                return;
             }
+
+            // Resolve staff details
+            const matchedAdmin = admins.find(a => a.email === user?.email);
+            const staffName = matchedAdmin?.name || user?.displayName || 'Staff';
+            const staffEmail = user?.email || '';
 
             const saleData = {
                 customerId: selectedCustomer.id,
                 staffId: staffId,
+                staffName: staffName,
+                staffEmail: staffEmail,
                 services: selectedServices,
 
                 totalAmount: Number(totalAmount),
@@ -244,6 +249,7 @@ export default function CreateSalePage() {
             try {
                 await downloadInvoice('invoice-template', `Invoice-${completedSale.salesRefId[0]}.pdf`);
                 toast.success("Invoice downloaded successfully");
+                router.push('/sales');
             } catch (error) {
                 toast.error("Failed to generate invoice");
             } finally {
@@ -714,7 +720,17 @@ export default function CreateSalePage() {
                                                     placeholder="0.00"
                                                 />
                                             </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setPaidAmount(totalAmount.toString())}
+                                                disabled={!totalAmount || totalAmount <= 0}
+                                                className="w-full h-10 mt-2 bg-zinc-900 border-zinc-800 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all font-bold text-[10px] uppercase tracking-widest rounded-xl disabled:opacity-30 disabled:grayscale"
+                                            >
+                                                Mark as Fully Paid
+                                            </Button>
                                         </div>
+
                                     </div>
 
                                     <div className="bg-muted p-6 rounded-3xl border border-border relative overflow-hidden">
@@ -792,7 +808,7 @@ export default function CreateSalePage() {
             </div>
 
             {/* Success Overlay instead of direct redirect */}
-            {completedSale && (
+            {completedSale && !isInvoicePreviewOpen && (
                 <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
                     <Card className="max-w-md w-full border-border shadow-2xl rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
                         <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto mb-6">
@@ -807,16 +823,15 @@ export default function CreateSalePage() {
                                 className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
                                 onClick={() => router.push('/sales')}
                             >
-                                <IconArrowLeft className="h-4 w-4" />
-                                Go Back
+                                <IconLayoutDashboard className="h-4 w-4" />
+                                Go to Dashboard
                             </Button>
                             <Button
                                 className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-emerald-500/20"
                                 onClick={handleGenerateInvoice}
-                                disabled={isInvoiceGenerating}
                             >
                                 <IconDownload className="h-4 w-4" />
-                                {isInvoiceGenerating ? "Generating..." : "Get Invoice"}
+                                Download Invoice
                             </Button>
                         </div>
                         <Button

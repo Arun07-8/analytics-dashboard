@@ -132,6 +132,7 @@ export default function CustomersPage() {
             });
     }, [selectedCustomer, sales, admins]);
 
+
     const stats = useMemo(() => {
         const totalCustomers = customers.length;
         const activeCustomers = new Set(sales.map(s => s.customerId)).size;

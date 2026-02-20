@@ -9,7 +9,16 @@ import { Button } from "@/components/ui/button";
 import { IconUserPlus, IconPlus } from "@tabler/icons-react";
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { SaleDetailsModal } from "@/components/sales/sale-details-modal";
-import { createCustomer, getCustomerByEmail, getCustomerByMobile, getAllSales, getAllCustomers, getAllAdmins, subscribeToSales } from "@/lib/firebase/collections";
+import {
+  subscribeToSales,
+  getAllSales,
+  getAllCustomers,
+  createCustomer,
+  getCustomerByMobile,
+  getCustomerByEmail,
+  getAllAdmins
+} from "@/lib/firebase/collections";
+
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -130,6 +139,11 @@ export default function Page() {
       filterConstraints = { fromDate, toDate };
     }
 
+    // Role-based filtering
+if (user?.role?.trim().toLowerCase() === "staff") {
+  filterConstraints.createdBy = user.uid;
+}
+
     setLoadingData(true);
     const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
       setSales(salesData);
@@ -163,7 +177,8 @@ export default function Page() {
     return sales.map(sale => ({
       ...sale,
       customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
-      staffName: adminMap.get(sale.staffId) || 'Unknown Staff',
+      staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
+      staffEmail: sale.staffEmail || '',
       status: sale.status || (sale.closed ? "Closed" : "Pending")
     })).sort((a, b) => {
       const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
@@ -419,9 +434,9 @@ export default function Page() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  // if (!user) {
+  //   return null;
+  // }
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">

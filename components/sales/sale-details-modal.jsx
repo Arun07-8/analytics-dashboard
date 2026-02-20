@@ -39,7 +39,8 @@ export function SaleDetailsModal({
     sale,
     customer,
     onDownloadInvoice
-}) {
+}) {   
+
     if (!sale) return null;
 
     const date = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);

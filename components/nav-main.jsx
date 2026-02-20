@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation"
 import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react";
 
+import Link from "next/link"
+
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -27,10 +29,10 @@ export function NavMain({
                 asChild
                 isActive={pathname === item.url}
                 className="data-[active=true]:bg-zinc-200 dark:data-[active=true]:bg-zinc-700 data-[active=true]:text-foreground">
-                <a href={item.url}>
+                <Link href={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -39,3 +41,4 @@ export function NavMain({
     </SidebarGroup>
   );
 }
+
