@@ -1,33 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { useSortable } from "@dnd-kit/sortable"
 import {
     IconCircleCheckFilled,
     IconDotsVertical,
-    IconGripVertical,
     IconLoader,
-    IconTrendingUp,
+    IconSearch,
+    IconFilter,
 } from "@tabler/icons-react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-import { toast } from "sonner"
-import { z } from "zod"
 
-import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -36,7 +19,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { DataTable } from "@/components/data-table"
 import {
     Select,
     SelectContent,
@@ -44,219 +27,80 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { DataTable } from "@/components/data-table"
-
-export const schema = z.object({
-    id: z.number(),
-    header: z.string(),
-    type: z.string(),
-    status: z.string(),
-    target: z.string(),
-    limit: z.string(),
-    reviewer: z.string(),
-})
-
-const chartData = [
-    { month: "January", desktop: 186, mobile: 80 },
-    { month: "February", desktop: 305, mobile: 200 },
-    { month: "March", desktop: 237, mobile: 120 },
-    { month: "April", desktop: 73, mobile: 190 },
-    { month: "May", desktop: 209, mobile: 130 },
-    { month: "June", desktop: 214, mobile: 140 },
-]
-
-const chartConfig = {
-    desktop: {
-        label: "Desktop",
-        color: "var(--primary)",
-    },
-    mobile: {
-        label: "Mobile",
-        color: "var(--primary)",
-    }
-}
-
-// Drag handle for sections
-function DragHandle({ id }) {
-    const { attributes, listeners } = useSortable({ id })
-    return (
-        <Button
-            {...attributes}
-            {...listeners}
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground size-7 hover:bg-transparent">
-            <IconGripVertical className="text-muted-foreground size-3" />
-            <span className="sr-only">Drag to reorder</span>
-        </Button>
-    );
-}
-
-function TableCellViewer({ item }) {
-    const isMobile = useIsMobile()
-    return (
-        <Drawer direction={isMobile ? "bottom" : "right"}>
-            <DrawerTrigger asChild>
-                <Button variant="link" className="text-foreground w-fit px-0 text-left">
-                    {item.header}
-                </Button>
-            </DrawerTrigger>
-            <DrawerContent>
-                <DrawerHeader className="gap-1">
-                    <DrawerTitle>{item.header}</DrawerTitle>
-                    <DrawerDescription>
-                        Showing total visitors for the last 6 months
-                    </DrawerDescription>
-                </DrawerHeader>
-                <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                    {!isMobile && (
-                        <>
-                            <ChartContainer config={chartConfig}>
-                                <AreaChart
-                                    accessibilityLayer
-                                    data={chartData}
-                                    margin={{ left: 0, right: 10 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis
-                                        dataKey="month"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                        tickFormatter={(value) => value.slice(0, 3)}
-                                        hide />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                    <Area
-                                        dataKey="mobile"
-                                        type="natural"
-                                        fill="var(--color-mobile)"
-                                        fillOpacity={0.6}
-                                        stroke="var(--color-mobile)"
-                                        stackId="a" />
-                                    <Area
-                                        dataKey="desktop"
-                                        type="natural"
-                                        fill="var(--color-desktop)"
-                                        fillOpacity={0.4}
-                                        stroke="var(--color-desktop)"
-                                        stackId="a" />
-                                </AreaChart>
-                            </ChartContainer>
-                            <Separator />
-                            <div className="grid gap-2">
-                                <div className="flex gap-2 leading-none font-medium">
-                                    Trending up by 5.2% this month <IconTrendingUp className="size-4" />
-                                </div>
-                                <div className="text-muted-foreground">
-                                    Showing total visitors for the last 6 months.
-                                </div>
-                            </div>
-                            <Separator />
-                        </>
-                    )}
-                    <form className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="header">Header</Label>
-                            <Input id="header" defaultValue={item.header} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="type">Type</Label>
-                                <Select defaultValue={item.type}>
-                                    <SelectTrigger id="type" className="w-full">
-                                        <SelectValue placeholder="Select a type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Table of Contents">Table of Contents</SelectItem>
-                                        <SelectItem value="Executive Summary">Executive Summary</SelectItem>
-                                        <SelectItem value="Technical Approach">Technical Approach</SelectItem>
-                                        <SelectItem value="Design">Design</SelectItem>
-                                        <SelectItem value="Capabilities">Capabilities</SelectItem>
-                                        <SelectItem value="Focus Documents">Focus Documents</SelectItem>
-                                        <SelectItem value="Narrative">Narrative</SelectItem>
-                                        <SelectItem value="Cover Page">Cover Page</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="status">Status</Label>
-                                <Select defaultValue={item.status}>
-                                    <SelectTrigger id="status" className="w-full">
-                                        <SelectValue placeholder="Select a status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Done">Done</SelectItem>
-                                        <SelectItem value="In Progress">In Progress</SelectItem>
-                                        <SelectItem value="Not Started">Not Started</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <DrawerFooter>
-                    <Button>Submit</Button>
-                    <DrawerClose asChild>
-                        <Button variant="outline">Done</Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
-    );
-}
 
 const columns = [
     {
-        id: "drag",
-        header: () => null,
-        cell: ({ row }) => <DragHandle id={row.original.id} />,
-    },
-    {
-        id: "select",
-        header: ({ table }) => (
-            <div className="flex items-center justify-center">
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all" />
-            </div>
-        ),
+        accessorKey: "salesRefId",
+        header: "Invoice ID",
         cell: ({ row }) => (
-            <div className="flex items-center justify-center">
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row" />
+            <div className="font-mono font-bold text-xs uppercase tracking-tighter">
+                {row.original.salesRefId?.[0] || "N/A"}
             </div>
         ),
     },
     {
-        accessorKey: "header",
-        header: "Header",
-        cell: ({ row }) => <TableCellViewer item={row.original} />,
+        accessorKey: "customerName",
+        header: "Customer Name",
+        cell: ({ row }) => (
+            <div className="font-bold text-sm">
+                {row.original.customerName || "Unknown"}
+            </div>
+        ),
     },
     {
-        accessorKey: "type",
-        header: "Section Type",
+        accessorKey: "services",
+        header: "Service Name",
         cell: ({ row }) => (
-            <div className="w-32">
-                <Badge variant="outline" className="text-muted-foreground px-1.5">{row.original.type}</Badge>
+            <div className="max-w-[200px] truncate text-xs text-muted-foreground font-medium">
+                {row.original.services?.map(s => s.name).join(', ')}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "staffName",
+        header: "Staff Name",
+        cell: ({ row }) => (
+            <div className="text-xs font-semibold">
+                {row.original.staffName || "System"}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "totalAmount",
+        header: "Amount",
+        cell: ({ row }) => (
+            <div className="font-black text-sm tracking-tighter">
+                ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
         ),
     },
     {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => (
-            <Badge variant="outline" className="text-muted-foreground px-1.5">
-                {row.original.status === "Done" ? (
-                    <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-                ) : (
-                    <IconLoader />
-                )}
-                {row.original.status}
-            </Badge>
-        ),
+        cell: ({ row }) => {
+            const status = row.original.status || "Pending";
+            const isClosed = status === "Closed";
+            return (
+                <Badge variant="outline" className={`gap-1.5 px-2 py-0.5 ${isClosed ? "bg-emerald-500/5 text-emerald-500 border-emerald-500/20" : "bg-orange-500/5 text-orange-500 border-orange-500/20"}`}>
+                    {isClosed ? <IconCircleCheckFilled className="size-3" /> : <IconLoader className="size-3 animate-spin" />}
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                        {isClosed ? "Payment Closed" : "Payment Pending"}
+                    </span>
+                </Badge>
+            );
+        },
+    },
+    {
+        accessorKey: "createdAt",
+        header: "Date",
+        cell: ({ row }) => {
+            const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
+            return (
+                <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                    {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+            );
+        },
     },
     {
         id: "actions",
@@ -267,38 +111,97 @@ const columns = [
                         variant="ghost"
                         className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
                         size="icon">
-                        <IconDotsVertical />
+                        <IconDotsVertical className="size-4" />
                         <span className="sr-only">Open menu</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>Make a copy</DropdownMenuItem>
-                    <DropdownMenuItem>Favorite</DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest">View PDF</DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest">Edit Entry</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" className="text-xs font-bold uppercase tracking-widest">Delete</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         ),
     },
 ]
 
-export function DashboardTable({ data }) {
-    const tabs = [
-        { label: "Outline", value: "outline" },
-        { label: "Past Performance", value: "past-performance", badge: "3" },
-        { label: "Key Personnel", value: "key-personnel", badge: "2" },
-        { label: "Focus Documents", value: "focus-documents" },
-    ];
+export function DashboardTable({ data = [] }) {
+    const [searchTerm, setSearchTerm] = React.useState("");
+    const [staffSearchTerm, setStaffSearchTerm] = React.useState("");
+    const [roleFilter, setRoleFilter] = React.useState("all");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+
+    const filteredData = React.useMemo(() => {
+        return data.filter(item => {
+            const matchesSearch = (item.customerName || "").toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStaffSearch = (item.staffName || "").toLowerCase().includes(staffSearchTerm.toLowerCase());
+            const matchesRole = roleFilter === "all" || (item.staffRole || "admin") === roleFilter;
+            const matchesStatus = statusFilter === "all" || (item.status || "Pending") === statusFilter;
+            return matchesSearch && matchesStaffSearch && matchesRole && matchesStatus;
+        });
+    }, [data, searchTerm, staffSearchTerm, roleFilter, statusFilter]);
 
     return (
-        <DataTable
-            data={data}
-            columns={columns}
-            tabs={tabs}
-            enableReordering={true}
-            addLabel="Add Section"
-            onAddClick={() => console.log("Add Section")}
-        />
+        <div className="flex flex-col gap-4 px-4 lg:px-6">
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-card p-4 rounded-xl border border-border/50">
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                    <div className="relative w-full md:w-72">
+                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search customer name..."
+                            className="pl-9 h-10 text-xs font-medium"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="relative w-full md:w-72">
+                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search staff or admin name..."
+                            className="pl-9 h-10 text-xs font-medium"
+                            value={staffSearchTerm}
+                            onChange={(e) => setStaffSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                        <SelectTrigger className="h-8 w-[100px] text-[10px] font-black uppercase tracking-widest bg-background border-border/50 focus:ring-0 rounded-lg shadow-sm">
+                            <SelectValue placeholder="Role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all" className="text-xs font-bold uppercase tracking-tighter">All</SelectItem>
+                            <SelectItem value="admin" className="text-xs font-bold uppercase tracking-tighter">Admin</SelectItem>
+                            <SelectItem value="staff" className="text-xs font-bold uppercase tracking-tighter">Staff</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <IconFilter className="size-4 text-muted-foreground" />
+                    <div className="flex gap-1">
+                        {[
+                            { label: "all", value: "all" },
+                            { label: "Payment Closed", value: "Closed" },
+                            { label: "Payment Pending", value: "Pending" }
+                        ].map((status) => (
+                            <Button
+                                key={status.value}
+                                variant={statusFilter === status.value ? "default" : "outline"}
+                                size="sm"
+                                className="h-8 text-[10px] font-black uppercase tracking-widest px-3"
+                                onClick={() => setStatusFilter(status.value)}
+                            >
+                                {status.label}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <DataTable
+                data={filteredData}
+                columns={columns}
+                enableReordering={false}
+            />
+        </div>
     );
 }

@@ -71,6 +71,7 @@ export default function Page() {
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week', 'month', 'last6months', 'year', 'custom'
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [chartTimeRange, setChartTimeRange] = useState("this-month");
 
   // Sale Modal States
   const [selectedSale, setSelectedSale] = useState(null);
@@ -113,36 +114,13 @@ export default function Page() {
   useEffect(() => {
     if (!user) return;
 
+    // We fetch all relevant sales based on roles, but handle date filtering locally
+    // to allow 'Total Revenue' (all time) and 'Period Revenue' to coexist.
     let filterConstraints = {};
-    const now = new Date();
 
-    if (dateFilter === 'today') {
-      filterConstraints = { fromDate: now, toDate: now };
-    } else if (dateFilter === 'yesterday') {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      filterConstraints = { fromDate: yesterday, toDate: yesterday };
-    } else if (dateFilter === 'week') {
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-      filterConstraints = { fromDate: startOfWeek };
-    } else if (dateFilter === 'month') {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      filterConstraints = { fromDate: startOfMonth };
-    } else if (dateFilter === 'last6months') {
-      const last6Months = new Date();
-      last6Months.setMonth(last6Months.getMonth() - 6);
-      filterConstraints = { fromDate: last6Months };
-    } else if (dateFilter === 'year') {
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-      filterConstraints = { fromDate: startOfYear };
-    } else if (dateFilter === 'custom') {
-      filterConstraints = { fromDate, toDate };
-    }
-
-    // Role-based filtering
-if (user?.role?.trim().toLowerCase() === "staff") {
-  filterConstraints.createdBy = user.uid;
-}
+    // Role-based filtering (Staff only see their own, Admins see all)
+    // Restrict visibility to personal sales only for both Admin and Staff
+    filterConstraints.createdBy = user.uid;
 
     setLoadingData(true);
     const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
@@ -151,7 +129,7 @@ if (user?.role?.trim().toLowerCase() === "staff") {
     });
 
     return () => unsubscribe();
-  }, [user, dateFilter, fromDate, toDate]);
+  }, [user]); // Removed dateFilter from dependencies here to fetch all records once
 
   const handleFromDateSelect = (date) => {
     setFromDate(date);
@@ -174,21 +152,76 @@ if (user?.role?.trim().toLowerCase() === "staff") {
     const customerMap = new Map(customers.map(c => [c.id, c.name]));
     const adminMap = new Map(admins.map(a => [a.id, a.name]));
 
-    return sales.map(sale => ({
-      ...sale,
-      customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
-      staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
-      staffEmail: sale.staffEmail || '',
-      status: sale.status || (sale.closed ? "Closed" : "Pending")
-    })).sort((a, b) => {
-      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-      return dateB - dateA; // Descending
-    });
+    return sales.map(sale => {
+      const date = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);
+      return {
+        ...sale,
+        createdAtDate: date, // Keep a real Date object for filtering
+        customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
+        staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
+        staffEmail: sale.staffEmail || '',
+        status: sale.status || (sale.closed ? "Closed" : "Pending")
+      };
+    }).sort((a, b) => b.createdAtDate - a.createdAtDate);
   }, [sales, customers, admins]);
 
-  const filteredSales = useMemo(() => {
+  // Apply Date Filtering locally
+  const periodSales = useMemo(() => {
+    if (dateFilter === 'all') return salesWithDetails;
+
+    const now = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    // Set boundaries
+    if (dateFilter === 'today') {
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (dateFilter === 'yesterday') {
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      end.setDate(end.getDate() - 1);
+      end.setHours(23, 59, 59, 999);
+    } else if (dateFilter === 'week') {
+      start.setDate(start.getDate() - start.getDay());
+      start.setHours(0, 0, 0, 0);
+    } else if (dateFilter === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    } else if (dateFilter === 'last6months') {
+      start.setMonth(start.getMonth() - 6);
+      start.setHours(0, 0, 0, 0);
+    } else if (dateFilter === 'year') {
+      start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+    } else if (dateFilter === 'specific-day') {
+      if (!fromDate) return salesWithDetails;
+      start = new Date(fromDate);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(fromDate);
+      end.setHours(23, 59, 59, 999);
+    } else if (dateFilter === 'custom') {
+      if (!fromDate && !toDate) return salesWithDetails;
+      if (fromDate) {
+        start = new Date(fromDate);
+        start.setHours(0, 0, 0, 0);
+      } else {
+        start = new Date(2000, 0, 1);
+      }
+      if (toDate) {
+        end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+      } else {
+        end = new Date();
+      }
+    }
+
     return salesWithDetails.filter(sale => {
+      const d = sale.createdAtDate;
+      return d >= start && d <= end;
+    });
+  }, [salesWithDetails, dateFilter, fromDate, toDate]);
+
+  const filteredSales = useMemo(() => {
+    return periodSales.filter(sale => {
       // Tab filter
       if (activeTab === 'closed' && sale.status !== 'Closed') return false;
       if (activeTab === 'pending' && sale.status !== 'Pending') return false;
@@ -205,104 +238,215 @@ if (user?.role?.trim().toLowerCase() === "staff") {
 
       return true;
     });
-  }, [salesWithDetails, activeTab, searchQuery, dateFilter]);
+  }, [periodSales, activeTab, searchQuery]);
 
   const salesTabs = useMemo(() => {
     const counts = {
-      all: salesWithDetails.length,
-      closed: salesWithDetails.filter(s => s.status === 'Closed').length,
-      pending: salesWithDetails.filter(s => s.status === 'Pending').length
+      all: periodSales.length,
+      closed: periodSales.filter(s => s.status === 'Closed').length,
+      pending: periodSales.filter(s => s.status === 'Pending').length
     };
 
     return [
       { label: "All Sales", value: "all", badge: counts.all.toString() },
-      { label: "Closed", value: "closed", badge: counts.closed.toString() },
-      { label: "Pending", value: "pending", badge: counts.pending.toString() },
+      { label: "Payment Closed", value: "closed", badge: counts.closed.toString() },
+      { label: "Payment Pending", value: "pending", badge: counts.pending.toString() },
     ];
-  }, [salesWithDetails]);
+  }, [periodSales]);
 
   const stats = useMemo(() => {
     const now = new Date();
-    const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
 
-    const startOfCurrentMonth = new Date(currentYear, currentMonth, 1);
-    const startOfLastMonth = new Date(currentYear, currentMonth - 1, 1);
-    const endOfLastMonth = new Date(currentYear, currentMonth, 0);
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    let allTimeRevenue = 0;
+    let monthlyRevenue = 0;
+    const customerSalesMap = {};
 
-    let totalRevenue = 0;
-    let currentPeriodRevenue = 0;
-    let lastPeriodRevenue = 0;
-
-    let newCustomersCount = 0;
-    let lastMonthCustomersCount = 0;
-    let activeAccountsCount = new Set(filteredSales.map(s => s.customerId)).size;
-
-    filteredSales.forEach(sale => {
+    salesWithDetails.forEach(sale => {
       const amount = Number(sale.totalAmount) || 0;
-      totalRevenue += amount;
+      allTimeRevenue += amount;
 
-      const date = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);
-      if (date >= startOfCurrentMonth) {
-        currentPeriodRevenue += amount;
-      } else if (date >= startOfLastMonth && date <= endOfLastMonth) {
-        lastPeriodRevenue += amount;
+      if (sale.createdAtDate >= startOfThisMonth) {
+        monthlyRevenue += amount;
+      }
+
+      if (sale.customerId) {
+        customerSalesMap[sale.customerId] = (customerSalesMap[sale.customerId] || 0) + 1;
       }
     });
 
-    customers.forEach(customer => {
-      const date = customer.createdAt?.toDate ? customer.createdAt.toDate() : new Date(customer.createdAt || 0);
-      if (date >= startOfCurrentMonth) {
-        newCustomersCount++;
-      } else if (date >= startOfLastMonth && date <= endOfLastMonth) {
-        lastMonthCustomersCount++;
-      }
-    });
+    const uniqueCustomersCount = Object.keys(customerSalesMap).length;
+    const returningCustomersCount = Object.values(customerSalesMap).filter(count => count >= 2).length;
+    const retentionRate = uniqueCustomersCount > 0
+      ? Math.round((returningCustomersCount / uniqueCustomersCount) * 100)
+      : 0;
 
-    const revenueGrowth = lastPeriodRevenue > 0
-      ? ((currentPeriodRevenue - lastPeriodRevenue) / lastPeriodRevenue) * 100
-      : (currentPeriodRevenue > 0 ? 100 : 0);
+    const periodRevenue = periodSales
+      .reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
 
-    const customerGrowth = lastMonthCustomersCount > 0
-      ? ((newCustomersCount - lastMonthCustomersCount) / lastMonthCustomersCount) * 100
-      : (newCustomersCount > 0 ? 100 : 0);
-
-    return {
-      totalRevenue: totalRevenue,
-      revenueGrowth: Number(revenueGrowth.toFixed(1)),
-      newCustomers: newCustomersCount,
-      customerGrowth: Number(customerGrowth.toFixed(1)),
-      activeAccounts: activeAccountsCount,
-      activeAccountsGrowth: 0,
-      growthRate: 0,
-      growthRateChange: 0
+    const getPeriodLabel = () => {
+      if (dateFilter === 'today') return "Daily Revenue";
+      if (dateFilter === 'yesterday') return "Yesterday Revenue";
+      if (dateFilter === 'specific-day') return "Selected Day Revenue";
+      if (dateFilter === 'month') return "Period Revenue";
+      return "Period Revenue";
     };
-  }, [filteredSales, customers]);
+
+    return [
+      {
+        label: "Total Revenue",
+        value: allTimeRevenue,
+        prefix: "₹",
+        isCurrency: true,
+        description: "Your lifetime achievement"
+      },
+      {
+        label: "Monthly Revenue",
+        value: monthlyRevenue,
+        prefix: "₹",
+        isCurrency: true,
+        description: "Current month total"
+      },
+      {
+        label: getPeriodLabel(),
+        value: periodRevenue,
+        prefix: "₹",
+        isCurrency: true,
+        description: "Revenue in selected period"
+      },
+      {
+        label: "Transactions",
+        value: periodSales.length,
+        description: "Orders in selected period"
+      },
+      {
+        label: "Retention Rate",
+        value: retentionRate,
+        suffix: "%",
+        description: "Returning customers"
+      },
+      {
+        label: "My Customers",
+        value: uniqueCustomersCount,
+        description: "Lifetime unique clients"
+      },
+    ];
+  }, [salesWithDetails, periodSales, dateFilter]);
 
   const chartData = useMemo(() => {
-    // Aggregate sales by day
-    const dailyData = {};
-    filteredSales.forEach(sale => {
-      const dateObj = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);
-      const dateStr = dateObj.toISOString().split('T')[0];
+    const data = {};
+    const isSingleDay = ['today', 'yesterday', 'specific-day'].includes(dateFilter);
 
-      if (!dailyData[dateStr]) {
-        dailyData[dateStr] = { date: dateStr, desktop: 0, mobile: 0 };
+    // Determine target date for single day mode
+    let targetDate = new Date();
+    if (dateFilter === 'yesterday') {
+      targetDate.setDate(targetDate.getDate() - 1);
+    } else if (dateFilter === 'specific-day' && fromDate) {
+      targetDate = new Date(fromDate);
+    }
+    targetDate.setHours(0, 0, 0, 0); // Normalize targetDate to start of day
+
+    if (isSingleDay) {
+      // Initialize 24 hours
+      for (let h = 0; h < 24; h++) {
+        const d = new Date(targetDate);
+        d.setHours(h, 0, 0, 0);
+        const iso = d.toISOString();
+        data[iso] = { date: iso, desktop: 0, mobile: 0, isHourly: true };
       }
 
-      dailyData[dateStr].desktop += Number(sale.totalAmount) || 0; // Revenue
-      dailyData[dateStr].mobile += 1; // Order count
-    });
+      filteredSales.forEach(sale => {
+        const d = new Date(sale.createdAtDate);
+        // Ensure the sale date matches the target date for single day view
+        if (d.getFullYear() === targetDate.getFullYear() &&
+          d.getMonth() === targetDate.getMonth() &&
+          d.getDate() === targetDate.getDate()) {
+          d.setMinutes(0, 0, 0); // Round to the nearest hour
+          const iso = d.toISOString();
+          if (data[iso]) { // Only add if it falls within the initialized 24 hours
+            data[iso].desktop += Number(sale.totalAmount) || 0;
+            data[iso].mobile += 1;
+          }
+        }
+      });
+    } else {
+      // Determine the range to fill for multi-day periods
+      const now = new Date();
+      let fillStart = null;
+      let fillEnd = new Date();
 
-    const result = Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (dateFilter === 'today') { // This case is handled by isSingleDay, but keeping for robustness if logic changes
+        fillStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (dateFilter === 'yesterday') { // This case is handled by isSingleDay
+        fillStart = new Date(now.getTime() - 86400000);
+        fillStart.setHours(0, 0, 0, 0);
+        fillEnd = new Date(fillStart);
+        fillEnd.setHours(23, 59, 59, 999);
+      } else if (dateFilter === 'week') {
+        fillStart = new Date(now);
+        fillStart.setDate(now.getDate() - now.getDay());
+        fillStart.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'month') {
+        fillStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (dateFilter === 'year') {
+        fillStart = new Date(now.getFullYear(), 0, 1);
+        fillEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+      } else if (dateFilter === 'last6months') {
+        fillStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        fillEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      } else if (dateFilter === 'specific-day' && fromDate) {
+        fillStart = new Date(fromDate);
+        fillStart.setHours(0, 0, 0, 0);
+        fillEnd = new Date(fromDate);
+        fillEnd.setHours(23, 59, 59, 999);
+      } else if (dateFilter === 'custom') {
+        if (fromDate) {
+          fillStart = new Date(fromDate);
+          fillStart.setHours(0, 0, 0, 0);
+        } else {
+          fillStart = new Date(2000, 0, 1);
+        }
+        if (toDate) {
+          fillEnd = new Date(toDate);
+          fillEnd.setHours(23, 59, 59, 999);
+        } else {
+          fillEnd = new Date();
+        }
+      } else {
+        fillStart = null;
+        fillEnd = null;
+      }
 
-    // Ensure at least some data for the chart if empty
+      // Initialize daily gaps if a fill range is determined
+      if (fillStart && fillEnd) {
+        const temp = new Date(fillStart);
+        while (temp <= fillEnd) {
+          const dStr = temp.toISOString().split('T')[0];
+          data[dStr] = { date: dStr, desktop: 0, mobile: 0 };
+          temp.setDate(temp.getDate() + 1);
+        }
+      }
+
+      // Populate actual daily data
+      filteredSales.forEach(sale => {
+        const dStr = sale.createdAtDate.toISOString().split('T')[0];
+        if (!data[dStr]) data[dStr] = { date: dStr, desktop: 0, mobile: 0 };
+        data[dStr].desktop += Number(sale.totalAmount) || 0;
+        data[dStr].mobile += 1;
+      });
+    }
+
+    const result = Object.values(data).sort((a, b) => new Date(a.date) - new Date(b.date));
+
     if (result.length === 0) {
+      // Return a single point for the current day if no data, to avoid empty chart
       return [{ date: new Date().toISOString().split('T')[0], desktop: 0, mobile: 0 }];
     }
 
     return result;
-  }, [filteredSales]);
+  }, [filteredSales, dateFilter, fromDate]);
 
   const handleViewDetails = (sale) => {
     setSelectedSale(sale);
@@ -409,8 +553,7 @@ if (user?.role?.trim().toLowerCase() === "staff") {
       toast.success("Customer added successfully");
       setIsCustomerModalOpen(false);
       resetCustomerForm();
-      const [newSales, newCustomers] = await Promise.all([getAllSales(), getAllCustomers()]);
-      setSales(newSales);
+      const newCustomers = await getAllCustomers();
       setCustomers(newCustomers);
 
     } catch (error) {
@@ -462,11 +605,41 @@ if (user?.role?.trim().toLowerCase() === "staff") {
                     <SelectItem value="month">This Month</SelectItem>
                     <SelectItem value="last6months">Last 6 Months</SelectItem>
                     <SelectItem value="year">This Year</SelectItem>
+                    <SelectItem value="specific-day">Specific Date</SelectItem>
                     <SelectItem value="custom">Custom Range</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
+
+            {dateFilter === 'specific-day' && (
+              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
+                        !fromDate && "text-muted-foreground"
+                      )}
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">Date</span>
+                      {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
+                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={fromDate}
+                      onSelect={setFromDate}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
 
             {dateFilter === 'custom' && (
               <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
@@ -544,10 +717,18 @@ if (user?.role?.trim().toLowerCase() === "staff") {
           </div>
         </div>
 
-        <SectionCards stats={stats} />
+        <SectionCards cards={stats} />
 
         <div className="px-4 lg:px-6">
-          <ChartAreaInteractive data={chartData} />
+          <ChartAreaInteractive
+            data={chartData}
+            timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter}
+            onTimeRangeChange={(val) => {
+              if (val === 'this-month') setDateFilter('month');
+              else if (val === 'this-year') setDateFilter('year');
+              else setDateFilter(val);
+            }}
+          />
         </div>
 
         <div className="px-4 lg:px-6">

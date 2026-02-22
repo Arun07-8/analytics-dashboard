@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { IconUser, IconPencil } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 
 export function CustomerModal({
     isOpen,
@@ -48,7 +49,6 @@ export function CustomerModal({
                             value={formData.name || ''}
                             onChange={onInputChange}
                             placeholder="John Doe"
-                            required
                             className={`transition-all duration-200 focus:ring-2 ${errors.name ? 'border-destructive focus:ring-destructive' : ''}`}
                         />
                         {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
@@ -64,7 +64,6 @@ export function CustomerModal({
                             value={formData.mobile || ''}
                             onChange={onInputChange}
                             placeholder="+1 234 567 890"
-                            required
                             className={`transition-all duration-200 focus:ring-2 ${errors.mobile ? 'border-destructive focus:ring-destructive' : ''}`}
                         />
                         {errors.mobile && <p className="text-xs text-destructive mt-1">{errors.mobile}</p>}
@@ -93,8 +92,12 @@ export function CustomerModal({
                             value={formData.country || ''}
                             onChange={onInputChange}
                             placeholder="United Arab Emirates"
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.country && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.country && <p className="text-xs text-destructive mt-1">{errors.country}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -105,8 +108,12 @@ export function CustomerModal({
                             value={formData.state || ''}
                             onChange={onInputChange}
                             placeholder="Dubai"
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.state && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.state && <p className="text-xs text-destructive mt-1">{errors.state}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -117,8 +124,12 @@ export function CustomerModal({
                             value={formData.city || ''}
                             onChange={onInputChange}
                             placeholder="Dubai City"
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.city && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -129,8 +140,12 @@ export function CustomerModal({
                             value={formData.place || ''}
                             onChange={onInputChange}
                             placeholder="Business Bay"
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.place && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.place && <p className="text-xs text-destructive mt-1">{errors.place}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -141,8 +156,12 @@ export function CustomerModal({
                             value={formData.pincode || ''}
                             onChange={onInputChange}
                             placeholder="00000"
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.pincode && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.pincode && <p className="text-xs text-destructive mt-1">{errors.pincode}</p>}
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
@@ -153,8 +172,12 @@ export function CustomerModal({
                             value={formData.address || ''}
                             onChange={onInputChange}
                             placeholder="Building name, Street address, etc."
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.address && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.address && <p className="text-xs text-destructive mt-1">{errors.address}</p>}
                     </div>
 
                     <div className="flex gap-3 pt-6 md:col-span-2">

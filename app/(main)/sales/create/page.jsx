@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
     IconPlus,
@@ -66,17 +77,28 @@ export default function CreateSalePage() {
 
     const [paidAmount, setPaidAmount] = useState('');
     const [salesRefId, setSalesRefId] = useState('');
+    const [errors, setErrors] = useState({});
 
     // Modals states
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
     const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
     const [customerFormData, setCustomerFormData] = useState({});
-    const [serviceFormData, setServiceFormData] = useState({});
+    const [serviceFormData, setServiceFormData] = useState({ isActive: true });
+    const [customerErrors, setCustomerErrors] = useState({});
+    const [serviceErrors, setServiceErrors] = useState({});
     const [admins, setAdmins] = useState([]);
 
     const [completedSale, setCompletedSale] = useState(null);
     const [isInvoiceGenerating, setIsInvoiceGenerating] = useState(false);
     const [isInvoicePreviewOpen, setIsInvoicePreviewOpen] = useState(false);
+
+    // Refs for focus handling
+    const customerSearchRef = useRef(null);
+    const salesRefIdRef = useRef(null);
+    const serviceSelectRef = useRef(null);
+    const priceInputRef = useRef(null);
+    const paidAmountRef = useRef(null);
+    const cartCardRef = useRef(null);
 
     useEffect(() => {
         fetchData();
@@ -132,10 +154,27 @@ export default function CreateSalePage() {
     }, [selectedServices]);
 
     const handleAddService = () => {
+        const newErrors = {};
+
         if (!currentServiceId) {
-            toast.error("Please select a service");
+            newErrors.service = "Asset selection is required";
+        }
+
+        const priceNum = Number(customPrice);
+        if (!customPrice || isNaN(priceNum) || priceNum <= 0) {
+            newErrors.price = "Price must be greater than 0";
+        } else if (customPrice.length > 1 && customPrice.startsWith('0') && !customPrice.startsWith('0.')) {
+            newErrors.price = "Invalid format: leading zero";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(prev => ({ ...prev, ...newErrors }));
+            // Focus first error
+            if (newErrors.service) serviceSelectRef.current?.focus();
+            else if (newErrors.price) priceInputRef.current?.focus();
             return;
         }
+
         const service = services.find(s => s.id === currentServiceId);
         if (service) {
             if (editingIndex !== null) {
@@ -147,7 +186,7 @@ export default function CreateSalePage() {
                 };
                 setSelectedServices(updated);
                 setEditingIndex(null);
-                toast.success("Service updated");
+                toast.success("Item updated in cart");
             } else {
                 setSelectedServices([...selectedServices, {
                     serviceId: service.id,
@@ -157,6 +196,11 @@ export default function CreateSalePage() {
             }
             setCurrentServiceId('');
             setCustomPrice('');
+            // Clear current entry errors
+            setErrors(prev => {
+                const { service: s, price: p, ...rest } = prev;
+                return rest;
+            });
         }
     };
 
@@ -181,28 +225,46 @@ export default function CreateSalePage() {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+
+        const newErrors = {};
         if (!selectedCustomer) {
-            toast.error("Please select a customer");
-            return;
+            newErrors.customer = "Select a customer to continue";
+        }
+        if (!salesRefId.trim()) {
+            newErrors.refId = "Reference number is required";
         }
         if (selectedServices.length === 0) {
-            toast.error("Please add at least one service");
+            newErrors.cart = "Add at least one item to cart";
+        }
+
+        const pAmount = Number(paidAmount);
+        if (paidAmount !== '' && (isNaN(pAmount) || pAmount < 0)) {
+            newErrors.paidAmount = "Enter a valid amount";
+        } else if (paidAmount.length > 1 && paidAmount.startsWith('0') && !paidAmount.startsWith('0.')) {
+            newErrors.paidAmount = "Invalid format: leading zero";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            // Intelligent Focus
+            if (newErrors.customer) customerSearchRef.current?.focus();
+            else if (newErrors.refId) salesRefIdRef.current?.focus();
+            else if (newErrors.cart) cartCardRef.current?.scrollIntoView({ behavior: 'smooth' });
+            else if (newErrors.paidAmount) paidAmountRef.current?.focus();
             return;
         }
 
         setIsSubmitting(true);
         try {
-            // Strictly use Auth UID as staffId per requirements
             const staffId = user?.uid;
 
             if (!staffId) {
-                toast.error("Authentication error: User ID missing");
+                toast.error("Auth session expired. Please login again.");
                 setIsSubmitting(false);
                 return;
             }
 
-            // Resolve staff details
             const matchedAdmin = admins.find(a => a.email === user?.email);
             const staffName = matchedAdmin?.name || user?.displayName || 'Staff';
             const staffEmail = user?.email || '';
@@ -213,7 +275,6 @@ export default function CreateSalePage() {
                 staffName: staffName,
                 staffEmail: staffEmail,
                 services: selectedServices,
-
                 totalAmount: Number(totalAmount),
                 paidAmount: Number(paidAmount) || 0,
                 excessAmount: Number(totalAmount) - (Number(paidAmount) || 0),
@@ -222,13 +283,10 @@ export default function CreateSalePage() {
 
             const docId = await createSale(saleData);
             setCompletedSale({ ...saleData, id: docId });
-            toast.success("Sale completed successfully");
-
-            // Re-fetch or Redirect choice? Let's stay on page to show success/download or redirect?
-            // User requested "download after place sale"
-            // router.push('/sales');
+            setErrors({});
+            toast.success("Sale synchronized successfully");
         } catch (error) {
-            toast.error(error.message);
+            toast.error("Sync error: " + error.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -260,6 +318,32 @@ export default function CreateSalePage() {
 
     const handleCustomerSubmit = async (e) => {
         e.preventDefault();
+        const newErrors = {};
+
+        if (!customerFormData.name?.trim()) newErrors.name = "Full name is required";
+        else if (customerFormData.name.trim().length < 3) newErrors.name = "Name must be at least 3 characters";
+
+        const mobileRegex = /^[0-9+() -]{7,15}$/;
+        if (!customerFormData.mobile?.trim()) newErrors.mobile = "Mobile number is required";
+        else if (!mobileRegex.test(customerFormData.mobile)) newErrors.mobile = "Invalid mobile number format";
+
+        if (customerFormData.email?.trim()) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(customerFormData.email)) newErrors.email = "Invalid email format";
+        }
+
+        if (!customerFormData.country?.trim()) newErrors.country = "Country is required";
+        if (!customerFormData.state?.trim()) newErrors.state = "State is required";
+        if (!customerFormData.city?.trim()) newErrors.city = "City is required";
+        if (!customerFormData.place?.trim()) newErrors.place = "Place/Area is required";
+        if (!customerFormData.pincode?.trim()) newErrors.pincode = "Pincode is required";
+        if (!customerFormData.address?.trim()) newErrors.address = "Full address is required";
+
+        if (Object.keys(newErrors).length > 0) {
+            setCustomerErrors(newErrors);
+            return;
+        }
+
         try {
             const id = await createCustomer(customerFormData);
             toast.success("Customer created");
@@ -269,6 +353,7 @@ export default function CreateSalePage() {
             setSelectedCustomer(newCustomer);
             setIsCustomerModalOpen(false);
             setCustomerFormData({});
+            setCustomerErrors({});
             setCustomerSearch('');
         } catch (error) {
             toast.error(error.message);
@@ -277,13 +362,23 @@ export default function CreateSalePage() {
 
     const handleServiceSubmit = async (e) => {
         e.preventDefault();
+        const newErrors = {};
+        if (!serviceFormData.name?.trim()) newErrors.name = "Service name is required";
+        if (!serviceFormData.description?.trim()) newErrors.description = "Description is required";
+
+        if (Object.keys(newErrors).length > 0) {
+            setServiceErrors(newErrors);
+            return;
+        }
+
         try {
             await createService(serviceFormData);
             toast.success("Service created");
             const updatedServices = await getActiveServices();
             setServices(updatedServices);
             setIsServiceModalOpen(false);
-            setServiceFormData({});
+            setServiceFormData({ isActive: true });
+            setServiceErrors({});
         } catch (error) {
             toast.error(error.message);
         }
@@ -372,15 +467,29 @@ export default function CreateSalePage() {
                                     {!selectedCustomer ? (
                                         <div className="space-y-6">
                                             <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                                                    <IconSearch className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                <div className="relative">
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                                                        <IconSearch className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                    </div>
+                                                    <Input
+                                                        ref={customerSearchRef}
+                                                        placeholder="Search Name, Email or Phone..."
+                                                        className={cn(
+                                                            "pl-12 h-14 text-base border-border focus-visible:ring-primary/20 rounded-xl transition-all bg-background",
+                                                            errors.customer && "border-destructive ring-destructive/20 shadow-[0_0_10px_rgba(239,68,68,0.05)]"
+                                                        )}
+                                                        value={customerSearch}
+                                                        onChange={(e) => {
+                                                            setCustomerSearch(e.target.value);
+                                                            if (errors.customer) setErrors(prev => ({ ...prev, customer: null }));
+                                                        }}
+                                                    />
                                                 </div>
-                                                <Input
-                                                    placeholder="Search Name, Email or Phone..."
-                                                    className="pl-12 h-14 text-base border-border focus-visible:ring-primary/20 rounded-xl transition-all bg-background"
-                                                    value={customerSearch}
-                                                    onChange={(e) => setCustomerSearch(e.target.value)}
-                                                />
+                                                {errors.customer && (
+                                                    <p className="text-[10px] text-destructive font-black uppercase tracking-widest mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                        {errors.customer}
+                                                    </p>
+                                                )}
                                                 {customerSearch && (
                                                     <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border shadow-2xl z-[100] rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                                         {filteredCustomers.length > 0 ? (
@@ -487,15 +596,27 @@ export default function CreateSalePage() {
                                 <CardContent className="pt-8 space-y-6">
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Reference Number</Label>
-                                        <div className="flex bg-muted/20 rounded-xl px-5 py-4 items-center gap-3 border border-border focus-within:border-primary/50 transition-all">
+                                        <div className={cn(
+                                            "flex bg-muted/20 rounded-xl px-5 py-4 items-center gap-3 border border-border focus-within:border-primary/50 transition-all",
+                                            errors.refId && "border-destructive ring-destructive/20 shadow-[0_0_10px_rgba(239,68,68,0.05)]"
+                                        )}>
                                             <IconCalendarEvent className="h-5 w-5 text-muted-foreground" />
                                             <input
+                                                ref={salesRefIdRef}
                                                 className="bg-transparent border-none focus:ring-0 text-lg font-black text-foreground w-full uppercase tracking-tight"
                                                 value={salesRefId}
-                                                onChange={(e) => setSalesRefId(e.target.value)}
+                                                onChange={(e) => {
+                                                    setSalesRefId(e.target.value);
+                                                    if (errors.refId) setErrors(prev => ({ ...prev, refId: null }));
+                                                }}
                                                 placeholder="REF-XXXX-XXXX"
                                             />
                                         </div>
+                                        {errors.refId && (
+                                            <p className="text-[10px] text-destructive font-black uppercase tracking-widest mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                {errors.refId}
+                                            </p>
+                                        )}
                                     </div>
                                     <Separator className="bg-border/50" />
                                     <div className="flex items-center justify-between text-[10px] px-2">
@@ -533,8 +654,20 @@ export default function CreateSalePage() {
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
                                     <div className="md:col-span-6 space-y-2">
                                         <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">Asset Selection</Label>
-                                        <Select value={currentServiceId} onValueChange={setCurrentServiceId}>
-                                            <SelectTrigger className="h-12 rounded-xl border-border focus:ring-primary/20 text-foreground font-bold text-base bg-background">
+                                        <Select
+                                            value={currentServiceId}
+                                            onValueChange={(val) => {
+                                                setCurrentServiceId(val);
+                                                if (errors.service) setErrors(prev => ({ ...prev, service: null }));
+                                            }}
+                                        >
+                                            <SelectTrigger
+                                                ref={serviceSelectRef}
+                                                className={cn(
+                                                    "h-12 rounded-xl border-border focus:ring-primary/20 text-foreground font-bold text-base bg-background",
+                                                    errors.service && "border-destructive ring-destructive/20"
+                                                )}
+                                            >
                                                 <SelectValue placeholder="Select a Service" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl shadow-2xl bg-card border-border">
@@ -545,19 +678,38 @@ export default function CreateSalePage() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        {errors.service && (
+                                            <p className="text-[10px] text-destructive font-black uppercase tracking-widest mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                {errors.service}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="md:col-span-3 space-y-2">
                                         <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground ml-1">Market Rate (₹)</Label>
                                         <div className="relative">
                                             <IconCurrencyRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" />
                                             <Input
+                                                ref={priceInputRef}
                                                 type="number"
-                                                className="h-12 pl-12 text-lg font-black border-border rounded-xl focus-visible:ring-emerald-500/10 transition-all bg-background"
+                                                className={cn(
+                                                    "h-12 pl-12 text-lg font-black border-border rounded-xl focus-visible:ring-emerald-500/10 transition-all bg-background",
+                                                    errors.price && "border-destructive ring-destructive/20 shadow-[0_0_10px_rgba(239,68,68,0.05)]"
+                                                )}
                                                 value={customPrice}
-                                                onChange={(e) => setCustomPrice(e.target.value)}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val.length > 1 && val.startsWith('0') && !val.startsWith('0.')) return;
+                                                    setCustomPrice(val);
+                                                    if (errors.price) setErrors(prev => ({ ...prev, price: null }));
+                                                }}
                                                 placeholder="0.00"
                                             />
                                         </div>
+                                        {errors.price && (
+                                            <p className="text-[10px] text-destructive font-black uppercase tracking-widest mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                {errors.price}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="md:col-span-3 flex gap-2">
                                         <Button
@@ -597,81 +749,88 @@ export default function CreateSalePage() {
                         </Card>
 
                         {/* 4. Cart Table */}
-                        <Card className="border-border shadow-md bg-card rounded-2xl overflow-hidden shadow-slate-200/5 dark:shadow-none">
-                            <CardHeader className="bg-muted/30 border-b border-border py-4 px-8">
-                                <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                    <IconReceipt2 className="h-4 w-4" />
-                                    Billed Cart Details
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader className="bg-muted/30">
-                                            <TableRow className="hover:bg-transparent border-b border-border">
-                                                <TableHead className="py-4 px-8 font-black text-muted-foreground text-[10px] uppercase tracking-[0.2em]">Service Description</TableHead>
-                                                <TableHead className="text-right py-4 px-8 font-black text-muted-foreground text-[10px] uppercase tracking-[0.2em]">Amount (INR)</TableHead>
-                                                <TableHead className="w-[120px]"></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {selectedServices.length > 0 ? (
-                                                selectedServices.map((service, index) => (
-                                                    <TableRow key={index} className={cn(
-                                                        "group transition-all border-b border-border last:border-0",
-                                                        editingIndex === index ? "bg-orange-500/5" : "hover:bg-muted/30"
-                                                    )}>
-                                                        <TableCell className="py-6 px-8">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-base font-black text-foreground leading-none mb-1.5">{service.name}</span>
-                                                                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">ID: {service.serviceId.substring(0, 8).toUpperCase()}</span>
+                        <div ref={cartCardRef}>
+                            <Card className="border-border shadow-md bg-card rounded-2xl overflow-hidden shadow-slate-200/5 dark:shadow-none">
+                                <CardHeader className="bg-muted/30 border-b border-border py-4 px-8 flex flex-row items-center justify-between">
+                                    <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                        <IconReceipt2 className="h-4 w-4" />
+                                        Billed Cart Details
+                                    </CardTitle>
+                                    {errors.cart && (
+                                        <Badge variant="destructive" className="text-[9px] font-black uppercase tracking-widest animate-pulse border-none px-4 py-1">
+                                            {errors.cart}
+                                        </Badge>
+                                    )}
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader className="bg-muted/30">
+                                                <TableRow className="hover:bg-transparent border-b border-border">
+                                                    <TableHead className="py-4 px-8 font-black text-muted-foreground text-[10px] uppercase tracking-[0.2em]">Service Description</TableHead>
+                                                    <TableHead className="text-right py-4 px-8 font-black text-muted-foreground text-[10px] uppercase tracking-[0.2em]">Amount (INR)</TableHead>
+                                                    <TableHead className="w-[120px]"></TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {selectedServices.length > 0 ? (
+                                                    selectedServices.map((service, index) => (
+                                                        <TableRow key={index} className={cn(
+                                                            "group transition-all border-b border-border last:border-0",
+                                                            editingIndex === index ? "bg-orange-500/5" : "hover:bg-muted/30"
+                                                        )}>
+                                                            <TableCell className="py-6 px-8">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-base font-black text-foreground leading-none mb-1.5">{service.name}</span>
+                                                                    <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">ID: {service.serviceId.substring(0, 8).toUpperCase()}</span>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-right py-6 px-8">
+                                                                <span className="text-lg font-black text-foreground tracking-tighter">₹{service.price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                            </TableCell>
+                                                            <TableCell className="px-8 flex justify-end gap-2 py-6">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-muted-foreground/60 hover:text-foreground transition-colors"
+                                                                    onClick={() => handleEditService(index)}
+                                                                >
+                                                                    <IconPencil className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                                                                    onClick={() => handleRemoveService(index)}
+                                                                >
+                                                                    <IconTrash className="h-4 w-4" />
+                                                                </Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={3} className="h-64 text-center">
+                                                            <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
+                                                                <div className="h-20 w-20 rounded-3xl bg-muted flex items-center justify-center">
+                                                                    <IconClipboardList className="h-10 w-10 text-muted-foreground" />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-base font-black text-foreground uppercase tracking-widest">Cart is Empty</p>
+                                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Add items using the entry form above</p>
+                                                                </div>
                                                             </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-right py-6 px-8">
-                                                            <span className="text-lg font-black text-foreground tracking-tighter">₹{service.price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                                                        </TableCell>
-                                                        <TableCell className="px-8 flex justify-end gap-2 py-6">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-muted-foreground/60 hover:text-foreground transition-colors"
-                                                                onClick={() => handleEditService(index)}
-                                                            >
-                                                                <IconPencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
-                                                                onClick={() => handleRemoveService(index)}
-                                                            >
-                                                                <IconTrash className="h-4 w-4" />
-                                                            </Button>
                                                         </TableCell>
                                                     </TableRow>
-                                                ))
-                                            ) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={3} className="h-64 text-center">
-                                                        <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
-                                                            <div className="h-20 w-20 rounded-3xl bg-muted flex items-center justify-center">
-                                                                <IconClipboardList className="h-10 w-10 text-muted-foreground" />
-                                                            </div>
-                                                            <div className="space-y-1">
-                                                                <p className="text-base font-black text-foreground uppercase tracking-widest">Cart is Empty</p>
-                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Add items using the entry form above</p>
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
 
                     {/* Settlement Sidebar */}
@@ -703,8 +862,6 @@ export default function CreateSalePage() {
 
                                 <CardContent className="pt-10 px-8 pb-10 space-y-10">
                                     <div className="space-y-8">
-
-
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1">
                                                 <Label htmlFor="paid">Paid Amount</Label>
@@ -712,25 +869,62 @@ export default function CreateSalePage() {
                                             <div className="relative group">
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">₹</div>
                                                 <Input
+                                                    ref={paidAmountRef}
                                                     id="paid"
                                                     type="number"
-                                                    className="h-14 pl-10 border-border rounded-2xl font-black text-2xl text-foreground focus-visible:ring-emerald-500/20 bg-emerald-500/5"
+                                                    className={cn(
+                                                        "h-14 pl-10 border-border rounded-2xl font-black text-2xl text-foreground focus-visible:ring-emerald-500/20 bg-emerald-500/5",
+                                                        errors.paidAmount && "border-destructive ring-destructive/20 shadow-[0_0_10px_rgba(239,68,68,0.05)]"
+                                                    )}
                                                     value={paidAmount}
-                                                    onChange={(e) => setPaidAmount(e.target.value)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val.length > 1 && val.startsWith('0') && !val.startsWith('0.')) return;
+                                                        setPaidAmount(val);
+                                                        if (errors.paidAmount) setErrors(prev => ({ ...prev, paidAmount: null }));
+                                                    }}
                                                     placeholder="0.00"
                                                 />
                                             </div>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() => setPaidAmount(totalAmount.toString())}
-                                                disabled={!totalAmount || totalAmount <= 0}
-                                                className="w-full h-10 mt-2 bg-zinc-900 border-zinc-800 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all font-bold text-[10px] uppercase tracking-widest rounded-xl disabled:opacity-30 disabled:grayscale"
-                                            >
-                                                Mark as Fully Paid
-                                            </Button>
+                                            {errors.paidAmount && (
+                                                <p className="text-[10px] text-destructive font-black uppercase tracking-widest mt-2 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    {errors.paidAmount}
+                                                </p>
+                                            )}
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        disabled={!totalAmount || totalAmount <= 0 || Number(paidAmount) === totalAmount}
+                                                        className="w-full h-10 mt-2 bg-zinc-900 border-zinc-800 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all font-bold text-[10px] uppercase tracking-widest rounded-xl disabled:opacity-30 disabled:grayscale"
+                                                    >
+                                                        Mark as Fully Paid
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent className="rounded-2xl border-border bg-card">
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle className="text-xl font-black uppercase tracking-tight">Confirm Full Payment</AlertDialogTitle>
+                                                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground">
+                                                            This will set the paid amount to <span className="text-foreground font-black">₹{totalAmount.toLocaleString()}</span>. Are you sure you want to clear the balance?
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter className="mt-6">
+                                                        <AlertDialogCancel className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-11">Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction
+                                                            onClick={() => {
+                                                                setPaidAmount(totalAmount.toString());
+                                                                if (errors.paidAmount) setErrors(prev => ({ ...prev, paidAmount: null }));
+                                                                toast.success("Payment amount adjusted to full");
+                                                            }}
+                                                            className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] h-11"
+                                                        >
+                                                            Confirm Payment
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
-
                                     </div>
 
                                     <div className="bg-muted p-6 rounded-3xl border border-border relative overflow-hidden">
@@ -774,19 +968,37 @@ export default function CreateSalePage() {
                 isOpen={isCustomerModalOpen}
                 onOpenChange={setIsCustomerModalOpen}
                 formData={customerFormData}
-                onInputChange={(e) => setCustomerFormData({ ...customerFormData, [e.target.name]: e.target.value })}
+                onInputChange={(e) => {
+                    setCustomerFormData({ ...customerFormData, [e.target.name]: e.target.value });
+                    if (customerErrors[e.target.name]) {
+                        setCustomerErrors(prev => ({ ...prev, [e.target.name]: null }));
+                    }
+                }}
                 onSubmit={handleCustomerSubmit}
-                onCancel={() => setIsCustomerModalOpen(false)}
+                onCancel={() => {
+                    setIsCustomerModalOpen(false);
+                    setCustomerErrors({});
+                }}
+                errors={customerErrors}
             />
 
             <ServiceModal
                 isOpen={isServiceModalOpen}
                 onOpenChange={setIsServiceModalOpen}
                 formData={serviceFormData}
-                onInputChange={(e) => setServiceFormData({ ...serviceFormData, [e.target.name]: e.target.value })}
+                onInputChange={(e) => {
+                    setServiceFormData({ ...serviceFormData, [e.target.name]: e.target.value });
+                    if (serviceErrors[e.target.name]) {
+                        setServiceErrors(prev => ({ ...prev, [e.target.name]: null }));
+                    }
+                }}
                 onCheckedChange={(isActive) => setServiceFormData({ ...serviceFormData, isActive })}
                 onSubmit={handleServiceSubmit}
-                onCancel={() => setIsServiceModalOpen(false)}
+                onCancel={() => {
+                    setIsServiceModalOpen(false);
+                    setServiceErrors({});
+                }}
+                errors={serviceErrors}
             />
 
             <InvoicePreviewModal
@@ -808,42 +1020,44 @@ export default function CreateSalePage() {
             </div>
 
             {/* Success Overlay instead of direct redirect */}
-            {completedSale && !isInvoicePreviewOpen && (
-                <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
-                    <Card className="max-w-md w-full border-border shadow-2xl rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
-                        <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto mb-6">
-                            <IconUserCheck className="h-10 w-10" />
-                        </div>
-                        <h2 className="text-2xl font-black text-foreground mb-2">Sale Completed!</h2>
-                        <p className="text-muted-foreground text-sm mb-8 italic">The transaction for <span className="text-foreground font-bold">{selectedCustomer?.name}</span> has been securely synced.</p>
+            {
+                completedSale && !isInvoicePreviewOpen && (
+                    <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
+                        <Card className="max-w-md w-full border-border shadow-2xl rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
+                            <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto mb-6">
+                                <IconUserCheck className="h-10 w-10" />
+                            </div>
+                            <h2 className="text-2xl font-black text-foreground mb-2">Sale Completed!</h2>
+                            <p className="text-muted-foreground text-sm mb-8 italic">The transaction for <span className="text-foreground font-bold">{selectedCustomer?.name}</span> has been securely synced.</p>
 
-                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Button
+                                    variant="outline"
+                                    className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
+                                    onClick={() => router.push('/sales')}
+                                >
+                                    <IconLayoutDashboard className="h-4 w-4" />
+                                    Go to Dashboard
+                                </Button>
+                                <Button
+                                    className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-emerald-500/20"
+                                    onClick={handleGenerateInvoice}
+                                >
+                                    <IconDownload className="h-4 w-4" />
+                                    Download Invoice
+                                </Button>
+                            </div>
                             <Button
-                                variant="outline"
-                                className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
-                                onClick={() => router.push('/sales')}
+                                variant="link"
+                                className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-primary transition-colors"
+                                onClick={() => window.location.reload()}
                             >
-                                <IconLayoutDashboard className="h-4 w-4" />
-                                Go to Dashboard
+                                Start New Transaction
                             </Button>
-                            <Button
-                                className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-emerald-500/20"
-                                onClick={handleGenerateInvoice}
-                            >
-                                <IconDownload className="h-4 w-4" />
-                                Download Invoice
-                            </Button>
-                        </div>
-                        <Button
-                            variant="link"
-                            className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-primary transition-colors"
-                            onClick={() => window.location.reload()}
-                        >
-                            Start New Transaction
-                        </Button>
-                    </Card>
-                </div>
-            )}
+                        </Card>
+                    </div>
+                )
+            }
 
             <style jsx global>{`
                 @media print {
@@ -865,6 +1079,6 @@ export default function CreateSalePage() {
                   -moz-appearance: textfield;
                 }
             `}</style>
-        </div>
+        </div >
     );
 }

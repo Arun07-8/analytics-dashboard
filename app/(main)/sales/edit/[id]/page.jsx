@@ -9,6 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
     IconTrash,
@@ -66,7 +77,9 @@ export default function EditSalePage() {
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
     const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
     const [customerFormData, setCustomerFormData] = useState({});
-    const [serviceFormData, setServiceFormData] = useState({});
+    const [serviceFormData, setServiceFormData] = useState({ isActive: true });
+    const [customerErrors, setCustomerErrors] = useState({});
+    const [serviceErrors, setServiceErrors] = useState({});
 
     useEffect(() => {
         fetchData();
@@ -215,6 +228,32 @@ export default function EditSalePage() {
 
     const handleCustomerSubmit = async (e) => {
         e.preventDefault();
+        const newErrors = {};
+
+        if (!customerFormData.name?.trim()) newErrors.name = "Full name is required";
+        else if (customerFormData.name.trim().length < 3) newErrors.name = "Name must be at least 3 characters";
+
+        const mobileRegex = /^[0-9+() -]{7,15}$/;
+        if (!customerFormData.mobile?.trim()) newErrors.mobile = "Mobile number is required";
+        else if (!mobileRegex.test(customerFormData.mobile)) newErrors.mobile = "Invalid mobile number format";
+
+        if (customerFormData.email?.trim()) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(customerFormData.email)) newErrors.email = "Invalid email format";
+        }
+
+        if (!customerFormData.country?.trim()) newErrors.country = "Country is required";
+        if (!customerFormData.state?.trim()) newErrors.state = "State is required";
+        if (!customerFormData.city?.trim()) newErrors.city = "City is required";
+        if (!customerFormData.place?.trim()) newErrors.place = "Place/Area is required";
+        if (!customerFormData.pincode?.trim()) newErrors.pincode = "Pincode is required";
+        if (!customerFormData.address?.trim()) newErrors.address = "Full address is required";
+
+        if (Object.keys(newErrors).length > 0) {
+            setCustomerErrors(newErrors);
+            return;
+        }
+
         try {
             const id = await createCustomer(customerFormData);
             toast.success("Customer created");
@@ -224,6 +263,7 @@ export default function EditSalePage() {
             setSelectedCustomer(newCustomer);
             setIsCustomerModalOpen(false);
             setCustomerFormData({});
+            setCustomerErrors({});
             setCustomerSearch('');
         } catch (error) {
             toast.error(error.message);
@@ -232,13 +272,23 @@ export default function EditSalePage() {
 
     const handleServiceSubmit = async (e) => {
         e.preventDefault();
+        const newErrors = {};
+        if (!serviceFormData.name?.trim()) newErrors.name = "Service name is required";
+        if (!serviceFormData.description?.trim()) newErrors.description = "Description is required";
+
+        if (Object.keys(newErrors).length > 0) {
+            setServiceErrors(newErrors);
+            return;
+        }
+
         try {
             await createService(serviceFormData);
             toast.success("Service created");
             const updatedServices = await getActiveServices();
             setServices(updatedServices);
             setIsServiceModalOpen(false);
-            setServiceFormData({});
+            setServiceFormData({ isActive: true });
+            setServiceErrors({});
         } catch (error) {
             toast.error(error.message);
         }
@@ -312,15 +362,17 @@ export default function EditSalePage() {
                                     {!selectedCustomer ? (
                                         <div className="space-y-6">
                                             <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                                                    <IconSearch className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                <div className="relative">
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                                                        <IconSearch className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                    </div>
+                                                    <Input
+                                                        placeholder="Search Name, Email or Phone..."
+                                                        className="pl-12 h-14 text-base border-border focus-visible:ring-primary/20 rounded-xl transition-all bg-background"
+                                                        value={customerSearch}
+                                                        onChange={(e) => setCustomerSearch(e.target.value)}
+                                                    />
                                                 </div>
-                                                <Input
-                                                    placeholder="Search Name, Email or Phone..."
-                                                    className="pl-12 h-14 text-base border-border focus-visible:ring-primary/20 rounded-xl transition-all bg-background"
-                                                    value={customerSearch}
-                                                    onChange={(e) => setCustomerSearch(e.target.value)}
-                                                />
                                                 {customerSearch && (
                                                     <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border shadow-2xl z-[100] rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                                         {filteredCustomers.length > 0 ? (
@@ -600,6 +652,38 @@ export default function EditSalePage() {
                                                 onChange={(e) => setPaidAmount(e.target.value)}
                                             />
                                         </div>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    disabled={!totalAmount || totalAmount <= 0 || Number(paidAmount) === totalAmount}
+                                                    className="w-full h-10 mt-2 bg-zinc-900 border-zinc-800 text-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all font-bold text-[10px] uppercase tracking-widest rounded-xl disabled:opacity-30 disabled:grayscale"
+                                                >
+                                                    Mark as Fully Paid
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent className="rounded-2xl border-border bg-card">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle className="text-xl font-black uppercase tracking-tight">Confirm Full Payment</AlertDialogTitle>
+                                                    <AlertDialogDescription className="text-sm font-medium text-muted-foreground">
+                                                        This will set the paid amount to <span className="text-foreground font-black">₹{totalAmount.toLocaleString()}</span>. Are you sure you want to clear the balance?
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter className="mt-6">
+                                                    <AlertDialogCancel className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-11">Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => {
+                                                            setPaidAmount(totalAmount.toString());
+                                                            toast.success("Payment amount adjusted to full");
+                                                        }}
+                                                        className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] h-11"
+                                                    >
+                                                        Confirm Payment
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
 
                                     <div className="bg-muted p-6 rounded-3xl border border-border">
@@ -629,19 +713,37 @@ export default function EditSalePage() {
                 isOpen={isCustomerModalOpen}
                 onOpenChange={setIsCustomerModalOpen}
                 formData={customerFormData}
-                onInputChange={(e) => setCustomerFormData({ ...customerFormData, [e.target.name]: e.target.value })}
+                onInputChange={(e) => {
+                    setCustomerFormData({ ...customerFormData, [e.target.name]: e.target.value });
+                    if (customerErrors[e.target.name]) {
+                        setCustomerErrors(prev => ({ ...prev, [e.target.name]: null }));
+                    }
+                }}
                 onSubmit={handleCustomerSubmit}
-                onCancel={() => setIsCustomerModalOpen(false)}
+                onCancel={() => {
+                    setIsCustomerModalOpen(false);
+                    setCustomerErrors({});
+                }}
+                errors={customerErrors}
             />
 
             <ServiceModal
                 isOpen={isServiceModalOpen}
                 onOpenChange={setIsServiceModalOpen}
                 formData={serviceFormData}
-                onInputChange={(e) => setServiceFormData({ ...serviceFormData, [e.target.name]: e.target.value })}
+                onInputChange={(e) => {
+                    setServiceFormData({ ...serviceFormData, [e.target.name]: e.target.value });
+                    if (serviceErrors[e.target.name]) {
+                        setServiceErrors(prev => ({ ...prev, [e.target.name]: null }));
+                    }
+                }}
                 onCheckedChange={(isActive) => setServiceFormData({ ...serviceFormData, isActive })}
                 onSubmit={handleServiceSubmit}
-                onCancel={() => setIsServiceModalOpen(false)}
+                onCancel={() => {
+                    setIsServiceModalOpen(false);
+                    setServiceErrors({});
+                }}
+                errors={serviceErrors}
             />
         </div>
     );

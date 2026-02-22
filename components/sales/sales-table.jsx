@@ -172,12 +172,12 @@ export function SalesTable({
                         {isClosed ? (
                             <>
                                 <IconCircleCheckFilled className="size-3 fill-green-500 text-green-500" />
-                                Closed
+                                Payment Closed
                             </>
                         ) : (
                             <>
                                 <IconLoader className="size-3 animate-spin" />
-                                Pending
+                                Payment Pending
                             </>
                         )}
                     </Badge>

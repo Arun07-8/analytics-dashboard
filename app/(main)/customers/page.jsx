@@ -166,15 +166,12 @@ export default function CustomersPage() {
 
         const revenueGrowth = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : (revenueThisMonth > 0 ? 100 : 0);
 
-        return {
-            totalRevenue: totalRevenue,
-            revenueGrowth: Number(revenueGrowth.toFixed(1)),
-            newCustomers: totalCustomers, // Showing Total Customers here
-            customerGrowth: Number(customerGrowth.toFixed(1)),
-            activeAccounts: newThisMonth, // Showing New This Month here
-            activeAccountsGrowth: 0,
-            growthRate: activeCustomers, // Showing Active Customers count here
-        };
+        return [
+            { label: "Total Revenue", value: totalRevenue, prefix: "₹", isCurrency: true, growth: Number(revenueGrowth.toFixed(1)), description: "Accumulated transaction value" },
+            { label: "Total Customers", value: totalCustomers, growth: Number(customerGrowth.toFixed(1)), description: "All-time registered clients" },
+            { label: "New This Month", value: newThisMonth, description: "Customer growth this month" },
+            { label: "Active Customers", value: activeCustomers, description: "With transaction history" },
+        ];
     }, [customers, sales]);
 
     const handleViewOrders = (customer) => {
@@ -240,25 +237,7 @@ export default function CustomersPage() {
                     </div>
                 </div>
 
-                <SectionCards
-                    stats={stats}
-                    labels={{
-                        totalRevenue: "Total Revenue",
-                        newCustomers: "Total Customers",
-                        activeAccounts: "New This Month",
-                        growthRate: "Active Customers",
-                        growthRateDescription: "Currently active"
-                    }}
-                    prefixes={{
-                        totalRevenue: "₹",
-                        newCustomers: "",
-                        activeAccounts: "",
-                        growthRate: ""
-                    }}
-                    suffixes={{
-                        growthRate: ""
-                    }}
-                />
+                <SectionCards cards={stats} />
 
                 <div className="px-4 lg:px-6">
                     <CustomersTable
