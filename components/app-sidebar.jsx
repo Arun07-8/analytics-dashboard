@@ -22,6 +22,7 @@ import {
   IconUsers,
   IconPlus,
   IconUserPlus,
+  IconClipboardList,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -52,6 +53,12 @@ const data = {
       icon: IconChartBar,
     },
     {
+      title: "Sales Requests",
+      url: "/sales-requests",
+      icon: IconClipboardList,
+      role: "admin",
+    },
+    {
       title: "Services",
       url: "/services",
       icon: IconListDetails,
@@ -65,6 +72,7 @@ const data = {
       title: "Create Admin",
       url: "/createAdmin",
       icon: IconUserPlus,
+      role: "admin",
     },
   ],
   navClouds: [
@@ -155,19 +163,19 @@ export function AppSidebar({ ...props }) {
   const { user, loading } = useAuth()
   const db = getFirestore()
 
- 
 
-    const role = user?.role?.trim().toLowerCase()
+
+  const role = user?.role?.trim().toLowerCase()
 
   // Filter navigation based on role
   const filteredNavMain = data.navMain.filter((item) => {
-    // Hide Dashboard for staff & viewer
-    if (item.title === "Dashboard" && role !== "admin") {
+    // If an item has a required role, check it
+    if (item.role && item.role !== role) {
       return false
     }
 
-    // Hide Create Admin for non-admin
-    if (item.title === "Create Admin" && role !== "admin") {
+    // Backup: Hide Dashboard for non-admins if not explicitly marked
+    if (item.title === "Dashboard" && role !== "admin") {
       return false
     }
 

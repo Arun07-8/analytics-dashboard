@@ -73,7 +73,8 @@ export default function CustomersPage() {
 
     const customerActivityMap = useMemo(() => {
         const map = new Map();
-        sales.forEach(sale => {
+        // Only count verified sales for activity status
+        sales.filter(s => s.isVerified === true).forEach(sale => {
             map.set(sale.customerId, (map.get(sale.customerId) || 0) + 1);
         });
         return map;
@@ -120,10 +121,11 @@ export default function CustomersPage() {
         if (!selectedCustomer) return [];
         const adminMap = new Map(admins.map(a => [a.id, a.name]));
 
-        return sales.filter(sale => sale.customerId === selectedCustomer.id)
+        // Only show verified orders in the customer history for consistency with revenue
+        return sales.filter(sale => sale.customerId === selectedCustomer.id && sale.isVerified === true)
             .map(sale => ({
                 ...sale,
-                staffName: adminMap.get(sale.staffId) || "Unknown"
+                staffName: adminMap.get(sale.staffId) || adminMap.get(sale.createdBy) || "Unknown"
             }))
             .sort((a, b) => {
                 const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
@@ -135,10 +137,13 @@ export default function CustomersPage() {
 
     const stats = useMemo(() => {
         const totalCustomers = customers.length;
-        const activeCustomers = new Set(sales.map(s => s.customerId)).size;
 
-        // Calculate revenue
-        const totalRevenue = sales.reduce((acc, sale) => acc + (Number(sale.totalAmount) || 0), 0);
+        // Filter for verified sales only
+        const verifiedSales = sales.filter(s => s.isVerified === true);
+        const activeCustomers = new Set(verifiedSales.map(s => s.customerId)).size;
+
+        // Calculate revenue from verified sales only
+        const totalRevenue = verifiedSales.reduce((acc, sale) => acc + (Number(sale.totalAmount) || 0), 0);
 
         // Calculate growth (customers and revenue)
         const now = new Date();
@@ -157,9 +162,9 @@ export default function CustomersPage() {
 
         const customerGrowth = newLastMonth > 0 ? ((newThisMonth - newLastMonth) / newLastMonth) * 100 : (newThisMonth > 0 ? 100 : 0);
 
-        const revenueThisMonth = sales.filter(s => getDate(s.createdAt) >= startOfCurrentMonth)
+        const revenueThisMonth = verifiedSales.filter(s => getDate(s.createdAt) >= startOfCurrentMonth)
             .reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-        const revenueLastMonth = sales.filter(s => {
+        const revenueLastMonth = verifiedSales.filter(s => {
             const date = getDate(s.createdAt);
             return date >= startOfLastMonth && date <= endOfLastMonth;
         }).reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
@@ -219,6 +224,10 @@ export default function CustomersPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
         );
+    }
+
+    if (!user) {
+        return null;
     }
 
     return (

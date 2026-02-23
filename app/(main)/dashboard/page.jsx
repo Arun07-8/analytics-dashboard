@@ -36,8 +36,12 @@ export default function Page() {
   const [toDate, setToDate] = useState(null);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (user?.role?.trim().toLowerCase() !== 'admin') {
+        router.push('/sales');
+      }
     }
   }, [user, loading, router]);
 
@@ -130,22 +134,29 @@ export default function Page() {
       };
     });
 
+    // Filter for verified sales for global revenue
+    const verifiedSales = allSalesWithDate.filter(s => s.isVerified === true);
+
     // 1. Total Global Revenue (Lifetime)
-    const allTimeCompanyRevenue = allSalesWithDate
+    const allTimeCompanyRevenue = verifiedSales
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
     // 2. Monthly Global Revenue
-    const companyMonthlyRevenue = allSalesWithDate
+    const companyMonthlyRevenue = verifiedSales
       .filter(s => s.date >= startOfThisMonth)
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
     // 3. Filtered Global Revenue (Selected Period)
-    const companyPeriodRevenue = allSalesWithDate
+    const companyPeriodRevenue = verifiedSales
       .filter(s => s.date >= currentStart && s.date <= currentEnd)
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
     // Role-based visibility for Table and personal stats
     const filteredByRole = allSalesWithDate.filter(s => {
+      // ONLY show verified sales on the main dashboard
+      if (s.isVerified !== true) return false;
+      if (!user) return false;
+
       if (user.role === 'admin') return true;
       return s.createdBy === user.uid;
     });
@@ -334,10 +345,10 @@ export default function Page() {
             </span>
           </div>
           <h1 className="text-3xl font-black text-foreground tracking-tight leading-none">
-            Hello, <span className="text-primary italic">{user.name?.split(' ')[0] || 'Admin'}</span>
+            Hello, <span className="text-primary italic">{user?.name?.split(' ')[0] || 'Admin'}</span>
           </h1>
           <p className="text-xs text-muted-foreground font-medium flex items-center gap-2">
-            <span>{user.role === 'admin' ? 'Master Administrator' : 'Staff Member'}</span>
+            <span>{user?.role === 'admin' ? 'Master Administrator' : 'Staff Member'}</span>
             <span className="h-1 w-1 rounded-full bg-border" />
             <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </p>

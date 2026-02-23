@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,8 +25,21 @@ import {
 import { IconUserPlus, IconShieldCheck, IconLock, IconEye, IconEyeOff } from '@tabler/icons-react';
 
 export default function CreateAdminPage() {
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!authLoading) {
+            if (!user) {
+                router.push('/login');
+            } else if (user?.role?.trim().toLowerCase() !== 'admin') {
+                router.push('/dashboard');
+                toast.error("Access denied. Admins only.");
+            }
+        }
+    }, [user, authLoading, router]);
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -161,6 +175,10 @@ export default function CreateAdminPage() {
         }
     };
 
+
+    if (authLoading || !user || user?.role?.trim().toLowerCase() !== 'admin') {
+        return null;
+    }
 
     return (
         <div className="flex flex-1 items-center justify-center p-4 md:p-8">

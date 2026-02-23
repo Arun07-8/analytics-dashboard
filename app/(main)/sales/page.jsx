@@ -121,6 +121,7 @@ export default function Page() {
     // Role-based filtering (Staff only see their own, Admins see all)
     // Restrict visibility to personal sales only for both Admin and Staff
     filterConstraints.createdBy = user.uid;
+    filterConstraints.isVerified = true;
 
     setLoadingData(true);
     const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
@@ -577,9 +578,9 @@ export default function Page() {
     );
   }
 
-  // if (!user) {
-  //   return null;
-  // }
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-2">

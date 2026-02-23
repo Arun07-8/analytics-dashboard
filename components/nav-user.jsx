@@ -47,6 +47,9 @@ export function NavUser({
       document.cookie = "authToken=; path=/; max-age=0"
       document.cookie = "userId=; path=/; max-age=0"
 
+      // Trigger logout in other tabs
+      localStorage.setItem('logout-event', Date.now().toString())
+
       toast.success("✅ Logged out successfully!")
 
       setTimeout(() => {

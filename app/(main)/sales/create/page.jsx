@@ -46,7 +46,8 @@ import {
     createService,
     getActiveServices,
     getAllAdmins,
-    createSale
+    createSale,
+    createNotification
 } from '@/lib/firebase/collections';
 import { CustomerModal } from '@/components/customers/customer-modal';
 import { ServiceModal } from '@/components/services/service-modal';
@@ -59,7 +60,7 @@ import { downloadInvoice } from '@/lib/invoice-utils';
 
 export default function CreateSalePage() {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
 
     // Data states
     const [customers, setCustomers] = useState([]);
@@ -101,8 +102,16 @@ export default function CreateSalePage() {
     const cartCardRef = useRef(null);
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
+
+    useEffect(() => {
+        if (user) {
+            fetchData();
+        }
+    }, [user]);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -279,12 +288,34 @@ export default function CreateSalePage() {
                 paidAmount: Number(paidAmount) || 0,
                 excessAmount: Number(totalAmount) - (Number(paidAmount) || 0),
                 salesRefId: [salesRefId],
+                createdByRole: user?.role?.trim().toLowerCase() === 'admin' ? 'admin' : 'staff',
             };
 
             const docId = await createSale(saleData);
             setCompletedSale({ ...saleData, id: docId });
             setErrors({});
-            toast.success("Sale synchronized successfully");
+
+            if (user?.role?.trim().toLowerCase() === 'admin') {
+                toast.success("Sale synchronized successfully");
+            } else {
+                // Send notification only to users with 'admin' role
+                const allUsers = await getAllAdmins();
+                const actualAdmins = allUsers.filter(acc =>
+                    acc.role?.trim().toLowerCase() === 'admin' &&
+                    acc.id !== user.uid
+                );
+
+                const notificationPromises = actualAdmins.map(admin => createNotification({
+                    userId: admin.id,
+                    title: "New Sales Request",
+                    message: `${staffName} has submitted a new sales request for ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
+                    type: "warning",
+                    actionUrl: "/sales-requests"
+                }));
+                await Promise.all(notificationPromises);
+
+                toast.success("Sales request has been sent to Admin for approval.");
+            }
         } catch (error) {
             toast.error("Sync error: " + error.message);
         } finally {
@@ -387,6 +418,19 @@ export default function CreateSalePage() {
     const handleDownloadInvoice = () => {
         window.print();
     };
+
+    if (authLoading || !user) {
+        return (
+            <div className="h-screen w-full flex flex-col items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                    <p className="font-bold text-sm text-primary uppercase tracking-[0.2em] animate-pulse">
+                        {authLoading ? "Initializing Auth..." : "Redirecting..."}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -1024,36 +1068,58 @@ export default function CreateSalePage() {
                 completedSale && !isInvoicePreviewOpen && (
                     <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
                         <Card className="max-w-md w-full border-border shadow-2xl rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
-                            <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto mb-6">
-                                <IconUserCheck className="h-10 w-10" />
-                            </div>
-                            <h2 className="text-2xl font-black text-foreground mb-2">Sale Completed!</h2>
-                            <p className="text-muted-foreground text-sm mb-8 italic">The transaction for <span className="text-foreground font-bold">{selectedCustomer?.name}</span> has been securely synced.</p>
+                            {user?.role?.trim().toLowerCase() === 'admin' ? (
+                                <>
+                                    <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto mb-6">
+                                        <IconUserCheck className="h-10 w-10" />
+                                    </div>
+                                    <h2 className="text-2xl font-black text-foreground mb-2">Sale Completed!</h2>
+                                    <p className="text-muted-foreground text-sm mb-8 italic">The transaction for <span className="text-foreground font-bold">{selectedCustomer?.name}</span> has been securely synced.</p>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <Button
-                                    variant="outline"
-                                    className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
-                                    onClick={() => router.push('/sales')}
-                                >
-                                    <IconLayoutDashboard className="h-4 w-4" />
-                                    Go to Dashboard
-                                </Button>
-                                <Button
-                                    className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-emerald-500/20"
-                                    onClick={handleGenerateInvoice}
-                                >
-                                    <IconDownload className="h-4 w-4" />
-                                    Download Invoice
-                                </Button>
-                            </div>
-                            <Button
-                                variant="link"
-                                className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-primary transition-colors"
-                                onClick={() => window.location.reload()}
-                            >
-                                Start New Transaction
-                            </Button>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Button
+                                            variant="outline"
+                                            className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
+                                            onClick={() => router.push('/sales')}
+                                        >
+                                            <IconLayoutDashboard className="h-4 w-4" />
+                                            Go to Dashboard
+                                        </Button>
+                                        <Button
+                                            className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-emerald-500/20"
+                                            onClick={handleGenerateInvoice}
+                                        >
+                                            <IconDownload className="h-4 w-4" />
+                                            Download Invoice
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        variant="link"
+                                        className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-primary transition-colors"
+                                        onClick={() => window.location.reload()}
+                                    >
+                                        Start New Transaction
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6">
+                                        <IconClipboardList className="h-10 w-10" />
+                                    </div>
+                                    <h2 className="text-2xl font-black text-foreground mb-2">Sales Request Sent to Admin</h2>
+                                    <p className="text-muted-foreground text-sm mb-8 italic">Your sales request has been successfully sent to the admin for approval.</p>
+
+                                    <Button
+                                        className="w-full h-12 bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg"
+                                        onClick={() => {
+                                            setCompletedSale(null);
+                                            window.location.reload();
+                                        }}
+                                    >
+                                        Go Back
+                                    </Button>
+                                </>
+                            )}
                         </Card>
                     </div>
                 )
