@@ -38,7 +38,7 @@ const chartConfig = {
   }
 }
 
-export function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }) {
+export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }) {
   const isMobile = useIsMobile()
 
   const isEmpty = data.length === 0 || data.every(d => d.desktop === 0 && d.mobile === 0);
@@ -202,4 +202,4 @@ export function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }
       </CardContent>
     </Card>
   );
-}
+});

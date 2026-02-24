@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DashboardTable } from "@/components/dashboard/sections-table"
 import { SectionCards } from "@/components/section-cards"
@@ -23,6 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SaleDetailsModal } from "@/components/sales/sale-details-modal";
+import { InvoicePreviewModal } from "@/components/sales/invoice-preview-modal";
+import { InvoiceTemplate } from "@/components/sales/invoice-template";
+import { toast } from "sonner";
+import { downloadInvoice } from "@/lib/invoice-utils";
 
 export default function Page() {
   const { user, loading } = useAuth();
@@ -34,6 +39,14 @@ export default function Page() {
   const [dateFilter, setDateFilter] = useState('this-month'); // match chart default
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+
+  // Sale Modal States
+  const [selectedSale, setSelectedSale] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isInvoiceGenerating, setIsInvoiceGenerating] = useState(false);
+  const [invoiceSaleData, setInvoiceSaleData] = useState(null);
+  const [isInvoicePreviewOpen, setIsInvoicePreviewOpen] = useState(false);
+  const [previewSaleData, setPreviewSaleData] = useState(null);
 
   useEffect(() => {
     if (!loading) {
@@ -315,6 +328,60 @@ export default function Page() {
     return Object.values(data).sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [dataPack.processedSales, dateFilter, fromDate, toDate]);
 
+  const handleViewDetails = useCallback((sale) => {
+    setSelectedSale(sale);
+    setIsDetailsModalOpen(true);
+  }, []);
+
+  const handleEditSale = useCallback((sale) => {
+    router.push(`/sales/edit/${sale.id}`);
+  }, [router]);
+
+  const handleDownloadInvoice = useCallback((sale) => {
+    // Show preview modal first
+    setPreviewSaleData(sale);
+    setIsInvoicePreviewOpen(true);
+  }, []);
+
+  const handleTimeRangeChange = useCallback((val) => {
+    if (val === 'this-month') setDateFilter('this-month');
+    else if (val === 'this-year') setDateFilter('this-year');
+    else setDateFilter(val);
+  }, []);
+
+  const handleConfirmDownload = useCallback(async () => {
+    if (!previewSaleData) return;
+
+    // Close preview modal
+    setIsInvoicePreviewOpen(false);
+
+    // Start generating PDF
+    setInvoiceSaleData(previewSaleData);
+    setIsInvoiceGenerating(true);
+
+    // Give state a moment to update and render the template
+    setTimeout(async () => {
+      try {
+        const refId = Array.isArray(previewSaleData.salesRefId)
+          ? previewSaleData.salesRefId[0]
+          : previewSaleData.salesRefId;
+        const success = await downloadInvoice('dashboard-invoice-template', `Invoice-${refId || previewSaleData.id}.pdf`);
+        if (success) {
+          toast.success("Invoice downloaded successfully");
+        } else {
+          toast.error("Failed to generate PDF");
+        }
+      } catch (error) {
+        console.error("Dashboard invoice error:", error);
+        toast.error("Failed to generate invoice");
+      } finally {
+        setIsInvoiceGenerating(false);
+        setInvoiceSaleData(null);
+        setPreviewSaleData(null);
+      }
+    }, 500);
+  }, [previewSaleData]);
+
   if (loading || !user || user?.role?.trim().toLowerCase() !== 'admin') {
     if (loading) {
       return (
@@ -432,11 +499,7 @@ export default function Page() {
         <ChartAreaInteractive
           data={chartData}
           timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
-          onTimeRangeChange={(val) => {
-            if (val === 'this-month') setDateFilter('this-month');
-            else if (val === 'this-year') setDateFilter('this-year');
-            else setDateFilter(val);
-          }}
+          onTimeRangeChange={handleTimeRangeChange}
         />
       </div>
 
@@ -447,7 +510,42 @@ export default function Page() {
           </div>
           <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Detailed Sales Records</h2>
         </div>
-        <DashboardTable data={dataPack.processedSales} />
+        <DashboardTable
+          data={dataPack.processedSales}
+          onViewDetails={handleViewDetails}
+          onEditSale={handleEditSale}
+          onDownloadInvoice={handleDownloadInvoice}
+        />
+      </div>
+
+      <SaleDetailsModal
+        isOpen={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        sale={selectedSale}
+        customer={selectedSale ? customers.find(c => c.id === selectedSale.customerId) : null}
+        onDownloadInvoice={handleDownloadInvoice}
+      />
+
+      <InvoicePreviewModal
+        isOpen={isInvoicePreviewOpen}
+        onClose={() => setIsInvoicePreviewOpen(false)}
+        sale={previewSaleData}
+        customer={previewSaleData ? customers.find(c => c.id === previewSaleData.customerId) : null}
+        admins={admins}
+        onConfirmDownload={handleConfirmDownload}
+      />
+
+      {/* Hidden Invoice Template for PDF generation */}
+      <div className="absolute -top-[10000px] left-0 opacity-0 pointer-events-none z-[-100]">
+        <div id="dashboard-invoice-template">
+          {invoiceSaleData && (
+            <InvoiceTemplate
+              sale={invoiceSaleData}
+              customer={customers.find(c => c.id === invoiceSaleData.customerId)}
+              admins={admins}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

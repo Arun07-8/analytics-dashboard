@@ -104,29 +104,34 @@ const columns = [
     },
     {
         id: "actions",
-        cell: () => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-                        size="icon">
-                        <IconDotsVertical className="size-4" />
-                        <span className="sr-only">Open menu</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                    <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest">View PDF</DropdownMenuItem>
-                    <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest">Edit Entry</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" className="text-xs font-bold uppercase tracking-widest">Delete</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        ),
-    },
-]
+        cell: function ActionCell({ row, table }) {
+            const sale = row.original;
+            const meta = table.options.meta;
 
-export function DashboardTable({ data = [] }) {
+            return (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                            size="icon">
+                            <IconDotsVertical className="size-4" />
+                            <span className="sr-only">Open menu</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-32">
+                        <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest cursor-pointer" onClick={() => meta?.onViewDetails?.(sale)}>View Details</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest cursor-pointer" onClick={() => meta?.onEditSale?.(sale)}>Edit Entry</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest text-primary cursor-pointer" onClick={() => meta?.onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )
+        },
+    },
+];
+
+export function DashboardTable({ data = [], onViewDetails, onEditSale, onDownloadInvoice }) {
     const [searchTerm, setSearchTerm] = React.useState("");
     const [staffSearchTerm, setStaffSearchTerm] = React.useState("");
     const [roleFilter, setRoleFilter] = React.useState("all");
@@ -201,6 +206,11 @@ export function DashboardTable({ data = [] }) {
                 data={filteredData}
                 columns={columns}
                 enableReordering={false}
+                tableMeta={{
+                    onViewDetails,
+                    onEditSale,
+                    onDownloadInvoice,
+                }}
             />
         </div>
     );

@@ -110,7 +110,8 @@ export function DataTable({
   activeTab,
   onTabChange,
   enableReordering = false,
-  rowIdField = "id"
+  rowIdField = "id",
+  tableMeta
 }) {
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -156,6 +157,7 @@ export function DataTable({
       columnFilters,
       pagination,
     },
+    meta: tableMeta,
     getRowId: (row) => row[rowIdField].toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,

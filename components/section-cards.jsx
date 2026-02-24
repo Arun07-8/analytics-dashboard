@@ -1,3 +1,4 @@
+import * as React from "react"
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -9,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export function SectionCards({ cards = [] }) {
+export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
   if (!cards.length) return null;
 
   const gridCols = {
@@ -67,4 +68,4 @@ export function SectionCards({ cards = [] }) {
       })}
     </div>
   );
-}
+});
