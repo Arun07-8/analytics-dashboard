@@ -358,6 +358,9 @@ export default function Page() {
       },
     ];
   }, [salesWithDetails, periodSales, dateFilter]);
+  const verifiedPeriodSales = useMemo(() => {
+    return periodSales.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
+  }, [periodSales]);
 
   const chartData = useMemo(() => {
     const data = {};
@@ -381,7 +384,7 @@ export default function Page() {
         data[iso] = { date: iso, desktop: 0, mobile: 0, isHourly: true };
       }
 
-      filteredSales.forEach(sale => {
+      verifiedPeriodSales.forEach(sale => {
         const d = new Date(sale.createdAtDate);
         // Ensure the sale date matches the target date for single day view
         if (d.getFullYear() === targetDate.getFullYear() &&
@@ -454,7 +457,7 @@ export default function Page() {
       }
 
       // Populate actual daily data
-      filteredSales.forEach(sale => {
+      verifiedPeriodSales.forEach(sale => {
         const dStr = sale.createdAtDate.toISOString().split('T')[0];
         if (!data[dStr]) data[dStr] = { date: dStr, desktop: 0, mobile: 0 };
         data[dStr].desktop += Number(sale.totalAmount) || 0;
@@ -470,7 +473,7 @@ export default function Page() {
     }
 
     return result;
-  }, [filteredSales, dateFilter, fromDate]);
+  }, [verifiedPeriodSales, dateFilter, fromDate]);
 
   const handleViewDetails = (sale) => {
     setSelectedSale(sale);

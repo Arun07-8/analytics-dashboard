@@ -8,7 +8,8 @@ import {
     IconCreditCard,
     IconUser,
     IconEye,
-    IconChevronDown
+    IconChevronDown,
+    IconTrash
 } from "@tabler/icons-react"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
@@ -215,9 +216,32 @@ export function SalesTable({
                         );
                     }
                     return (
-                        <Badge variant="secondary" className="px-2 py-0.5 font-bold uppercase tracking-tighter text-[10px]">
+                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20 px-2 py-0.5 font-bold uppercase tracking-tighter text-[10px]">
                             Request Pending
                         </Badge>
+                    );
+                },
+            });
+        }
+
+        // Add Decline Reason column ONLY for the 'Declined' tab
+        if (activeTab === 'declined') {
+            baseColumns.push({
+                accessorKey: "declineReason",
+                header: "Reason",
+                cell: ({ row }) => {
+                    const sale = row.original;
+                    if (!sale.declineReason) return null;
+
+                    return (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onViewDetails?.(sale)}
+                            className="h-7 px-3 text-[9px] font-black uppercase tracking-widest text-destructive border-destructive/20 hover:bg-destructive/5 hover:text-destructive rounded-lg"
+                        >
+                            View Reason
+                        </Button>
                     );
                 },
             });
@@ -230,30 +254,41 @@ export function SalesTable({
                 const sale = row.original;
                 const vStatus = sale.verificationStatus || (sale.isVerified ? "Approved" : "Pending");
 
-                // 1. Hide actions for Pending Requests
-                if (activeTab === 'requests' || (!isAdmin && vStatus === "Pending")) {
+                // 1. Specialized logic for Staff Pending Requests
+                if (!isAdmin && vStatus === "Pending") {
+                    return (
+                        <div className="flex justify-end pr-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onViewDetails?.(sale)}
+                                className="h-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                            >
+                                <IconEye className="size-3.5 mr-1" />
+                                View Details
+                            </Button>
+                        </div>
+                    );
+                }
+
+                // 2. Hide actions for admin requests tab (handled by SalesRequestTable)
+                if (activeTab === 'requests') {
                     return <div className="size-8" />;
                 }
 
                 // 2. Specialized actions for Declined items
                 if (activeTab === 'declined') {
                     return (
-                        <div className="flex items-center justify-end gap-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-                                        size="icon">
-                                        <IconDotsVertical className="size-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40 font-bold">
-                                    <DropdownMenuItem onClick={() => onDeleteSale?.(sale)} className="text-destructive font-black">
-                                        Remove Record
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                        <div className="flex items-center justify-end gap-2 px-2">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onDeleteSale?.(sale)}
+                                className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
+                                title="Delete Record"
+                            >
+                                <IconTrash className="size-4" />
+                            </Button>
                         </div>
                     );
                 }
@@ -283,7 +318,7 @@ export function SalesTable({
         });
 
         return baseColumns;
-    }, [onViewDetails, onEditSale, onDownloadInvoice, userRole]);
+    }, [onViewDetails, onEditSale, onDownloadInvoice, onDeleteSale, userRole, activeTab]);
 
 
     return (

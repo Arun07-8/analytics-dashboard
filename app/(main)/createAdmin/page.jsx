@@ -253,7 +253,6 @@ export default function CreateAdminPage() {
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="staff">Staff</SelectItem>
-                                            <SelectItem value="viewer">Viewer</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

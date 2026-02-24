@@ -107,20 +107,12 @@ function TableBody({ services, startIndex, totalAmount, isLastPage }) {
 function ContinuationHeader({ invoiceNo, pageNum }) {
     return (
         <div className="flex justify-between items-center mb-8 px-2">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 -mt-8">
                 <img
                     src="/Foxon Final Logo-01.png"
                     alt="Foxon Career Hub Logo"
-                    className="h-16 w-auto object-contain"
+                    className="h-36 w-auto object-contain"
                 />
-                <div>
-                    <p className="text-[14px] font-bold text-[#1e3a5f]">
-                        Foxon Career Hub
-                    </p>
-                    <p className="text-[10px] font-bold tracking-[0.12em] uppercase text-[#ff5722]">
-                        Crafting Career, Word by Word
-                    </p>
-                </div>
             </div>
             <div className="text-right">
                 <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">
@@ -220,15 +212,12 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                             <>
                                 {/* HEADER */}
                                 <div className="flex justify-between items-start mb-14 px-2">
-                                    <div>
+                                    <div className="-mt-8">
                                         <img
                                             src="/Foxon Final Logo-01.png"
                                             alt="Foxon Career Hub Logo"
-                                            className="h-32 w-auto object-contain mb-2"
+                                            className="h-60 w-auto object-contain"
                                         />
-                                        <div className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#ff5722] pl-1">
-                                            Crafting Career, Word by Word
-                                        </div>
                                     </div>
                                     <div className="text-right">
                                         <h1 className="text-[56px] font-black tracking-[-0.04em] text-[#1e3a5f] uppercase leading-none mb-2">

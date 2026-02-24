@@ -179,14 +179,6 @@ export default function CustomersPage() {
 
         return [
             {
-                label: isAdmin ? "Total Revenue" : "My Revenue",
-                value: totalRevenue,
-                prefix: "₹",
-                isCurrency: true,
-                growth: Number(revenueGrowth.toFixed(1)),
-                description: isAdmin ? "Company-wide verified revenue" : "Your total verified revenue"
-            },
-            {
                 label: "Total Customers",
                 value: totalCustomers,
                 growth: Number(customerGrowth.toFixed(1)),

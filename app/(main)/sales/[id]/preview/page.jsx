@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { IconDownload, IconArrowLeft, IconLayoutDashboard } from "@tabler/icons-react";
+import { IconDownload, IconArrowLeft, IconLayoutDashboard, IconX } from "@tabler/icons-react";
 import { InvoiceTemplate } from '@/components/sales/invoice-template';
 import { getSale } from '@/lib/firebase/collections/sale';
 import { getCustomer } from '@/lib/firebase/collections/customer';
@@ -23,6 +23,8 @@ export default function InvoicePreviewPage() {
     const [admins, setAdmins] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDownloading, setIsDownloading] = useState(false);
+
+    const isRejected = sale?.verificationStatus === "Rejected";
 
     useEffect(() => {
         if (params.id) {
@@ -118,34 +120,60 @@ export default function InvoicePreviewPage() {
                             <IconLayoutDashboard className="h-4 w-4" />
                             Go to Dashboard
                         </Button>
-                        <Button
-                            onClick={handleDownload}
-                            disabled={isDownloading}
-                            className="bg-primary hover:bg-primary/90 text-white gap-2 font-bold shadow-lg shadow-primary/20"
-                        >
-                            {isDownloading ? (
-                                <>Generating PDF...</>
-                            ) : (
-                                <>
-                                    <IconDownload className="h-4 w-4" />
-                                    Download Invoice
-                                </>
-                            )}
-                        </Button>
+                        {!isRejected && (
+                            <Button
+                                onClick={handleDownload}
+                                disabled={isDownloading}
+                                className="bg-primary hover:bg-primary/90 text-white gap-2 font-bold shadow-lg shadow-primary/20"
+                            >
+                                {isDownloading ? (
+                                    <>Generating PDF...</>
+                                ) : (
+                                    <>
+                                        <IconDownload className="h-4 w-4" />
+                                        Download Invoice
+                                    </>
+                                )}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Preview Container */}
             <div className="flex-1 overflow-auto p-8">
-                <div className="max-w-[850px] mx-auto bg-white shadow-2xl rounded-xl overflow-hidden ring-1 ring-slate-900/5">
-                    <div className="transform origin-top scale-[0.9] sm:scale-100">
-                        <div id="invoice-preview-container">
-                            <InvoiceTemplate
-                                sale={sale}
-                                customer={customer}
-                                admins={admins}
-                            />
+                <div className="max-w-[850px] mx-auto space-y-8">
+                    {/* REJECTION MESSAGE FOR FULL VIEW */}
+                    {isRejected && sale.declineReason && (
+                        <div className="bg-red-50 border border-red-100 rounded-[2rem] p-1 overflow-hidden shadow-sm">
+                            <div className="bg-red-600 px-6 py-2.5 flex items-center justify-between">
+                                <div className="flex items-center gap-3 text-white">
+                                    <IconX className="h-3.5 w-3.5 stroke-[3]" />
+                                    <span className="text-[9px] font-black uppercase tracking-[0.3em]">Official Rejection Notice</span>
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-white/80">Action Required</span>
+                            </div>
+                            <div className="p-6 bg-white">
+                                <div className="relative pl-6">
+                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-600 rounded-full" />
+                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2 font-sans">Message from Administrator</p>
+                                    <h2 className="text-xl font-black text-red-600 tracking-tight leading-snug italic font-sans">
+                                        "{sale.declineReason}"
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-white shadow-2xl rounded-xl overflow-hidden ring-1 ring-slate-900/5">
+                        <div className="transform origin-top scale-[0.9] sm:scale-100">
+                            <div id="invoice-preview-container">
+                                <InvoiceTemplate
+                                    sale={sale}
+                                    customer={customer}
+                                    admins={admins}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

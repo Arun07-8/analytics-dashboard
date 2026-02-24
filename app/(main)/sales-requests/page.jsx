@@ -42,6 +42,7 @@ export default function SalesRequestsPage() {
     const [selectedSale, setSelectedSale] = useState(null);
     const [showApproveDialog, setShowApproveDialog] = useState(false);
     const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+    const [declineReason, setDeclineReason] = useState("");
 
     // Modal states
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -115,6 +116,7 @@ export default function SalesRequestsPage() {
 
     const handleDecline = (sale) => {
         setSelectedSale(sale);
+        setDeclineReason("");
         setShowDeclineDialog(true);
     };
 
@@ -145,15 +147,21 @@ export default function SalesRequestsPage() {
 
     const confirmDecline = async () => {
         if (!selectedSale) return;
+
+        if (!declineReason.trim()) {
+            toast.error("Please enter a reason for declining");
+            return;
+        }
+
         setIsProcessing(true);
         try {
-            await declineSale(selectedSale.id);
+            await declineSale(selectedSale.id, declineReason);
 
             // Notification to staff
             await createNotification({
                 userId: selectedSale.createdBy,
                 title: "Sale Declined",
-                message: "Your sales request has been declined by the admin.",
+                message: `Your sales request has been declined. Reason: ${declineReason}`,
                 type: "error",
                 actionUrl: "/sales"
             });
@@ -165,6 +173,7 @@ export default function SalesRequestsPage() {
             setIsProcessing(false);
             setShowDeclineDialog(false);
             setSelectedSale(null);
+            setDeclineReason("");
         }
     };
 
@@ -295,27 +304,45 @@ export default function SalesRequestsPage() {
 
             {/* Decline Dialog */}
             <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
-                <AlertDialogContent className="rounded-2xl border-border bg-card">
+                <AlertDialogContent className="rounded-2xl border-border bg-card max-w-md">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+                        <AlertDialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3 text-red-500">
+                            <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
                                 <IconX className="size-6" />
                             </div>
-                            Confirm Decline
+                            Decline Request
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-sm font-medium text-muted-foreground pt-4">
-                            Are you sure you want to decline this sales request?
-                            The request will NOT be added to company revenue and staff will be notified.
+                            Please provide a reason for declining this request. This message will be sent to the staff member.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-6 gap-3">
-                        <AlertDialogCancel className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-11 border-border">Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmDecline}
-                            disabled={isProcessing}
-                            className="rounded-xl bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest text-[10px] h-11 px-8"
+
+                    <div className="py-6">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Decline Reason</label>
+                        <textarea
+                            className="w-full min-h-[120px] bg-background border border-border/50 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 outline-none transition-all resize-none placeholder:text-muted-foreground/30"
+                            placeholder="Type the reason here (e.g., Incorrect amount, missing details...)"
+                            value={declineReason}
+                            onChange={(e) => setDeclineReason(e.target.value)}
+                        />
+                    </div>
+
+                    <AlertDialogFooter className="gap-3">
+                        <AlertDialogCancel
+                            onClick={() => setDeclineReason("")}
+                            className="flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] h-11 border-border"
                         >
-                            {isProcessing ? "Processing..." : "Decline Sale"}
+                            Back
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                confirmDecline();
+                            }}
+                            disabled={isProcessing || !declineReason.trim()}
+                            className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest text-[10px] h-11"
+                        >
+                            {isProcessing ? "Processing..." : "Confirm Decline"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

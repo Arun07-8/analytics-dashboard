@@ -1,5 +1,5 @@
 "use client"
-
+import * as React from "react"
 import { usePathname } from "next/navigation"
 import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react";
 
@@ -11,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from "@/components/ui/sidebar"
 
 export function NavMain({
@@ -23,18 +24,21 @@ export function NavMain({
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                tooltip={item.title}
-                asChild
-                isActive={pathname === item.url}
-                className="data-[active=true]:bg-zinc-200 dark:data-[active=true]:bg-zinc-700 data-[active=true]:text-foreground">
-                <Link href={item.url}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <React.Fragment key={item.title}>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  asChild
+                  isActive={pathname === item.url}
+                  className="data-[active=true]:bg-zinc-200 dark:data-[active=true]:bg-zinc-700 data-[active=true]:text-foreground">
+                  <Link href={item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {item.hasSeparator && <SidebarSeparator className="my-2" />}
+            </React.Fragment>
           ))}
         </SidebarMenu>
       </SidebarGroupContent>

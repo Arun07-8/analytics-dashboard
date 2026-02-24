@@ -11,7 +11,7 @@ export default function LoginPage() {
             <img
               src="/Foxon Final Logo-02.png"
               alt="FoxonHub Logo"
-              className="h-30 w-auto object-contain"
+              className="h-30 w-auto object-contain dark:brightness-0 dark:invert"
             />
           </a>
         </div>

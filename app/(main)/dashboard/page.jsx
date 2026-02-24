@@ -95,9 +95,16 @@ export default function Page() {
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfThisYear = new Date(now.getFullYear(), 0, 1);
 
+    const startOfThisWeek = new Date(now);
+    const day = startOfThisWeek.getDay();
+    const diff = startOfThisWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfThisWeek.setDate(diff);
+    startOfThisWeek.setHours(0, 0, 0, 0);
+
     const getPrevStart = (range) => {
       if (range === "today") return new Date(startOfToday.getTime() - 86400000);
       if (range === "yesterday") return new Date(startOfYesterday.getTime() - 86400000);
+      if (range === "this-week") return new Date(startOfThisWeek.getTime() - 7 * 86400000);
       if (range === "this-month") return new Date(now.getFullYear(), now.getMonth() - 1, 1);
       if (range === "this-year") return new Date(now.getFullYear() - 1, 0, 1);
       return new Date(0);
@@ -113,6 +120,9 @@ export default function Page() {
     } else if (dateFilter === "yesterday") {
       currentStart = startOfYesterday;
       currentEnd = new Date(startOfYesterday.getFullYear(), startOfYesterday.getMonth(), startOfYesterday.getDate(), 23, 59, 59, 999);
+    } else if (dateFilter === "this-week") {
+      currentStart = startOfThisWeek;
+      currentEnd = new Date(startOfThisWeek.getTime() + 7 * 86400000 - 1);
     } else if (dateFilter === "this-month") {
       currentStart = startOfThisMonth;
     } else if (dateFilter === "this-year") {
@@ -150,16 +160,34 @@ export default function Page() {
     // Filter for verified sales for global revenue
     const verifiedSales = allSalesWithDate.filter(s => s.isVerified === true);
 
-    // 1. Total Global Revenue (Lifetime)
-    const allTimeCompanyRevenue = verifiedSales
+    // Global Revenue Calculations (Independent of filter)
+
+    const todayRevenue = verifiedSales
+      .filter(s => s.date >= startOfToday)
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
-    // 2. Monthly Global Revenue
-    const companyMonthlyRevenue = verifiedSales
+    const yesterdayEnd = new Date(startOfToday);
+    yesterdayEnd.setMilliseconds(-1);
+    const yesterdayRevenue = verifiedSales
+      .filter(s => s.date >= startOfYesterday && s.date <= yesterdayEnd)
+      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    const weeklyRevenue = verifiedSales
+      .filter(s => s.date >= startOfThisWeek)
+      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    const monthlyRevenue = verifiedSales
       .filter(s => s.date >= startOfThisMonth)
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
-    // 3. Filtered Global Revenue (Selected Period)
+    const yearlyRevenue = verifiedSales
+      .filter(s => s.date >= startOfThisYear)
+      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    const allTimeCompanyRevenue = verifiedSales
+      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    // Filtered Global Revenue (Selected Period)
     const companyPeriodRevenue = verifiedSales
       .filter(s => s.date >= currentStart && s.date <= currentEnd)
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
@@ -191,7 +219,11 @@ export default function Page() {
       previousSales: previous,
       newCustomersCount: newCusts,
       allTimeCompanyRevenue,
-      companyMonthlyRevenue,
+      todayRevenue,
+      yesterdayRevenue,
+      weeklyRevenue,
+      monthlyRevenue,
+      yearlyRevenue,
       companyPeriodRevenue
     };
   }, [sales, dateFilter, fromDate, toDate, customerMap, staffMap, customers, user]);
@@ -202,7 +234,11 @@ export default function Page() {
       previousSales: previous,
       newCustomersCount: newCusts,
       allTimeCompanyRevenue,
-      companyMonthlyRevenue,
+      todayRevenue,
+      yesterdayRevenue,
+      weeklyRevenue,
+      monthlyRevenue,
+      yearlyRevenue,
       companyPeriodRevenue
     } = dataPack;
 
@@ -226,6 +262,7 @@ export default function Page() {
     const getDynamicLabel = () => {
       if (dateFilter === 'today') return "Today's Revenue";
       if (dateFilter === 'yesterday') return "Yesterday's Revenue";
+      if (dateFilter === 'this-week') return "Weekly Revenue";
       if (dateFilter === 'this-month') return "Monthly Revenue";
       if (dateFilter === 'this-year') return "Yearly Revenue";
       if (dateFilter === 'all') return "Total Revenue";
@@ -233,6 +270,7 @@ export default function Page() {
     };
 
     // Core requirements from user
+    // Exactly 5 cards as requested by USER
     const coreCards = [
       {
         label: "Total Revenue",
@@ -246,25 +284,35 @@ export default function Page() {
         value: companyPeriodRevenue,
         prefix: "₹",
         isCurrency: true,
-        description: "Revenue in current view"
-      }
+        growth: calcGrowth(currentStats.revenue, prevStats.revenue),
+        description: `Vs. Previous ${dateFilter === 'this-week' ? 'Week' :
+            dateFilter === 'this-month' ? 'Month' :
+              dateFilter === 'this-year' ? 'Year' :
+                dateFilter === 'today' ? 'Day' :
+                  dateFilter === 'yesterday' ? 'Day' :
+                    'Period'
+          }`
+      },
+      {
+        label: "Total Sales",
+        value: currentStats.count,
+        growth: calcGrowth(currentStats.count, prevStats.count),
+        description: "Orders in period"
+      },
+      {
+        label: "New Customers",
+        value: newCusts,
+        description: "Acquired this period"
+      },
+      {
+        label: "Retention Rate",
+        value: retentionRate,
+        suffix: "%",
+        description: "Period Engagement"
+      },
     ];
 
-    if (user?.role === 'admin') {
-      return [
-        ...coreCards,
-        { label: "Total Sales", value: currentStats.count, growth: calcGrowth(currentStats.count, prevStats.count), description: "Period Activity" },
-        { label: "New Customers", value: newCusts, description: "Acquired this period" },
-        { label: "Retention Rate", value: retentionRate, suffix: "%", description: "Period Engagement" },
-      ];
-    } else {
-      return [
-        ...coreCards,
-        { label: "My Revenue", value: currentStats.revenue, prefix: "₹", isCurrency: true, growth: calcGrowth(currentStats.revenue, prevStats.revenue), description: "Your contribution" },
-        { label: "My Sales", value: currentStats.count, growth: calcGrowth(currentStats.count, prevStats.count), description: "Your orders" },
-        { label: "My Efficiency", value: processed.length > 0 ? Math.round((processed.filter(s => s.status === 'Closed').length / processed.length) * 100) : 0, suffix: "%", description: "Success rate" },
-      ];
-    }
+    return coreCards;
   }, [dataPack, customers, user, dateFilter]);
 
   const chartData = useMemo(() => {
@@ -284,8 +332,11 @@ export default function Page() {
       fillEnd.setHours(23, 59, 59, 999);
     } else if (dateFilter === 'this-week') {
       fillStart = new Date(now);
-      fillStart.setDate(now.getDate() - now.getDay());
+      const day = fillStart.getDay();
+      const diff = fillStart.getDate() - day + (day === 0 ? -6 : 1);
+      fillStart.setDate(diff);
       fillStart.setHours(0, 0, 0, 0);
+      fillEnd = new Date(fillStart.getTime() + 7 * 86400000 - 1);
     } else if (dateFilter === 'this-month') {
       fillStart = new Date(now.getFullYear(), now.getMonth(), 1);
     } else if (dateFilter === 'this-year') {
@@ -428,6 +479,7 @@ export default function Page() {
                 <SelectGroup>
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="this-week">This Week</SelectItem>
                   <SelectItem value="this-month">This Month</SelectItem>
                   <SelectItem value="this-year">This Year</SelectItem>
                   <SelectItem value="specific-day">Specific Date</SelectItem>
@@ -483,13 +535,6 @@ export default function Page() {
               </Popover>
             </div>
           )}
-
-          <div className="flex items-center bg-card border border-border/50 p-1.5 px-4 h-10 rounded-lg shadow-sm">
-            <div className="flex flex-col items-center justify-center text-emerald-500">
-              <span className="text-[9px] font-black uppercase leading-none mb-1 opacity-70 tracking-widest whitespace-nowrap">System Stats</span>
-              <span className="text-[10px] font-bold uppercase tracking-tighter whitespace-nowrap">Live & Online</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -512,6 +557,7 @@ export default function Page() {
         </div>
         <DashboardTable
           data={dataPack.processedSales}
+          admins={admins}
           onViewDetails={handleViewDetails}
           onEditSale={handleEditSale}
           onDownloadInvoice={handleDownloadInvoice}

@@ -75,88 +75,7 @@ const data = {
       role: "admin",
     },
   ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
-    },
-  ],
+
 }
 
 export function AppSidebar({ ...props }) {
@@ -168,19 +87,26 @@ export function AppSidebar({ ...props }) {
   const role = user?.role?.trim().toLowerCase()
 
   // Filter navigation based on role
-  const filteredNavMain = data.navMain.filter((item) => {
-    // If an item has a required role, check it
-    if (item.role && item.role !== role) {
-      return false
-    }
+  const filteredNavMain = data.navMain
+    .filter((item) => {
+      // If an item has a required role, check it
+      if (item.role && item.role !== role) {
+        return false
+      }
 
-    // Backup: Hide Dashboard for non-admins if not explicitly marked
-    if (item.title === "Dashboard" && role !== "admin") {
-      return false
-    }
+      // Backup: Hide Dashboard for non-admins if not explicitly marked
+      if (item.title === "Dashboard" && role !== "admin") {
+        return false
+      }
 
-    return true
-  })
+      return true
+    })
+    .map((item) => ({
+      ...item,
+      hasSeparator:
+        (item.title === "Customers" && role !== "admin") ||
+        (item.title === "Create Admin" && role === "admin"),
+    }))
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -192,7 +118,7 @@ export function AppSidebar({ ...props }) {
                 <img
                   src="/Foxon Final Logo-02.png"
                   alt="FoxonHub Logo"
-                  className="h-25 pl-4 w-full object-contain object-left"
+                  className="h-25 pl-4 w-full object-contain object-left dark:brightness-0 dark:invert"
                 />
               </Link>
             </SidebarMenuButton>
@@ -212,8 +138,6 @@ export function AppSidebar({ ...props }) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={filteredNavMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         {loading ? (

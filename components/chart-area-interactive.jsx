@@ -64,6 +64,7 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
             className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex bg-background/50 p-1 rounded-xl h-10 border-border/40">
             <ToggleGroupItem value="today" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Today</ToggleGroupItem>
             <ToggleGroupItem value="yesterday" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Yesterday</ToggleGroupItem>
+            <ToggleGroupItem value="this-week" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Week</ToggleGroupItem>
             <ToggleGroupItem value="this-month" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Month</ToggleGroupItem>
             <ToggleGroupItem value="this-year" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Year</ToggleGroupItem>
           </ToggleGroup>
@@ -77,6 +78,7 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
             <SelectContent className="rounded-xl border-border/50 shadow-2xl">
               <SelectItem value="today" className="text-xs font-bold uppercase tracking-widest">Today</SelectItem>
               <SelectItem value="yesterday" className="text-xs font-bold uppercase tracking-widest">Yesterday</SelectItem>
+              <SelectItem value="this-week" className="text-xs font-bold uppercase tracking-widest">This Week</SelectItem>
               <SelectItem value="this-month" className="text-xs font-bold uppercase tracking-widest">This Month</SelectItem>
               <SelectItem value="this-year" className="text-xs font-bold uppercase tracking-widest">This Year</SelectItem>
             </SelectContent>
