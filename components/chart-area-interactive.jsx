@@ -30,11 +30,11 @@ export const description = "An interactive area chart"
 const chartConfig = {
   desktop: {
     label: "Total Revenue",
-    color: "hsl(var(--chart-1))",
+    color: "#10b981", // Vibrant Emerald
   },
   mobile: {
     label: "Order Volume",
-    color: "hsl(var(--chart-2))",
+    color: "#6366f1", // Sleek Indigo
   }
 }
 
@@ -99,18 +99,18 @@ export function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }
               <defs>
                 <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-desktop)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-desktop)" stopOpacity={0.01} />
+                  <stop offset="95%" stopColor="var(--color-desktop)" stopOpacity={0.1} />
                 </linearGradient>
                 <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-mobile)" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="var(--color-mobile)" stopOpacity={0.01} />
+                  <stop offset="5%" stopColor="var(--color-mobile)" stopOpacity={0.6} />
+                  <stop offset="95%" stopColor="var(--color-mobile)" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 vertical={false}
                 strokeDasharray="4 4"
                 stroke="hsl(var(--border))"
-                opacity={0.4}
+                opacity={0.6}
               />
               <XAxis
                 dataKey="date"
@@ -125,7 +125,7 @@ export function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }
                     day: "numeric",
                   });
                 }}
-                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60"
+                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80"
               />
               <YAxis
                 hide={isMobile}
@@ -133,7 +133,7 @@ export function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }
                 axisLine={false}
                 tickMargin={8}
                 tickFormatter={(value) => value === 0 ? "₹0" : value > 1000 ? `₹${(value / 1000).toFixed(0)}k` : `₹${value}`}
-                className="text-[10px] font-black text-muted-foreground/40"
+                className="text-[10px] font-black text-muted-foreground/70"
               />
               <ChartTooltip
                 cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
@@ -181,8 +181,9 @@ export function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }
                 type="monotone"
                 fill="url(#fillMobile)"
                 stroke="var(--color-mobile)"
-                strokeWidth={2}
+                strokeWidth={3}
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 stackId="a"
               />
               <Area
@@ -190,8 +191,9 @@ export function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }
                 type="monotone"
                 fill="url(#fillDesktop)"
                 stroke="var(--color-desktop)"
-                strokeWidth={3}
+                strokeWidth={4}
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 stackId="a"
               />
             </AreaChart>

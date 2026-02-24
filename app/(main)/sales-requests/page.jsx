@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { SalesRequestTable } from "@/components/sales/sales-request-table";
+import { SaleDetailsModal } from "@/components/sales/sale-details-modal";
+import { InvoicePreviewModal } from "@/components/sales/invoice-preview-modal";
 import {
     subscribeToSales,
     approveSale,
@@ -41,6 +43,11 @@ export default function SalesRequestsPage() {
     const [showApproveDialog, setShowApproveDialog] = useState(false);
     const [showDeclineDialog, setShowDeclineDialog] = useState(false);
 
+    // Modal states
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isInvoicePreviewOpen, setIsInvoicePreviewOpen] = useState(false);
+    const [isInvoiceGenerating, setIsInvoiceGenerating] = useState(false);
+
     useEffect(() => {
         if (!loading) {
             if (!user) {
@@ -55,8 +62,8 @@ export default function SalesRequestsPage() {
     useEffect(() => {
         if (!user || !isAdmin) return;
 
-        // Subscribing only to unverified sales
-        const unsubSales = subscribeToSales({ isVerified: false }, setSales);
+        // Subscribing only to pending sales requests
+        const unsubSales = subscribeToSales({ verificationStatus: 'Pending' }, setSales);
 
         const fetchContext = async () => {
             try {
@@ -82,10 +89,18 @@ export default function SalesRequestsPage() {
         }, {});
     }, [customers]);
 
+    const staffMap = useMemo(() => {
+        return admins.reduce((acc, curr) => {
+            acc[curr.id] = curr.name;
+            return acc;
+        }, {});
+    }, [admins]);
+
     const processedSales = useMemo(() => {
         return sales.map(sale => ({
             ...sale,
             customerName: customerMap[sale.customerId] || "Unknown",
+            staffName: staffMap[sale.createdBy] || sale.staffName || "Unknown Staff",
         })).sort((a, b) => {
             const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
             const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
@@ -154,24 +169,41 @@ export default function SalesRequestsPage() {
     };
 
     const handleView = (sale) => {
-        router.push(`/sales/edit/${sale.id}`);
+        setSelectedSale(sale);
+        setIsDetailsModalOpen(true);
     };
 
     const handleEdit = (sale) => {
         router.push(`/sales/edit/${sale.id}`);
     };
 
-    const handleDownload = async (sale) => {
-        try {
-            setSelectedSale(sale);
-            toast.info("Preparing invoice download...");
+    const handleDownload = (sale) => {
+        setSelectedSale(sale);
+        setIsInvoicePreviewOpen(true);
+    };
 
-            setTimeout(() => {
-                downloadInvoice('hidden-invoice-template', `Sale-Request-${sale.salesRefId?.[0] || sale.id}.pdf`);
-            }, 500);
-        } catch (error) {
-            toast.error("Download failed");
-        }
+    const handleConfirmDownload = async () => {
+        if (!selectedSale) return;
+
+        setIsInvoicePreviewOpen(false);
+        setIsInvoiceGenerating(true);
+        toast.info("Generating invoice PDF...");
+
+        setTimeout(async () => {
+            try {
+                const success = await downloadInvoice('hidden-invoice-template', `Sale-Request-${selectedSale.salesRefId?.[0] || selectedSale.id}.pdf`);
+                if (success) {
+                    toast.success("Invoice downloaded successfully");
+                } else {
+                    toast.error("Failed to generate PDF");
+                }
+            } catch (error) {
+                console.error("Download failed:", error);
+                toast.error("Download failed");
+            } finally {
+                setIsInvoiceGenerating(false);
+            }
+        }, 500);
     };
 
     if (loading || !isAdmin) return null;
@@ -288,6 +320,27 @@ export default function SalesRequestsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* View Details Modal */}
+            <SaleDetailsModal
+                isOpen={isDetailsModalOpen}
+                onOpenChange={setIsDetailsModalOpen}
+                sale={selectedSale}
+                customer={customers.find(c => c.id === selectedSale?.customerId)}
+                onDownloadInvoice={handleDownload}
+            />
+
+            {/* Invoice Preview Modal */}
+            <InvoicePreviewModal
+                isOpen={isInvoicePreviewOpen}
+                onClose={() => {
+                    setIsInvoicePreviewOpen(false);
+                }}
+                sale={selectedSale}
+                customer={customers.find(c => c.id === selectedSale?.customerId)}
+                admins={admins}
+                onConfirmDownload={handleConfirmDownload}
+            />
         </div>
     );
 }

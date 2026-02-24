@@ -33,9 +33,16 @@ export function SectionCards({ cards = [] }) {
         return (
           <Card key={index} className={`@container/card border-border/40 transition-all duration-300 hover:border-primary/30 ${isHighlight ? 'xl:col-span-2 bg-primary/[0.03] border-primary/20 shadow-sm shadow-primary/5' : ''}`}>
             <CardHeader className={`${isHighlight ? 'p-4' : 'p-3.5'} space-y-0 relative`}>
-              <CardDescription className={`font-black uppercase tracking-widest line-clamp-1 ${isHighlight ? 'text-[11px] text-primary mb-1' : 'text-[10px] mb-0.5'}`}>
-                {card.label}
-              </CardDescription>
+              <div className="flex items-center justify-between mb-1">
+                <CardDescription className={`font-black uppercase tracking-widest line-clamp-1 ${isHighlight ? 'text-[11px] text-primary' : 'text-[10px]'}`}>
+                  {card.label}
+                </CardDescription>
+                {card.action && (
+                  <div className="z-10 bg-background/50 rounded-md">
+                    {card.action}
+                  </div>
+                )}
+              </div>
               <div className="flex items-baseline gap-1">
                 <span className={`font-black tabular-nums tracking-tighter ${isHighlight ? 'text-2xl' : 'text-xl'}`}>
                   {card.prefix || ""}{typeof card.value === 'number' ? card.value.toLocaleString(undefined, {

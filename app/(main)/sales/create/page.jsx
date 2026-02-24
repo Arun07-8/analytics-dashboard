@@ -274,8 +274,9 @@ export default function CreateSalePage() {
                 return;
             }
 
-            const matchedAdmin = admins.find(a => a.email === user?.email);
-            const staffName = matchedAdmin?.name || user?.displayName || 'Staff';
+            const userEmail = user?.email?.toLowerCase().trim();
+            const matchedAdmin = admins.find(a => a.email?.toLowerCase().trim() === userEmail);
+            const staffName = matchedAdmin?.name || user?.displayName || (user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)) || 'Staff';
             const staffEmail = user?.email || '';
 
             const saleData = {
@@ -1112,8 +1113,7 @@ export default function CreateSalePage() {
                                     <Button
                                         className="w-full h-12 bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg"
                                         onClick={() => {
-                                            setCompletedSale(null);
-                                            window.location.reload();
+                                            router.push('/sales');
                                         }}
                                     >
                                         Go Back

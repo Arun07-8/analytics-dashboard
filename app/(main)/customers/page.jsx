@@ -137,9 +137,15 @@ export default function CustomersPage() {
 
     const stats = useMemo(() => {
         const totalCustomers = customers.length;
+        const isAdmin = user?.role?.trim().toLowerCase() === 'admin';
 
-        // Filter for verified sales only
-        const verifiedSales = sales.filter(s => s.isVerified === true);
+        // Filter for verified sales only, and apply role-based filtering
+        const verifiedSales = sales.filter(s => {
+            if (s.isVerified !== true) return false;
+            if (isAdmin) return true;
+            return s.createdBy === user?.uid;
+        });
+
         const activeCustomers = new Set(verifiedSales.map(s => s.customerId)).size;
 
         // Calculate revenue from verified sales only
@@ -172,12 +178,32 @@ export default function CustomersPage() {
         const revenueGrowth = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : (revenueThisMonth > 0 ? 100 : 0);
 
         return [
-            { label: "Total Revenue", value: totalRevenue, prefix: "₹", isCurrency: true, growth: Number(revenueGrowth.toFixed(1)), description: "Accumulated transaction value" },
-            { label: "Total Customers", value: totalCustomers, growth: Number(customerGrowth.toFixed(1)), description: "All-time registered clients" },
-            { label: "New This Month", value: newThisMonth, description: "Customer growth this month" },
-            { label: "Active Customers", value: activeCustomers, description: "With transaction history" },
+            {
+                label: isAdmin ? "Total Revenue" : "My Revenue",
+                value: totalRevenue,
+                prefix: "₹",
+                isCurrency: true,
+                growth: Number(revenueGrowth.toFixed(1)),
+                description: isAdmin ? "Company-wide verified revenue" : "Your total verified revenue"
+            },
+            {
+                label: "Total Customers",
+                value: totalCustomers,
+                growth: Number(customerGrowth.toFixed(1)),
+                description: "All-time registered clients"
+            },
+            {
+                label: "New This Month",
+                value: newThisMonth,
+                description: "Customer growth this month"
+            },
+            {
+                label: isAdmin ? "Active Customers" : "My Active Clients",
+                value: activeCustomers,
+                description: isAdmin ? "With transaction history" : "Customers you've served"
+            },
         ];
-    }, [customers, sales]);
+    }, [customers, sales, user]);
 
     const handleViewOrders = (customer) => {
         setSelectedCustomer(customer);

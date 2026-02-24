@@ -16,7 +16,8 @@ import {
   createCustomer,
   getCustomerByMobile,
   getCustomerByEmail,
-  getAllAdmins
+  getAllAdmins,
+  deleteSale
 } from "@/lib/firebase/collections";
 
 import { toast } from "sonner";
@@ -68,10 +69,10 @@ export default function Page() {
   const [loadingData, setLoadingData] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'yesterday', 'week', 'month', 'last6months', 'year', 'custom'
+  const [dateFilter, setDateFilter] = useState('month'); // 'all', 'today', 'yesterday', 'week', 'month', 'last6months', 'year', 'custom'
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [chartTimeRange, setChartTimeRange] = useState("this-month");
+  const [chartTimeRange, setChartTimeRange] = useState("month");
 
   // Sale Modal States
   const [selectedSale, setSelectedSale] = useState(null);
@@ -110,18 +111,21 @@ export default function Page() {
     fetchStaticData();
   }, [user]);
 
-  // Real-time Sales Subscription with Query
+  // Real-time Sales Subscription
   useEffect(() => {
     if (!user) return;
 
-    // We fetch all relevant sales based on roles, but handle date filtering locally
-    // to allow 'Total Revenue' (all time) and 'Period Revenue' to coexist.
-    let filterConstraints = {};
+    // The Sales page is for personal record tracking. 
+    // Both Admins and Staff see ONLY their own records here.
+    let filterConstraints = {
+      createdBy: user.uid
+    };
 
-    // Role-based filtering (Staff only see their own, Admins see all)
-    // Restrict visibility to personal sales only for both Admin and Staff
-    filterConstraints.createdBy = user.uid;
-    filterConstraints.isVerified = true;
+    // Requirement: "Admin Sales Page -> Show only approved sales records"
+    const isAdmin = user.role?.trim().toLowerCase() === 'admin';
+    if (isAdmin) {
+      filterConstraints.isVerified = true;
+    }
 
     setLoadingData(true);
     const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
@@ -130,7 +134,7 @@ export default function Page() {
     });
 
     return () => unsubscribe();
-  }, [user]); // Removed dateFilter from dependencies here to fetch all records once
+  }, [user]);
 
   const handleFromDateSelect = (date) => {
     setFromDate(date);
@@ -161,7 +165,9 @@ export default function Page() {
         customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
         staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
         staffEmail: sale.staffEmail || '',
-        status: sale.status || (sale.closed ? "Closed" : "Pending")
+        status: sale.status || (sale.closed ? "Closed" : "Pending"),
+        verificationStatus: sale.verificationStatus || (sale.isVerified ? "Approved" : "Pending"),
+        isVerified: sale.isVerified
       };
     }).sort((a, b) => b.createdAtDate - a.createdAtDate);
   }, [sales, customers, admins]);
@@ -223,9 +229,21 @@ export default function Page() {
 
   const filteredSales = useMemo(() => {
     return periodSales.filter(sale => {
-      // Tab filter
+      // Tab filter logic:
       if (activeTab === 'closed' && sale.status !== 'Closed') return false;
       if (activeTab === 'pending' && sale.status !== 'Pending') return false;
+
+      // Staff-only tabs
+      if (activeTab === 'requests' && sale.verificationStatus !== 'Pending') return false;
+      if (activeTab === 'declined' && sale.verificationStatus !== 'Rejected') return false;
+
+      // Primary tabs ('all', 'closed', 'pending') only show Approved records
+      // This is crucial for "Revenue should add only after Admin approval"
+      if (['all', 'closed', 'pending'].includes(activeTab)) {
+        if (sale.verificationStatus === 'Rejected' || sale.isVerified === false) {
+          return false;
+        }
+      }
 
       // Search filter
       if (searchQuery) {
@@ -242,36 +260,46 @@ export default function Page() {
   }, [periodSales, activeTab, searchQuery]);
 
   const salesTabs = useMemo(() => {
+    const isAdmin = user?.role?.trim().toLowerCase() === 'admin';
     const counts = {
-      all: periodSales.length,
-      closed: periodSales.filter(s => s.status === 'Closed').length,
-      pending: periodSales.filter(s => s.status === 'Pending').length
+      // For personal stats, only count verified/approved items in main tabs
+      all: periodSales.filter(s => s.isVerified !== false).length,
+      closed: periodSales.filter(s => s.isVerified !== false && s.status === 'Closed').length,
+      pending: periodSales.filter(s => s.isVerified !== false && s.status === 'Pending').length,
+      // Track pending/rejected items separately for Staff
+      requests: periodSales.filter(s => s.verificationStatus === 'Pending').length,
+      declined: periodSales.filter(s => s.verificationStatus === 'Rejected').length
     };
 
-    return [
-      { label: "All Sales", value: "all", badge: counts.all.toString() },
+    const tabs = [
+      { label: isAdmin ? "All Sales" : "My Sales", value: "all", badge: counts.all.toString() },
       { label: "Payment Closed", value: "closed", badge: counts.closed.toString() },
       { label: "Payment Pending", value: "pending", badge: counts.pending.toString() },
     ];
-  }, [periodSales]);
+
+    // Only show extra tabs to Staff
+    if (!isAdmin) {
+      if (counts.requests > 0) {
+        tabs.push({ label: "Requests", value: "requests", badge: counts.requests.toString() });
+      }
+      if (counts.declined > 0) {
+        tabs.push({ label: "Declined", value: "declined", badge: counts.declined.toString() });
+      }
+    }
+
+    return tabs;
+  }, [periodSales, user]);
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     let allTimeRevenue = 0;
-    let monthlyRevenue = 0;
     const customerSalesMap = {};
 
     salesWithDetails.forEach(sale => {
+      // ONLY include approved/verified sales in revenue metrics
+      if (sale.isVerified === false || sale.verificationStatus === 'Rejected') return;
+
       const amount = Number(sale.totalAmount) || 0;
       allTimeRevenue += amount;
-
-      if (sale.createdAtDate >= startOfThisMonth) {
-        monthlyRevenue += amount;
-      }
 
       if (sale.customerId) {
         customerSalesMap[sale.customerId] = (customerSalesMap[sale.customerId] || 0) + 1;
@@ -285,14 +313,16 @@ export default function Page() {
       : 0;
 
     const periodRevenue = periodSales
+      .filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected')
       .reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
 
-    const getPeriodLabel = () => {
-      if (dateFilter === 'today') return "Daily Revenue";
-      if (dateFilter === 'yesterday') return "Yesterday Revenue";
-      if (dateFilter === 'specific-day') return "Selected Day Revenue";
-      if (dateFilter === 'month') return "Period Revenue";
-      return "Period Revenue";
+    const getDynamicLabel = () => {
+      if (dateFilter === 'today') return "Today's Revenue";
+      if (dateFilter === 'yesterday') return "Yesterday's Revenue";
+      if (dateFilter === 'month') return "Monthly Revenue";
+      if (dateFilter === 'year') return "Yearly Revenue";
+      if (dateFilter === 'all') return "Total Contribution";
+      return "Selected Revenue";
     };
 
     return [
@@ -304,18 +334,11 @@ export default function Page() {
         description: "Your lifetime achievement"
       },
       {
-        label: "Monthly Revenue",
-        value: monthlyRevenue,
-        prefix: "₹",
-        isCurrency: true,
-        description: "Current month total"
-      },
-      {
-        label: getPeriodLabel(),
+        label: getDynamicLabel(),
         value: periodRevenue,
         prefix: "₹",
         isCurrency: true,
-        description: "Revenue in selected period"
+        description: "Revenue in current view"
       },
       {
         label: "Transactions",
@@ -565,6 +588,18 @@ export default function Page() {
     }
   };
 
+  const handleDeleteSale = async (sale) => {
+    try {
+      await deleteSale(sale.id);
+      toast.success("Record removed successfully");
+    } catch (error) {
+      toast.error("Failed to remove record");
+      console.error(error);
+    }
+  };
+
+
+
   if (loading || loadingData) {
     return (
       <div className="@container/main flex flex-1 flex-col gap-2">
@@ -744,6 +779,8 @@ export default function Page() {
             onViewDetails={handleViewDetails}
             onEditSale={handleEditSale}
             onDownloadInvoice={handleDownloadInvoice}
+            onDeleteSale={handleDeleteSale}
+            userRole={user?.role}
           />
         </div>
       </div>

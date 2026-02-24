@@ -210,11 +210,13 @@ export default function Page() {
     const totalCustomers = customers.length;
     const retentionRate = totalCustomers > 0 ? Math.round((uniqueCustomersInPeriod / totalCustomers) * 100) : 0;
 
-    const getPeriodRevenueLabel = () => {
+    const getDynamicLabel = () => {
       if (dateFilter === 'today') return "Today's Revenue";
       if (dateFilter === 'yesterday') return "Yesterday's Revenue";
-      if (dateFilter === 'specific-day') return "Selected Day Rev";
-      return "Period Revenue";
+      if (dateFilter === 'this-month') return "Monthly Revenue";
+      if (dateFilter === 'this-year') return "Yearly Revenue";
+      if (dateFilter === 'all') return "Total Revenue";
+      return "Selected Revenue";
     };
 
     // Core requirements from user
@@ -227,18 +229,11 @@ export default function Page() {
         description: "Lifetime Achievement"
       },
       {
-        label: "Monthly Revenue",
-        value: companyMonthlyRevenue,
-        prefix: "₹",
-        isCurrency: true,
-        description: "Current Month Total"
-      },
-      {
-        label: getPeriodRevenueLabel(),
+        label: getDynamicLabel(),
         value: companyPeriodRevenue,
         prefix: "₹",
         isCurrency: true,
-        description: "Dynamic Period Total"
+        description: "Revenue in current view"
       }
     ];
 
@@ -320,18 +315,19 @@ export default function Page() {
     return Object.values(data).sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [dataPack.processedSales, dateFilter, fromDate, toDate]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background text-foreground">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] animate-pulse">Initializing Data Stream...</p>
+  if (loading || !user || user?.role?.trim().toLowerCase() !== 'admin') {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-background text-foreground">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] animate-pulse">Initializing Data Stream...</p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    return null;
   }
-
-  if (!user) return null;
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-8 py-8 transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
