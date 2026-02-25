@@ -255,34 +255,45 @@ export default function CustomersPage() {
     }
 
     return (
-        <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                <div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Customer Management</h1>
-                        <p className="text-muted-foreground text-sm">View and manage all your clients</p>
+        <div className="@container/main flex flex-1 flex-col gap-8 py-8 animate-in fade-in duration-700">
+            <div className="px-4 lg:px-6 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </div>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                            Customer Registry
+                        </span>
                     </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
-                            <IconUserPlus className="h-4 w-4" />
-                            New Customer
-                        </Button>
-                    </div>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Customer Management
+                    </h1>
+                    <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        View and manage all your clients
+                    </p>
                 </div>
-
-                <SectionCards cards={stats} />
-
-                <div className="px-4 lg:px-6">
-                    <CustomersTable
-                        data={filteredCustomers}
-                        onViewOrders={handleViewOrders}
-                        onAddClick={() => setIsAddModalOpen(true)}
-                        onSearchChange={setSearchQuery}
-                        tabs={customerTabs}
-                        activeTab={activeTab}
-                        onTabChange={setActiveTab}
-                    />
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
+                        <IconUserPlus className="h-4 w-4" />
+                        New Customer
+                    </Button>
                 </div>
+            </div>
+
+            <SectionCards cards={stats} />
+
+            <div className="px-4 lg:px-6">
+                <CustomersTable
+                    data={filteredCustomers}
+                    onViewOrders={handleViewOrders}
+                    onAddClick={() => setIsAddModalOpen(true)}
+                    onSearchChange={setSearchQuery}
+                    tabs={customerTabs}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                />
             </div>
 
             <CustomerOrdersModal

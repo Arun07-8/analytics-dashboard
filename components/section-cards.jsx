@@ -23,48 +23,49 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
     9: 'xl:grid-cols-9 lg:grid-cols-9',
   };
 
-  const totalSlots = cards.length + 1; // Assuming first card is span-2
+  const totalSlots = cards.length + 1;
   const gridClass = gridCols[totalSlots] || 'xl:grid-cols-9 lg:grid-cols-9';
 
   return (
-    <div
-      className={`dark:*:data-[slot=card]:bg-card grid grid-cols-2 gap-3 px-4 *:data-[slot=card]:bg-card *:data-[slot=card]:shadow-sm lg:px-6 md:grid-cols-4 ${gridClass}`}>
+    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full ${gridClass}`}>
       {cards.map((card, index) => {
         const isHighlight = index === 0;
         return (
-          <Card key={index} className={`@container/card border-border/40 transition-all duration-300 hover:border-primary/30 ${isHighlight ? 'xl:col-span-2 bg-primary/[0.03] border-primary/20 shadow-sm shadow-primary/5' : ''}`}>
-            <CardHeader className={`${isHighlight ? 'p-4' : 'p-3.5'} space-y-0 relative`}>
-              <div className="flex items-center justify-between mb-1">
+          <Card key={index} className={`relative overflow-hidden group border-border/40 transition-all duration-300 hover:border-primary/30 hover:shadow-md ${isHighlight ? 'xl:col-span-2 bg-gradient-to-br from-card to-primary/[0.02] border-primary/20 shadow-sm shadow-primary/5' : 'bg-card shadow-sm'}`}>
+            <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent"></div>
+            <CardHeader className={`${isHighlight ? 'p-5' : 'p-4'} flex flex-col justify-between h-full`}>
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  {card.icon && <div className="text-muted-foreground/50">{card.icon}</div>}
-                  <CardDescription className={`font-semibold line-clamp-1 ${isHighlight ? 'text-xs text-primary' : 'text-[11px]'}`}>
+                  {card.icon && (
+                    <div className={`flex items-center justify-center rounded-lg ${isHighlight ? 'h-10 w-10 bg-primary/10 text-primary ring-1 ring-inset ring-primary/20' : 'h-8 w-8 bg-muted/50 text-muted-foreground ring-1 ring-inset ring-border/50'}`}>
+                      {React.cloneElement(card.icon, { className: 'h-4 w-4' })}
+                    </div>
+                  )}
+                  <CardDescription className={`font-medium tracking-tight ${isHighlight ? 'text-sm text-foreground' : 'text-xs text-muted-foreground'}`}>
                     {card.label}
                   </CardDescription>
                 </div>
-                {card.action && (
-                  <div className="z-10 bg-background/50 rounded-md">
-                    {card.action}
+                {card.growth !== undefined && (
+                  <div className={`flex items-center gap-1 flex-shrink-0 ml-2 rounded-full px-2 py-0.5 text-[10px] md:text-xs font-medium ${card.growth >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 ring-1 ring-inset ring-rose-500/20'}`}>
+                    {card.growth >= 0 ? <IconTrendingUp className="h-3 w-3" /> : <IconTrendingDown className="h-3 w-3" />}
+                    {card.growth > 0 ? "+" : ""}{card.growth}%
                   </div>
                 )}
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className={`font-bold tabular-nums tracking-tight ${isHighlight ? 'text-2xl' : 'text-xl'}`}>
-                  {card.prefix || ""}{typeof card.value === 'number' ? card.value.toLocaleString(undefined, {
-                    minimumFractionDigits: card.isCurrency ? (card.value % 1 === 0 ? 0 : 2) : 0,
-                    maximumFractionDigits: card.isCurrency ? 2 : 0
-                  }) : card.value}{card.suffix || ""}
-                </span>
-              </div>
-              {card.growth !== undefined && (
-                <div className={`absolute ${isHighlight ? 'top-4 right-4' : 'top-3.5 right-3.5'}`}>
-                  <span className={`font-semibold ${isHighlight ? 'text-xs px-2 py-0.5 rounded-full bg-emerald-500/10' : 'text-[10px]'} ${card.growth >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                    {card.growth >= 0 ? "+" : ""}{card.growth}%
+
+              <div className="mt-auto">
+                <div className="flex items-baseline gap-1">
+                  <span className={`font-bold tabular-nums tracking-tight ${isHighlight ? 'text-3xl lg:text-4xl text-primary' : 'text-2xl text-foreground'}`}>
+                    {card.prefix || ""}{typeof card.value === 'number' ? card.value.toLocaleString(undefined, {
+                      minimumFractionDigits: card.isCurrency ? (card.value % 1 === 0 ? 0 : 2) : 0,
+                      maximumFractionDigits: card.isCurrency ? 2 : 0
+                    }) : card.value}{card.suffix || ""}
                   </span>
                 </div>
-              )}
-              <p className={`font-medium mt-1 opacity-60 line-clamp-1 ${isHighlight ? 'text-[10px]' : 'text-[9px]'}`}>
-                {card.description || "Live Status"}
-              </p>
+                <p className={`font-medium mt-1 text-muted-foreground line-clamp-1 ${isHighlight ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
+                  {card.description || "Live Status"}
+                </p>
+              </div>
             </CardHeader>
           </Card>
         );

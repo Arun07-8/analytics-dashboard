@@ -125,17 +125,17 @@ const columns = [
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                                className="data-[state=open]:bg-muted hover:bg-muted/50 text-muted-foreground transition-colors flex size-8"
                                 size="icon">
                                 <IconDotsVertical className="size-4" />
                                 <span className="sr-only">Open menu</span>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-2xl border-border/50">
-                            <DropdownMenuItem className="text-xs font-medium cursor-pointer py-2" onClick={() => meta?.onViewDetails?.(sale)}>View Details</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-medium cursor-pointer py-2" onClick={() => meta?.onEditSale?.(sale)}>Edit Entry</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-xs font-semibold text-primary cursor-pointer py-2" onClick={() => meta?.onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-border/40 p-1.5">
+                            <DropdownMenuItem className="text-sm font-medium cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onViewDetails?.(sale)}>View Details</DropdownMenuItem>
+                            <DropdownMenuItem className="text-sm font-medium cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onEditSale?.(sale)}>Edit Entry</DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-border/40 my-1" />
+                            <DropdownMenuItem className="text-sm font-semibold text-primary cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -177,8 +177,8 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
     }, [data]);
 
     return (
-        <div className="flex flex-col gap-4 px-4 lg:px-6">
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-card p-4 rounded-xl border border-border/50 shadow-sm">
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-card p-2 rounded-xl border border-border/40 shadow-sm mx-4 lg:mx-0">
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="flex gap-1 bg-muted/40 p-1 rounded-lg border border-border/40">
                         {[
@@ -204,9 +204,9 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
+                <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-center">
                     <Select value={staffFilter} onValueChange={setStaffFilter}>
-                        <SelectTrigger className="h-10 w-full md:w-[150px] text-xs font-semibold bg-muted/20 border-border/50 focus:ring-1 focus:ring-primary/20 rounded-lg transition-all">
+                        <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs font-semibold bg-background border-border/60 focus:ring-1 focus:ring-primary/20 rounded-lg transition-all shadow-sm">
                             <SelectValue placeholder="All Team" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-border/50 shadow-2xl">
@@ -236,11 +236,11 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                         </SelectContent>
                     </Select>
 
-                    <div className="relative w-full md:w-72">
-                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <div className="relative w-full sm:w-64">
+                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50" />
                         <Input
-                            placeholder="Search customer name..."
-                            className="pl-9 h-10 text-xs font-medium bg-muted/20 border-border/50 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 transition-all"
+                            placeholder="Search customer..."
+                            className="pl-9 h-9 text-xs font-medium bg-background border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 transition-all shadow-sm"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -248,17 +248,17 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-10 text-xs font-semibold gap-2 bg-background border-border/50 rounded-lg shadow-sm hover:bg-muted/50">
+                            <Button variant="outline" className="h-9 text-xs font-semibold gap-2 bg-background border-border/60 hover:border-primary/30 rounded-lg shadow-sm hover:bg-muted/30 transition-all">
                                 <IconLayoutColumns className="size-3.5" />
                                 <span className="hidden sm:inline">Customize Columns</span>
                                 <IconChevronDown className="size-3" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-border/50">
+                        <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border-border/40 p-1.5">
                             {columns.filter(c => c.accessorKey).map((column) => (
                                 <DropdownMenuCheckboxItem
                                     key={column.accessorKey}
-                                    className="text-xs font-medium"
+                                    className="text-sm font-medium py-1.5 rounded-md focus:bg-primary/5 focus:text-primary transition-colors cursor-pointer"
                                     checked={columnVisibility[column.accessorKey] !== false}
                                     onCheckedChange={(value) =>
                                         setColumnVisibility(prev => ({
@@ -273,19 +273,21 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                     </DropdownMenu>
                 </div>
             </div>
-            <DataTable
-                data={filteredData}
-                columns={columns}
-                enableReordering={false}
-                columnVisibility={columnVisibility}
-                onColumnVisibilityChange={setColumnVisibility}
-                showColumnsButton={false}
-                tableMeta={{
-                    onViewDetails,
-                    onEditSale,
-                    onDownloadInvoice,
-                }}
-            />
+            <div className="rounded-xl border border-border/40 bg-card overflow-hidden shadow-sm mx-4 lg:mx-0">
+                <DataTable
+                    data={filteredData}
+                    columns={columns}
+                    enableReordering={false}
+                    columnVisibility={columnVisibility}
+                    onColumnVisibilityChange={setColumnVisibility}
+                    showColumnsButton={false}
+                    tableMeta={{
+                        onViewDetails,
+                        onEditSale,
+                        onDownloadInvoice,
+                    }}
+                />
+            </div>
         </div>
     );
 }

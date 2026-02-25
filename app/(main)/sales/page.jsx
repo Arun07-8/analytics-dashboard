@@ -584,12 +584,10 @@ export default function Page() {
 
   if (loading || loadingData) {
     return (
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
+      <div className="flex items-center justify-center h-screen bg-background text-foreground">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-xs font-medium animate-pulse">Loading Sales Data...</p>
         </div>
       </div>
     );
@@ -600,144 +598,157 @@ export default function Page() {
   }
 
   return (
-    <div className="@container/main flex flex-1 flex-col gap-2">
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Sales Dashboard</h1>
-            <p className="text-xs text-muted-foreground">Monitor and manage your business performance</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-card border rounded-lg pl-3 h-10 shadow-sm">
-              <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="yesterday">Yesterday</SelectItem>
-                    <SelectItem value="week">This Week</SelectItem>
-                    <SelectItem value="month">This Month</SelectItem>
-                    <SelectItem value="last6months">Last 6 Months</SelectItem>
-                    <SelectItem value="year">This Year</SelectItem>
-                    <SelectItem value="specific-day">Specific Date</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+    <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </div>
-
-            {dateFilter === 'specific-day' && (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
-                        !fromDate && "text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
-                      {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
-                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={fromDate}
-                      onSelect={setFromDate}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            {dateFilter === 'custom' && (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                {/* From Date Popover */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
-                        !fromDate && "text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
-                      {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
-                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={fromDate}
-                      onSelect={handleFromDateSelect}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <div className="h-4 w-[1px] bg-border" />
-
-                {/* To Date Popover */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
-                        !toDate && "text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
-                      {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
-                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={toDate}
-                      onSelect={handleToDateSelect}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            <Button
-              onClick={() => router.push('/sales/create')}
-              className="flex items-center gap-2 w-full sm:w-auto"
-            >
-              <IconPlus className="h-4 w-4" />
-              Create Sale
-            </Button>
-            <Button
-              onClick={() => setIsCustomerModalOpen(true)}
-              className="flex items-center gap-2 w-full sm:w-auto"
-              variant="outline"
-            >
-              <IconUserPlus className="h-4 w-4" />
-              Add Customer
-            </Button>
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+              Sales Terminal
+            </span>
           </div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Sales Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+            Monitor and manage your business performance
+          </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
+            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
+            <Select value={dateFilter} onValueChange={setDateFilter}>
+              <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="last6months">Last 6 Months</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="specific-day">Specific Date</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
 
+          {dateFilter === 'specific-day' && (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      !fromDate && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
+                    {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
+                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fromDate}
+                    onSelect={setFromDate}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {dateFilter === 'custom' && (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+              {/* From Date Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      !fromDate && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
+                    {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fromDate}
+                    onSelect={handleFromDateSelect}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <div className="h-4 w-[1px] bg-border/50" />
+
+              {/* To Date Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      !toDate && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
+                    {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={toDate}
+                    onSelect={handleToDateSelect}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          <Button
+            onClick={() => router.push('/sales/create')}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all w-full sm:w-auto"
+          >
+            <IconPlus className="size-4 mr-2" />
+            Create Sale
+          </Button>
+          <Button
+            onClick={() => setIsCustomerModalOpen(true)}
+            variant="outline"
+            className="font-semibold text-sm h-10 px-6 rounded-xl shadow-sm border-border/50 hover:bg-muted/50 hover:border-border active:scale-95 transition-all w-full sm:w-auto"
+          >
+            <IconUserPlus className="size-4 mr-2" />
+            Add Customer
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6">
         <SectionCards cards={stats} />
 
-        <div className="px-4 lg:px-6">
+        <div className="rounded-xl border border-border/40 bg-card p-1 shadow-sm">
           <ChartAreaInteractive
             data={chartData}
             timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter}
@@ -748,23 +759,23 @@ export default function Page() {
             }}
           />
         </div>
+      </div>
 
-        <div className="px-4 lg:px-6">
-          <SalesTable
-            data={filteredSales}
-            tabs={salesTabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search customer, staff or ref..."
-            onAddClick={() => router.push('/sales/create')}
-            onViewDetails={handleViewDetails}
-            onEditSale={handleEditSale}
-            onDownloadInvoice={handleDownloadInvoice}
-            onDeleteSale={handleDeleteSale}
-            userRole={user?.role}
-          />
-        </div>
+      <div className="space-y-4 pt-4">
+        <SalesTable
+          data={filteredSales}
+          tabs={salesTabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search customer, staff or ref..."
+          onAddClick={() => router.push('/sales/create')}
+          onViewDetails={handleViewDetails}
+          onEditSale={handleEditSale}
+          onDownloadInvoice={handleDownloadInvoice}
+          onDeleteSale={handleDeleteSale}
+          userRole={user?.role}
+        />
       </div>
 
       {/* Hidden Invoice Template for PDF generation */}

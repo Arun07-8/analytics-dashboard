@@ -445,31 +445,36 @@ export default function Page() {
   }
 
   return (
-    <div className="@container/main flex flex-1 flex-col gap-8 py-8 transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+    <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
       {/* Premium Dashboard Header */}
-      <div className="px-4 lg:px-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-1.5">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">
-              Intelligence Dashboard
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </div>
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+              Overview
             </span>
           </div>
-          <h1 className="text-3xl font-black text-foreground tracking-tight leading-none">
-            Hello, <span className="text-primary italic">{user?.name?.split(' ')[0] || 'Admin'}</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Good to see you, {user?.name?.split(' ')[0] || 'Admin'}.
           </h1>
-          <p className="text-xs text-muted-foreground font-medium flex items-center gap-2">
-            <span>{user?.role === 'admin' ? 'Master Administrator' : 'Staff Member'}</span>
+          <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-muted-foreground/10">
+              {user?.role === 'admin' ? 'Master Administrator' : 'Staff Member'}
+            </span>
             <span className="h-1 w-1 rounded-full bg-border" />
             <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
-            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
+          <div className="flex items-center gap-2 bg-background border border-border/60 hover:border-primary/30 transition-colors rounded-lg pl-3 h-9 shadow-sm">
+            <span className="text-xs font-medium text-muted-foreground shrink-0 pr-2 h-full flex items-center">Period</span>
             <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
+              <SelectTrigger className="bg-transparent border-l border-none text-sm font-semibold focus:ring-0 cursor-pointer outline-none h-full px-3 w-[140px] shadow-none rounded-none rounded-r-lg">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -490,13 +495,12 @@ export default function Page() {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
-                    <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
-                    {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
-                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  <Button variant="outline" className={cn("h-9 justify-start text-left font-medium text-sm bg-background pl-3 pr-4 border border-border/60 shadow-sm rounded-lg hover:border-primary/30 hover:bg-muted/30 transition-all", !fromDate && "text-muted-foreground")}>
+                    <IconCalendar className="mr-2 h-4 w-4 opacity-70" />
+                    {fromDate ? format(fromDate, "dd MMM yyyy") : <span>Select Date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                   <CalendarComponent mode="single" selected={fromDate} onSelect={setFromDate} disabled={(date) => date > new Date()} initialFocus />
                 </PopoverContent>
               </Popover>
@@ -504,29 +508,27 @@ export default function Page() {
           )}
 
           {dateFilter === 'custom' && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300 bg-background border border-border/60 rounded-lg p-1 shadow-sm">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
-                    <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
-                    {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
-                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  <Button variant="ghost" className={cn("h-7 px-3 justify-start text-left font-medium text-sm rounded-md hover:bg-muted/50 transition-all", !fromDate && "text-muted-foreground")}>
+                    <span className="text-xs text-muted-foreground mr-2">From</span>
+                    {fromDate ? format(fromDate, "dd MMM yy") : <span>Select</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                   <CalendarComponent mode="single" selected={fromDate} onSelect={setFromDate} disabled={(date) => date > new Date()} initialFocus />
                 </PopoverContent>
               </Popover>
-              <div className="h-4 w-[1px] bg-border" />
+              <div className="h-4 w-[1px] bg-border/60" />
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !toDate && "text-muted-foreground")}>
-                    <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
-                    {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
-                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  <Button variant="ghost" className={cn("h-7 px-3 justify-start text-left font-medium text-sm rounded-md hover:bg-muted/50 transition-all", !toDate && "text-muted-foreground")}>
+                    <span className="text-xs text-muted-foreground mr-2">To</span>
+                    {toDate ? format(toDate, "dd MMM yy") : <span>Select</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                   <CalendarComponent mode="single" selected={toDate} onSelect={setToDate} disabled={(date) => date > new Date()} initialFocus />
                 </PopoverContent>
               </Popover>
@@ -535,23 +537,20 @@ export default function Page() {
         </div>
       </div>
 
-      <SectionCards cards={stats} />
+      <div className="space-y-6">
+        <SectionCards cards={stats} />
 
-      <div className="px-4 lg:px-6">
-        <ChartAreaInteractive
-          data={chartData}
-          timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
-          onTimeRangeChange={handleTimeRangeChange}
-        />
+        <div className="rounded-xl border border-border/40 bg-card p-1 shadow-sm">
+          <ChartAreaInteractive
+            data={chartData}
+            timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
+            onTimeRangeChange={handleTimeRangeChange}
+          />
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="px-4 lg:px-6 flex items-center gap-3 mt-4">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-            <span className="font-bold text-xs">DB</span>
-          </div>
-          <h2 className="text-sm font-semibold text-muted-foreground">Detailed Sales Records</h2>
-        </div>
+      <div className="space-y-4 pt-4">
+        
         <DashboardTable
           data={dataPack.processedSales}
           admins={admins}
