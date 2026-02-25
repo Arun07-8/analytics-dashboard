@@ -310,11 +310,11 @@ export default function ExpensesPage() {
                 <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] font-mono">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">
                             Expenditure Terminal
                         </span>
                     </div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight leading-none">
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight leading-none">
                         Business <span className="text-destructive italic">Expenses</span>
                     </h1>
                     <p className="text-xs text-muted-foreground font-medium">
@@ -324,9 +324,9 @@ export default function ExpensesPage() {
 
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0 border-r pr-2 h-full flex items-center">Period</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
                         <Select value={dateFilter} onValueChange={setDateFilter}>
-                            <SelectTrigger className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 cursor-pointer outline-none h-full px-2 w-[120px] shadow-none">
+                            <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -347,8 +347,8 @@ export default function ExpensesPage() {
                         <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">Date</span>
+                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
+                                        <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
                                         {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                                     </Button>
@@ -364,8 +364,8 @@ export default function ExpensesPage() {
                         <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">From</span>
+                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
+                                        <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
                                         {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                                     </Button>
@@ -377,8 +377,8 @@ export default function ExpensesPage() {
                             <div className="h-4 w-[1px] bg-border" />
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !toDate && "text-muted-foreground")}>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">To</span>
+                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !toDate && "text-muted-foreground")}>
+                                        <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
                                         {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                                     </Button>
@@ -392,7 +392,7 @@ export default function ExpensesPage() {
 
                     <Button
                         onClick={handleAdd}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all"
                     >
                         <IconPlus className="size-4 mr-2" />
                         Add Expense
@@ -418,9 +418,9 @@ export default function ExpensesPage() {
             <div className="px-4 lg:px-6 space-y-4">
                 <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive shadow-inner">
-                        <span className="font-black text-[10px]">EX</span>
+                        <span className="font-bold text-xs">EX</span>
                     </div>
-                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Expense Records</h2>
+                    <h2 className="text-sm font-semibold text-muted-foreground">Expense Records</h2>
                 </div>
                 <div className="bg-card/50 rounded-2xl border border-border/50 p-6 shadow-sm">
                     <ExpensesTable
@@ -442,16 +442,16 @@ export default function ExpensesPage() {
             <AlertDialog open={!!deletingExpenseId} onOpenChange={() => setDeletingExpenseId(null)}>
                 <AlertDialogContent className="rounded-2xl border-border bg-card">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-black uppercase tracking-tight">Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogTitle className="text-xl font-bold tracking-tight">Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription className="text-sm font-medium text-muted-foreground pt-2">
                             Are you sure you want to remove this expense record? This action cannot be undone and will affect your net profit logic instantly.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-6">
-                        <AlertDialogCancel className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-11">Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="mt-6 gap-3">
+                        <AlertDialogCancel className="rounded-xl font-semibold text-xs h-11 border-border">Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteConfirm}
-                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl font-black uppercase tracking-widest text-[10px] h-11"
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl font-semibold text-xs h-11 px-6"
                         >
                             Delete Expense
                         </AlertDialogAction>

@@ -359,17 +359,12 @@ export default function CreateSalePage() {
         if (!customerFormData.mobile?.trim()) newErrors.mobile = "Mobile number is required";
         else if (!mobileRegex.test(customerFormData.mobile)) newErrors.mobile = "Invalid mobile number format";
 
-        if (customerFormData.email?.trim()) {
+        if (!customerFormData.email?.trim()) {
+            newErrors.email = "Email address is required";
+        } else {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(customerFormData.email)) newErrors.email = "Invalid email format";
         }
-
-        if (!customerFormData.country?.trim()) newErrors.country = "Country is required";
-        if (!customerFormData.state?.trim()) newErrors.state = "State is required";
-        if (!customerFormData.city?.trim()) newErrors.city = "City is required";
-        if (!customerFormData.place?.trim()) newErrors.place = "Place/Area is required";
-        if (!customerFormData.pincode?.trim()) newErrors.pincode = "Pincode is required";
-        if (!customerFormData.address?.trim()) newErrors.address = "Full address is required";
 
         if (Object.keys(newErrors).length > 0) {
             setCustomerErrors(newErrors);

@@ -203,20 +203,20 @@ export function SalesTable({
 
                     if (vStatus === "Approved") {
                         return (
-                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 px-2 py-0.5 font-bold uppercase tracking-tighter text-[10px]">
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 px-2 py-0.5 font-semibold text-[10px]">
                                 Request Approved
                             </Badge>
                         );
                     }
                     if (vStatus === "Rejected") {
                         return (
-                            <Badge variant="destructive" className="px-2 py-0.5 font-bold uppercase tracking-tighter text-[10px]">
+                            <Badge variant="destructive" className="px-2 py-0.5 font-semibold text-[10px]">
                                 Request Rejected
                             </Badge>
                         );
                     }
                     return (
-                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20 px-2 py-0.5 font-bold uppercase tracking-tighter text-[10px]">
+                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20 px-2 py-0.5 font-semibold text-[10px]">
                             Request Pending
                         </Badge>
                     );
@@ -238,7 +238,7 @@ export function SalesTable({
                             variant="outline"
                             size="sm"
                             onClick={() => onViewDetails?.(sale)}
-                            className="h-7 px-3 text-[9px] font-black uppercase tracking-widest text-destructive border-destructive/20 hover:bg-destructive/5 hover:text-destructive rounded-lg"
+                            className="h-7 px-3 text-[10px] font-semibold text-destructive border-destructive/20 hover:bg-destructive/5 hover:text-destructive rounded-lg"
                         >
                             View Reason
                         </Button>
@@ -262,7 +262,7 @@ export function SalesTable({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onViewDetails?.(sale)}
-                                className="h-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                                className="h-8 text-xs font-semibold text-muted-foreground hover:text-foreground"
                             >
                                 <IconEye className="size-3.5 mr-1" />
                                 View Details
@@ -306,7 +306,7 @@ export function SalesTable({
                                     <span className="sr-only">Open menu</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 font-bold">
+                            <DropdownMenuContent align="end" className="w-40 font-semibold text-xs">
                                 <DropdownMenuItem onClick={() => onViewDetails?.(sale)}>View Details</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => onEditSale?.(sale)}>Edit Sale</DropdownMenuItem>
                                 <DropdownMenuItem className="text-primary" onClick={() => onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>

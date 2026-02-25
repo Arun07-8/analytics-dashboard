@@ -37,7 +37,7 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   {card.icon && <div className="text-muted-foreground/50">{card.icon}</div>}
-                  <CardDescription className={`font-black uppercase tracking-widest line-clamp-1 ${isHighlight ? 'text-[11px] text-primary' : 'text-[10px]'}`}>
+                  <CardDescription className={`font-semibold line-clamp-1 ${isHighlight ? 'text-xs text-primary' : 'text-[11px]'}`}>
                     {card.label}
                   </CardDescription>
                 </div>
@@ -48,7 +48,7 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
                 )}
               </div>
               <div className="flex items-baseline gap-1">
-                <span className={`font-black tabular-nums tracking-tighter ${isHighlight ? 'text-2xl' : 'text-xl'}`}>
+                <span className={`font-bold tabular-nums tracking-tight ${isHighlight ? 'text-2xl' : 'text-xl'}`}>
                   {card.prefix || ""}{typeof card.value === 'number' ? card.value.toLocaleString(undefined, {
                     minimumFractionDigits: card.isCurrency ? (card.value % 1 === 0 ? 0 : 2) : 0,
                     maximumFractionDigits: card.isCurrency ? 2 : 0
@@ -57,12 +57,12 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
               </div>
               {card.growth !== undefined && (
                 <div className={`absolute ${isHighlight ? 'top-4 right-4' : 'top-3.5 right-3.5'}`}>
-                  <span className={`font-black ${isHighlight ? 'text-xs px-2 py-0.5 rounded-full bg-emerald-500/10' : 'text-[10px]'} ${card.growth >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                  <span className={`font-semibold ${isHighlight ? 'text-xs px-2 py-0.5 rounded-full bg-emerald-500/10' : 'text-[10px]'} ${card.growth >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                     {card.growth >= 0 ? "+" : ""}{card.growth}%
                   </span>
                 </div>
               )}
-              <p className={`font-bold mt-1 opacity-60 line-clamp-1 ${isHighlight ? 'text-[10px]' : 'text-[9px]'}`}>
+              <p className={`font-medium mt-1 opacity-60 line-clamp-1 ${isHighlight ? 'text-[10px]' : 'text-[9px]'}`}>
                 {card.description || "Live Status"}
               </p>
             </CardHeader>

@@ -212,6 +212,12 @@ export default function CustomersPage() {
             errors.mobile = "Invalid mobile number format";
         }
 
+        if (!customerFormData.email.trim()) {
+            errors.email = "Email Address is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerFormData.email)) {
+            errors.email = "Invalid email format";
+        }
+
         if (Object.keys(errors).length > 0) {
             setCustomerErrors(errors);
             return;

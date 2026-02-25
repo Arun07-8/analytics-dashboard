@@ -223,11 +223,11 @@ export default function SalesRequestsPage() {
                 <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] font-mono">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">
                             Admin Approval Queue
                         </span>
                     </div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight leading-none">
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight leading-none">
                         Sales <span className="text-primary italic">Requests</span>
                     </h1>
                     <p className="text-xs text-muted-foreground font-medium">
@@ -241,8 +241,8 @@ export default function SalesRequestsPage() {
                             <IconAlertCircle className="size-5" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none mb-1">Unverified</p>
-                            <p className="text-lg font-black leading-none">{processedSales.length}</p>
+                            <p className="text-[11px] font-semibold text-muted-foreground leading-none mb-1">Unverified</p>
+                            <p className="text-lg font-bold leading-none">{processedSales.length}</p>
                         </div>
                     </div>
                 </div>
@@ -278,7 +278,7 @@ export default function SalesRequestsPage() {
             <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
                 <AlertDialogContent className="rounded-2xl border-border bg-card">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
+                        <AlertDialogTitle className="text-xl font-bold tracking-tight flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                                 <IconCheck className="size-6" />
                             </div>
@@ -290,11 +290,11 @@ export default function SalesRequestsPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-6 gap-3">
-                        <AlertDialogCancel className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-11 border-border">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl font-semibold text-xs h-11 border-border">Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmApprove}
                             disabled={isProcessing}
-                            className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] h-11 px-8"
+                            className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs h-11 px-8"
                         >
                             {isProcessing ? "Processing..." : "Approve Sale"}
                         </AlertDialogAction>
@@ -306,7 +306,7 @@ export default function SalesRequestsPage() {
             <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
                 <AlertDialogContent className="rounded-2xl border-border bg-card max-w-md">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3 text-red-500">
+                        <AlertDialogTitle className="text-xl font-bold tracking-tight flex items-center gap-3 text-red-500">
                             <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
                                 <IconX className="size-6" />
                             </div>
@@ -318,7 +318,7 @@ export default function SalesRequestsPage() {
                     </AlertDialogHeader>
 
                     <div className="py-6">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Decline Reason</label>
+                        <label className="text-xs font-semibold text-muted-foreground mb-2 block">Decline Reason</label>
                         <textarea
                             className="w-full min-h-[120px] bg-background border border-border/50 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-red-500/20 focus:border-red-500/50 outline-none transition-all resize-none placeholder:text-muted-foreground/30"
                             placeholder="Type the reason here (e.g., Incorrect amount, missing details...)"
@@ -330,7 +330,7 @@ export default function SalesRequestsPage() {
                     <AlertDialogFooter className="gap-3">
                         <AlertDialogCancel
                             onClick={() => setDeclineReason("")}
-                            className="flex-1 rounded-xl font-bold uppercase tracking-widest text-[10px] h-11 border-border"
+                            className="flex-1 rounded-xl font-semibold text-xs h-11 border-border"
                         >
                             Back
                         </AlertDialogCancel>
@@ -340,7 +340,7 @@ export default function SalesRequestsPage() {
                                 confirmDecline();
                             }}
                             disabled={isProcessing || !declineReason.trim()}
-                            className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest text-[10px] h-11"
+                            className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-xs h-11"
                         >
                             {isProcessing ? "Processing..." : "Confirm Decline"}
                         </AlertDialogAction>

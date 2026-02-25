@@ -436,7 +436,7 @@ export default function Page() {
         <div className="flex items-center justify-center h-screen bg-background text-foreground">
           <div className="text-center space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] animate-pulse">Initializing Data Stream...</p>
+            <p className="text-xs font-medium animate-pulse">Initializing Data Stream...</p>
           </div>
         </div>
       );
@@ -451,7 +451,7 @@ export default function Page() {
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] font-mono">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">
               Intelligence Dashboard
             </span>
           </div>
@@ -467,9 +467,9 @@ export default function Page() {
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0 border-r pr-2 h-full flex items-center">Period</span>
+            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
             <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 cursor-pointer outline-none h-full px-2 w-[120px] shadow-none">
+              <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -490,8 +490,8 @@ export default function Page() {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">Date</span>
+                  <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
                     {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                   </Button>
@@ -507,8 +507,8 @@ export default function Page() {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">From</span>
+                  <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
                     {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                   </Button>
@@ -520,8 +520,8 @@ export default function Page() {
               <div className="h-4 w-[1px] bg-border" />
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !toDate && "text-muted-foreground")}>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">To</span>
+                  <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !toDate && "text-muted-foreground")}>
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
                     {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                   </Button>
@@ -548,9 +548,9 @@ export default function Page() {
       <div className="space-y-4">
         <div className="px-4 lg:px-6 flex items-center gap-3 mt-4">
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-            <span className="font-black text-[10px]">DB</span>
+            <span className="font-bold text-xs">DB</span>
           </div>
-          <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Detailed Sales Records</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground">Detailed Sales Records</h2>
         </div>
         <DashboardTable
           data={dataPack.processedSales}

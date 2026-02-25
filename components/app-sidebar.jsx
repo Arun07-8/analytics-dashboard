@@ -161,7 +161,7 @@ export function AppSidebar({ ...props }) {
                 className="bg-primary/10 text-primary hover:bg-primary/20 justify-center gap-2 border border-primary/20 h-10 shadow-sm transition-all"
               >
                 <IconPlus className="size-4" />
-                <span className="font-black text-[10px] uppercase tracking-widest">Add Expense</span>
+                <span className="font-semibold text-sm">Add Expense</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
