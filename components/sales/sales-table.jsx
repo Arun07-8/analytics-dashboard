@@ -75,6 +75,21 @@ export function SalesTable({
                 ),
             },
             {
+                accessorKey: "salesRefId",
+                header: "Invoice ID",
+                cell: ({ row }) => {
+                    const refId = Array.isArray(row.original.salesRefId)
+                        ? row.original.salesRefId[0]
+                        : row.original.salesRefId;
+
+                    return (
+                        <div className="font-mono font-bold text-[10px] text-primary">
+                            {refId || "N/A"}
+                        </div>
+                    );
+                },
+            },
+            {
                 accessorKey: "createdAt",
                 header: ({ column }) => (
                     <Button

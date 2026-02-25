@@ -56,7 +56,7 @@ const columns = [
     {
         accessorKey: "services",
         label: "Services",
-        header: () => <div className="text-[11px] font-extrabold text-foreground">Service Name</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Services</div>,
         cell: ({ row }) => (
             <div className="max-w-[200px] truncate text-xs text-muted-foreground font-medium">
                 {row.original.services?.map(s => s.name).join(', ')}
@@ -76,12 +76,38 @@ const columns = [
     {
         accessorKey: "totalAmount",
         label: "Total Amount",
-        header: () => <div className="text-[11px] font-extrabold text-foreground">Amount</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Total</div>,
         cell: ({ row }) => (
-            <div className="font-black text-sm tracking-tighter">
-                ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+            <div className="font-bold text-sm tracking-tight text-foreground">
+                ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 1 })}
             </div>
         ),
+    },
+    {
+        accessorKey: "paidAmount",
+        label: "Paid Amount",
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Paid</div>,
+        cell: ({ row }) => (
+            <div className="font-bold text-sm tracking-tight text-emerald-600">
+                ₹{row.original.paidAmount?.toLocaleString('en-IN', { minimumFractionDigits: 1 })}
+            </div>
+        ),
+    },
+    {
+        id: "balance",
+        label: "Balance",
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Balance</div>,
+        cell: ({ row }) => {
+            const balance = (Number(row.original.totalAmount) || 0) - (Number(row.original.paidAmount) || 0);
+            return (
+                <div className={cn(
+                    "font-black text-sm tracking-tight",
+                    balance > 0 ? "text-destructive" : "text-emerald-600"
+                )}>
+                    ₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 1 })}
+                </div>
+            );
+        },
     },
     {
         accessorKey: "status",

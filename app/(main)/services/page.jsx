@@ -3,19 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
     IconPackage,
     IconCircleCheckFilled,
     IconCircleXFilled,
     IconAlertTriangle,
-    IconTrendingUp,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { getAllServices, createService, updateService, deleteService } from "@/lib/firebase";
 
 // Reusable components
+import { SectionCards } from "@/components/section-cards";
 import { ServiceModal } from "@/components/services/service-modal";
 import { ServicesTable } from "@/components/services/services-table";
 
@@ -212,6 +211,27 @@ export default function ServicesPage() {
         return matchesSearch;
     });
 
+    const stats = [
+        {
+            label: "Total Services",
+            value: services.length,
+            icon: <IconPackage />,
+            description: "All registered service offerings"
+        },
+        {
+            label: "Active Services",
+            value: services.filter(s => s.isActive).length,
+            icon: <IconCircleCheckFilled />,
+            description: "Available for customers"
+        },
+        {
+            label: "Inactive Services",
+            value: services.filter(s => !s.isActive).length,
+            icon: <IconCircleXFilled />,
+            description: "Hidden from public view"
+        }
+    ];
+
     // Show loading state
     if (loading || isLoadingData) {
         return (
@@ -252,74 +272,8 @@ export default function ServicesPage() {
                 </div>
             </div>
 
-            {/* Stats Cards - Matching Dashboard SectionCards style */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Card className="relative overflow-hidden group border-border/40 transition-all duration-300 hover:border-primary/30 hover:shadow-md bg-card shadow-sm">
-                    <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent"></div>
-                    <CardHeader className="p-4 flex flex-col justify-between h-full">
-                        <div className="flex items-start justify-between mb-4">
-                            <CardDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.2em]">Total Services</CardDescription>
-                            <div className="flex items-center justify-center rounded-lg h-8 w-8 bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
-                                <IconPackage className="h-4 w-4 text-primary" />
-                            </div>
-                        </div>
-                        <div className="mt-auto">
-                            <div className="flex items-baseline gap-1">
-                                <span className="font-bold tabular-nums tracking-tight text-3xl text-foreground">
-                                    {services.length}
-                                </span>
-                            </div>
-                            <p className="font-medium mt-1 text-muted-foreground line-clamp-1 text-[10px]">
-                                All registered service offerings
-                            </p>
-                        </div>
-                    </CardHeader>
-                </Card>
-
-                <Card className="relative overflow-hidden group border-border/40 transition-all duration-300 hover:border-primary/30 hover:shadow-md bg-card shadow-sm">
-                    <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent"></div>
-                    <CardHeader className="p-4 flex flex-col justify-between h-full">
-                        <div className="flex items-start justify-between mb-4">
-                            <CardDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.2em]">Active Services</CardDescription>
-                            <div className="flex items-center justify-center rounded-lg h-8 w-8 bg-emerald-500/10 text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
-                                <IconCircleCheckFilled className="h-4 w-4 text-emerald-600" />
-                            </div>
-                        </div>
-                        <div className="mt-auto">
-                            <div className="flex items-baseline gap-1">
-                                <span className="font-bold tabular-nums tracking-tight text-3xl text-foreground">
-                                    {services.filter(s => s.isActive).length}
-                                </span>
-                            </div>
-                            <p className="font-medium mt-1 text-muted-foreground line-clamp-1 text-[10px]">
-                                Available for customers
-                            </p>
-                        </div>
-                    </CardHeader>
-                </Card>
-
-                <Card className="relative overflow-hidden group border-border/40 transition-all duration-300 hover:border-primary/30 hover:shadow-md bg-card shadow-sm">
-                    <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent"></div>
-                    <CardHeader className="p-4 flex flex-col justify-between h-full">
-                        <div className="flex items-start justify-between mb-4">
-                            <CardDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.2em]">Inactive Services</CardDescription>
-                            <div className="flex items-center justify-center rounded-lg h-8 w-8 bg-rose-500/10 text-rose-600 ring-1 ring-inset ring-rose-500/20">
-                                <IconCircleXFilled className="h-4 w-4 text-rose-600" />
-                            </div>
-                        </div>
-                        <div className="mt-auto">
-                            <div className="flex items-baseline gap-1">
-                                <span className="font-bold tabular-nums tracking-tight text-3xl text-foreground">
-                                    {services.filter(s => !s.isActive).length}
-                                </span>
-                            </div>
-                            <p className="font-medium mt-1 text-muted-foreground line-clamp-1 text-[10px]">
-                                Hidden from public view
-                            </p>
-                        </div>
-                    </CardHeader>
-                </Card>
-            </div>
+            {/* Stats Cards - Unified Dashboard Design */}
+            <SectionCards cards={stats} />
 
             {/* Services Table Content - Using REUSABLE Components */}
             <ServicesTable
