@@ -406,30 +406,22 @@ export default function ExpensesPage() {
             <div className="space-y-6">
                 <SectionCards cards={stats} />
 
-                <div className="rounded-xl border border-border/40 bg-card p-1 shadow-sm">
-                    <ChartAreaInteractive
-                        data={chartData}
-                        timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
-                        onTimeRangeChange={handleTimeRangeChange}
-                    />
-                </div>
+
+                <ChartAreaInteractive
+                    data={chartData}
+                    timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
+                    onTimeRangeChange={handleTimeRangeChange}
+                />
+
             </div>
 
             {/* Expenses Table Section */}
-            <div className="space-y-4 pt-4">
-                <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive shadow-inner">
-                        <span className="font-bold text-xs">EX</span>
-                    </div>
-                    <h2 className="text-sm font-semibold text-muted-foreground">Expense Records</h2>
-                </div>
-                <div className="bg-card/50 rounded-2xl border border-border/50 p-6 shadow-sm">
-                    <ExpensesTable
-                        data={dataPack.filtered}
-                        onEdit={handleEdit}
-                        onDelete={setDeletingExpenseId}
-                    />
-                </div>
+            <div className="pt-4">
+                <ExpensesTable
+                    data={dataPack.filtered}
+                    onEdit={handleEdit}
+                    onDelete={setDeletingExpenseId}
+                />
             </div>
 
             {/* Modal */}

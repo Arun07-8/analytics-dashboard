@@ -88,16 +88,25 @@ export function SalesTable({
                 ),
                 cell: ({ row }) => {
                     const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
-                    return <div className="text-nowrap">{date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
+                    return (
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-bold text-foreground">
+                                {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                            </span>
+                            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-widest leading-none">
+                                {date.toLocaleDateString('en-IN', { year: 'numeric' })}
+                            </span>
+                        </div>
+                    );
                 },
             },
             {
                 accessorKey: "customerName",
                 header: "Customer",
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-2">
-                        <IconUser className="size-4 text-muted-foreground" />
-                        <span className="font-medium">{row.original.customerName || "Unknown"}</span>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-sm text-foreground">{row.original.customerName || "Unknown"}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tighter">Client Registry</span>
                     </div>
                 ),
             },
@@ -105,8 +114,13 @@ export function SalesTable({
                 accessorKey: "staffName",
                 header: "Staff",
                 cell: ({ row }) => (
-                    <div className="text-muted-foreground">
-                        {row.original.staffName || "Unknown"}
+                    <div className="flex items-center gap-2">
+                        <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase">
+                            {(row.original.staffName || "S")[0]}
+                        </div>
+                        <span className="text-xs font-bold text-muted-foreground/80">
+                            {row.original.staffName || "Staff"}
+                        </span>
                     </div>
                 ),
             },
@@ -123,8 +137,8 @@ export function SalesTable({
                     </Button>
                 ),
                 cell: ({ row }) => (
-                    <div className="font-medium">
-                        ₹{row.original.totalAmount?.toFixed(2)}
+                    <div className="font-bold text-sm tracking-tight text-foreground">
+                        ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                 ),
             },
@@ -141,8 +155,8 @@ export function SalesTable({
                     </Button>
                 ),
                 cell: ({ row }) => (
-                    <div className="font-medium text-muted-foreground">
-                        ₹{row.original.paidAmount?.toFixed(2)}
+                    <div className="font-bold text-sm tracking-tight text-muted-foreground/80">
+                        ₹{row.original.paidAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                 ),
             },

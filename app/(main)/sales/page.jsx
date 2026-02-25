@@ -6,7 +6,7 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SalesTable } from "@/components/sales/sales-table"
 import { SectionCards } from "@/components/section-cards"
 import { Button } from "@/components/ui/button";
-import { IconUserPlus, IconPlus } from "@tabler/icons-react";
+import { IconUserPlus, IconPlus, IconReceipt, IconCash, IconClock, IconListCheck } from "@tabler/icons-react";
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { SaleDetailsModal } from "@/components/sales/sale-details-modal";
 import {
@@ -311,6 +311,7 @@ export default function Page() {
         value: dateFilter === 'all' ? myTotalSalesAllTime : myTotalSalesPeriod,
         prefix: "₹",
         isCurrency: true,
+        icon: <IconReceipt className="size-4" />,
         description: "Gross value (Paid + Unpaid)"
       },
       {
@@ -318,6 +319,7 @@ export default function Page() {
         value: dateFilter === 'all' ? myPaidRevenueAllTime : myPaidRevenuePeriod,
         prefix: "₹",
         isCurrency: true,
+        icon: <IconCash className="size-4" />,
         description: "Only confirmed payments"
       },
       {
@@ -325,11 +327,13 @@ export default function Page() {
         value: dateFilter === 'all' ? myPendingAmountAllTime : myPendingAmountPeriod,
         prefix: "₹",
         isCurrency: true,
+        icon: <IconClock className="size-4" />,
         description: "Outstanding balance"
       },
       {
         label: "Transactions",
         value: periodSales.length,
+        icon: <IconListCheck className="size-4" />,
         description: "Orders in current view"
       }
     ];
@@ -748,7 +752,7 @@ export default function Page() {
       <div className="space-y-6">
         <SectionCards cards={stats} />
 
-        <div className="rounded-xl border border-border/40 bg-card p-1 shadow-sm">
+        
           <ChartAreaInteractive
             data={chartData}
             timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter}
@@ -758,7 +762,7 @@ export default function Page() {
               else setDateFilter(val);
             }}
           />
-        </div>
+        
       </div>
 
       <div className="space-y-4 pt-4">

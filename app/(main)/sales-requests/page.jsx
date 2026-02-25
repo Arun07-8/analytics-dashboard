@@ -218,8 +218,8 @@ export default function SalesRequestsPage() {
     if (loading || !isAdmin) return null;
 
     return (
-        <div className="flex flex-1 flex-col gap-8 py-8 animate-in fade-in duration-700">
-            <div className="px-4 lg:px-6 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+        <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
                 <div className="space-y-2">
                     <div className="flex items-center gap-2">
                         <div className="relative flex h-2 w-2">
@@ -239,7 +239,7 @@ export default function SalesRequestsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="bg-card border border-border/50 px-4 py-2 rounded-xl flex items-center gap-3">
+                    <div className="bg-card border border-border/50 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
                         <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
                             <IconAlertCircle className="size-5" />
                         </div>
@@ -251,17 +251,15 @@ export default function SalesRequestsPage() {
                 </div>
             </div>
 
-            <div className="px-4 lg:px-6">
-                <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-                    <SalesRequestTable
-                        data={processedSales}
-                        onAccept={handleAccept}
-                        onDecline={handleDecline}
-                        onView={handleView}
-                        onEdit={handleEdit}
-                        onDownloadInvoice={handleDownload}
-                    />
-                </div>
+            <div className="pt-4">
+                <SalesRequestTable
+                    data={processedSales}
+                    onAccept={handleAccept}
+                    onDecline={handleDecline}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDownloadInvoice={handleDownload}
+                />
             </div>
 
             {/* Hidden Template for PDF */}

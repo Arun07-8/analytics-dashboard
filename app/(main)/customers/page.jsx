@@ -255,8 +255,8 @@ export default function CustomersPage() {
     }
 
     return (
-        <div className="@container/main flex flex-1 flex-col gap-8 py-8 animate-in fade-in duration-700">
-            <div className="px-4 lg:px-6 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+        <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
                 <div className="space-y-2">
                     <div className="flex items-center gap-2">
                         <div className="relative flex h-2 w-2">
@@ -275,8 +275,11 @@ export default function CustomersPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
-                        <IconUserPlus className="h-4 w-4" />
+                    <Button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
+                    >
+                        <IconUserPlus className="size-4" />
                         New Customer
                     </Button>
                 </div>
@@ -284,7 +287,7 @@ export default function CustomersPage() {
 
             <SectionCards cards={stats} />
 
-            <div className="px-4 lg:px-6">
+            <div className="space-y-4 pt-4">
                 <CustomersTable
                     data={filteredCustomers}
                     onViewOrders={handleViewOrders}

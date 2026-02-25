@@ -459,7 +459,7 @@ export default function Page() {
             </span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Good to see you, {user?.name?.split(' ')[0] || 'Admin'}.
+            FoxonHub Dashboard
           </h1>
           <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
             <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-muted-foreground/10">
@@ -540,17 +540,15 @@ export default function Page() {
       <div className="space-y-6">
         <SectionCards cards={stats} />
 
-        <div className="rounded-xl border border-border/40 bg-card p-1 shadow-sm">
-          <ChartAreaInteractive
-            data={chartData}
-            timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
-            onTimeRangeChange={handleTimeRangeChange}
-          />
-        </div>
+        <ChartAreaInteractive
+          data={chartData}
+          timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
+          onTimeRangeChange={handleTimeRangeChange}
+        />
       </div>
 
       <div className="space-y-4 pt-4">
-        
+
         <DashboardTable
           data={dataPack.processedSales}
           admins={admins}

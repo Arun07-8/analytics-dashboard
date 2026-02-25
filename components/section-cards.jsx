@@ -31,40 +31,41 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
       {cards.map((card, index) => {
         const isHighlight = index === 0;
         return (
-          <Card key={index} className={`relative overflow-hidden group border-border/40 transition-all duration-300 hover:border-primary/30 hover:shadow-md ${isHighlight ? 'xl:col-span-2 bg-gradient-to-br from-card to-primary/[0.02] border-primary/20 shadow-sm shadow-primary/5' : 'bg-card shadow-sm'}`}>
-            <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent"></div>
-            <CardHeader className={`${isHighlight ? 'p-5' : 'p-4'} flex flex-col justify-between h-full`}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-2">
+          <Card key={index} className={`relative overflow-hidden group border-border/40 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.02),0_1px_2px_0_rgba(0,0,0,0.04)] transition-all duration-300 ${isHighlight ? 'xl:col-span-2' : ''}`}>
+            <CardHeader className="p-5 flex flex-col justify-between h-full space-y-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3.5">
                   {card.icon && (
-                    <div className={`flex items-center justify-center rounded-lg ${isHighlight ? 'h-10 w-10 bg-primary/10 text-primary ring-1 ring-inset ring-primary/20' : 'h-8 w-8 bg-muted/50 text-muted-foreground ring-1 ring-inset ring-border/50'}`}>
-                      {React.cloneElement(card.icon, { className: 'h-4 w-4' })}
+                    <div className="flex items-center justify-center size-10 rounded-xl bg-muted/50 text-muted-foreground ring-1 ring-inset ring-border/20 shadow-sm">
+                      {React.cloneElement(card.icon, { className: 'size-5' })}
                     </div>
                   )}
-                  <CardDescription className={`font-medium tracking-tight ${isHighlight ? 'text-sm text-foreground' : 'text-xs text-muted-foreground'}`}>
-                    {card.label}
-                  </CardDescription>
+                  <div className="space-y-0.5">
+                    <h3 className="text-[15px] font-bold text-foreground/90 tracking-tight leading-tight">
+                      {card.label}
+                    </h3>
+                    <p className="text-[11px] font-medium text-muted-foreground/50 tracking-tight line-clamp-1">
+                      {card.description || "Live Status"}
+                    </p>
+                  </div>
                 </div>
                 {card.growth !== undefined && (
-                  <div className={`flex items-center gap-1 flex-shrink-0 ml-2 rounded-full px-2 py-0.5 text-[10px] md:text-xs font-medium ${card.growth >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-inset ring-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 ring-1 ring-inset ring-rose-500/20'}`}>
-                    {card.growth >= 0 ? <IconTrendingUp className="h-3 w-3" /> : <IconTrendingDown className="h-3 w-3" />}
+                  <Badge variant="outline" className={`gap-1 font-bold py-0.5 px-2 rounded-lg border-0 ${card.growth >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                    {card.growth >= 0 ? <IconTrendingUp className="size-3" /> : <IconTrendingDown className="size-3" />}
                     {card.growth > 0 ? "+" : ""}{card.growth}%
-                  </div>
+                  </Badge>
                 )}
               </div>
 
-              <div className="mt-auto">
+              <div className="pt-1">
                 <div className="flex items-baseline gap-1">
-                  <span className={`font-bold tabular-nums tracking-tight ${isHighlight ? 'text-3xl lg:text-4xl text-primary' : 'text-2xl text-foreground'}`}>
+                  <span className="text-3xl lg:text-4xl font-bold tabular-nums tracking-tighter text-foreground">
                     {card.prefix || ""}{typeof card.value === 'number' ? card.value.toLocaleString(undefined, {
                       minimumFractionDigits: card.isCurrency ? (card.value % 1 === 0 ? 0 : 2) : 0,
                       maximumFractionDigits: card.isCurrency ? 2 : 0
                     }) : card.value}{card.suffix || ""}
                   </span>
                 </div>
-                <p className={`font-medium mt-1 text-muted-foreground line-clamp-1 ${isHighlight ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
-                  {card.description || "Live Status"}
-                </p>
               </div>
             </CardHeader>
           </Card>

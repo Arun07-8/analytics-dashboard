@@ -45,8 +45,8 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
 
   return (
     <div className="w-full">
-      <Card className="flex flex-col border-0 shadow-none bg-transparent">
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2 px-0">
+      <Card className="flex flex-col border border-border/40 bg-card shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2 px-6 pt-6">
           <div className="space-y-1.5">
             <CardTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
               Performance Overview
@@ -90,17 +90,15 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
           </CardAction>
         </CardHeader>
 
-        <CardContent className="px-0 pt-4 sm:pt-6">
+        <CardContent className="px-2 md:px-4 pt-4 sm:pt-6 pb-6">
           <div className="relative h-[320px] w-full">
-            {isEmpty && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/50 backdrop-blur-[1px] z-10 rounded-2xl border-2 border-dashed border-border/30">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse">Waiting for Data Stream...</p>
-              </div>
-            )}
             <ChartContainer config={chartConfig} className="h-full w-full">
               <AreaChart
-                data={data}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                data={isEmpty ? [
+                  { date: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(), revenue: 0, volume: 0 },
+                  { date: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(), revenue: 0, volume: 0 }
+                ] : data}
+                margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
               >
                 <defs>
                   <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">

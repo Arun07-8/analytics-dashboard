@@ -11,6 +11,7 @@ import {
     IconChevronDown,
 } from "@tabler/icons-react"
 
+import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -35,7 +36,7 @@ const columns = [
     {
         accessorKey: "salesRefId",
         label: "Invoice ID",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Invoice ID</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Invoice ID</div>,
         cell: ({ row }) => (
             <div className="font-mono font-bold text-xs uppercase tracking-tighter">
                 {row.original.salesRefId?.[0] || "N/A"}
@@ -45,7 +46,7 @@ const columns = [
     {
         accessorKey: "customerName",
         label: "Customer Name",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Customer Name</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Customer Name</div>,
         cell: ({ row }) => (
             <div className="font-bold text-sm">
                 {row.original.customerName || "Unknown"}
@@ -55,7 +56,7 @@ const columns = [
     {
         accessorKey: "services",
         label: "Services",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Service Name</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Service Name</div>,
         cell: ({ row }) => (
             <div className="max-w-[200px] truncate text-xs text-muted-foreground font-medium">
                 {row.original.services?.map(s => s.name).join(', ')}
@@ -65,7 +66,7 @@ const columns = [
     {
         accessorKey: "staffName",
         label: "Staff Member",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Staff Name</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Staff Name</div>,
         cell: ({ row }) => (
             <div className="text-xs font-semibold">
                 {row.original.staffName || "System"}
@@ -75,7 +76,7 @@ const columns = [
     {
         accessorKey: "totalAmount",
         label: "Total Amount",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Amount</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Amount</div>,
         cell: ({ row }) => (
             <div className="font-black text-sm tracking-tighter">
                 ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -85,7 +86,7 @@ const columns = [
     {
         accessorKey: "status",
         label: "Payment Status",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Status</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Status</div>,
         cell: ({ row }) => {
             const status = row.original.status?.toLowerCase() || (row.original.closed ? "paid" : "unpaid");
             const isPaid = status === "paid" || status === "closed";
@@ -102,7 +103,7 @@ const columns = [
     {
         accessorKey: "createdAt",
         label: "Recording Date",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Date</div>,
+        header: () => <div className="text-[11px] font-extrabold text-foreground">Date</div>,
         cell: ({ row }) => {
             const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
             return (
@@ -114,7 +115,7 @@ const columns = [
     },
     {
         id: "actions",
-        header: () => <div className="text-right text-[11px] font-semibold text-muted-foreground/70 pr-2">Actions</div>,
+        header: () => <div className="text-right text-[11px] font-extrabold text-foreground pr-2">Actions</div>,
         cell: function ActionCell({ row, table }) {
             const sale = row.original;
             const meta = table.options.meta;
@@ -177,70 +178,74 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
     }, [data]);
 
     return (
-        <div className="flex flex-col gap-4">
-            <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-card p-2 rounded-xl border border-border/40 shadow-sm mx-4 lg:mx-0">
+        <div className="flex flex-col gap-6 w-full">
+            <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center py-1">
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex gap-1 bg-muted/40 p-1 rounded-lg border border-border/40">
+                    <div className="inline-flex items-center p-1 bg-muted/40 rounded-xl border border-border/40 w-fit">
                         {[
                             { label: "All Sales", value: "all" },
                             { label: "Payment Closed", value: "paid" },
                             { label: "Payment Pending", value: "unpaid" }
                         ].map((status) => (
-                            <Button
+                            <button
                                 key={status.value}
-                                variant={statusFilter === status.value ? "secondary" : "ghost"}
-                                size="sm"
-                                className={`h-8 text-xs font-semibold px-4 rounded-md transition-all relative ${statusFilter === status.value ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground"}`}
                                 onClick={() => setStatusFilter(status.value)}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap",
+                                    statusFilter === status.value
+                                        ? "bg-card text-foreground shadow-sm ring-1 ring-border/10"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
                             >
-                                <span className="flex items-center gap-2">
-                                    {status.label}
-                                    <span className={`px-1.5 py-0.5 rounded-full text-[8px] tracking-tight ${statusFilter === status.value ? "bg-primary text-primary-foreground" : "bg-slate-950 text-slate-50"}`}>
-                                        {statusCounts[status.value]}
-                                    </span>
+                                {status.label}
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded-full text-[9px] tracking-tight",
+                                    statusFilter === status.value ? "bg-primary text-primary-foreground" : "bg-muted-foreground/20 text-muted-foreground"
+                                )}>
+                                    {statusCounts[status.value]}
                                 </span>
-                            </Button>
+                            </button>
                         ))}
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-center">
+                <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto items-center ml-auto">
                     <Select value={staffFilter} onValueChange={setStaffFilter}>
-                        <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs font-semibold bg-background border-border/60 focus:ring-1 focus:ring-primary/20 rounded-lg transition-all shadow-sm">
+                        <SelectTrigger className="h-10 w-full sm:w-[170px] text-xs font-bold bg-card border-border/60 hover:border-primary/30 focus:ring-1 focus:ring-primary/20 rounded-xl transition-all shadow-sm">
                             <SelectValue placeholder="All Team" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-border/50 shadow-2xl">
-                            <SelectItem value="all" className="text-xs font-bold uppercase tracking-tighter text-primary group">
+                        <SelectContent className="rounded-xl border-border/50 shadow-2xl p-1.5">
+                            <SelectItem value="all" className="text-[10px] font-bold uppercase tracking-tight text-primary py-2 rounded-lg">
                                 All Team Members
                             </SelectItem>
 
-                            <DropdownMenuSeparator />
-                            <SelectItem value="admin" className="text-xs font-extrabold uppercase tracking-tighter bg-muted/30">
-                                👑 All Admins
-                            </SelectItem>
+                            <DropdownMenuSeparator className="my-1 border-border/40" />
+                            <div className="px-3 py-1.5 text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">
+                                Admins
+                            </div>
                             {admins.filter(a => a.role?.toLowerCase() === 'admin').map(admin => (
-                                <SelectItem key={admin.id} value={admin.id} className="text-xs font-medium uppercase tracking-tighter pl-8">
+                                <SelectItem key={admin.id} value={admin.id} className="text-xs font-semibold py-2 rounded-lg pl-8">
                                     {admin.name}
                                 </SelectItem>
                             ))}
 
-                            <DropdownMenuSeparator />
-                            <SelectItem value="staff" className="text-xs font-extrabold uppercase tracking-tighter bg-muted/30">
-                                👨‍💼 All Staff Members
-                            </SelectItem>
+                            <DropdownMenuSeparator className="my-1 border-border/40" />
+                            <div className="px-3 py-1.5 text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">
+                                Staff Members
+                            </div>
                             {admins.filter(a => a.role?.toLowerCase() !== 'admin').map(staff => (
-                                <SelectItem key={staff.id} value={staff.id} className="text-xs font-medium pl-8">
+                                <SelectItem key={staff.id} value={staff.id} className="text-xs font-semibold py-2 rounded-lg pl-8">
                                     {staff.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
 
-                    <div className="relative w-full sm:w-64">
-                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50" />
+                    <div className="relative w-full sm:w-72">
+                        <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40" strokeWidth={2.5} />
                         <Input
-                            placeholder="Search customer..."
-                            className="pl-9 h-9 text-xs font-medium bg-background border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 transition-all shadow-sm"
+                            placeholder="Search customer name..."
+                            className="pl-10 h-10 text-xs font-bold bg-card border-border/60 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20 transition-all shadow-sm"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -248,17 +253,17 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-9 text-xs font-semibold gap-2 bg-background border-border/60 hover:border-primary/30 rounded-lg shadow-sm hover:bg-muted/30 transition-all">
-                                <IconLayoutColumns className="size-3.5" />
-                                <span className="hidden sm:inline">Customize Columns</span>
+                            <Button variant="outline" className="h-10 text-xs font-bold gap-2 px-4 bg-card border-border/60 hover:border-primary/30 rounded-xl shadow-sm hover:bg-muted/30 transition-all text-muted-foreground">
+                                <IconLayoutColumns className="size-4" />
+                                <span className="hidden sm:inline">Columns</span>
                                 <IconChevronDown className="size-3" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border-border/40 p-1.5">
-                            {columns.filter(c => c.accessorKey).map((column) => (
+                        <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-border/40 p-1.5">
+                            {columns.filter(c => c.accessorKey && c.label).map((column) => (
                                 <DropdownMenuCheckboxItem
                                     key={column.accessorKey}
-                                    className="text-sm font-medium py-1.5 rounded-md focus:bg-primary/5 focus:text-primary transition-colors cursor-pointer"
+                                    className="text-xs font-semibold py-2 rounded-lg cursor-pointer"
                                     checked={columnVisibility[column.accessorKey] !== false}
                                     onCheckedChange={(value) =>
                                         setColumnVisibility(prev => ({
@@ -273,21 +278,20 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                     </DropdownMenu>
                 </div>
             </div>
-            <div className="rounded-xl border border-border/40 bg-card overflow-hidden shadow-sm mx-4 lg:mx-0">
-                <DataTable
-                    data={filteredData}
-                    columns={columns}
-                    enableReordering={false}
-                    columnVisibility={columnVisibility}
-                    onColumnVisibilityChange={setColumnVisibility}
-                    showColumnsButton={false}
-                    tableMeta={{
-                        onViewDetails,
-                        onEditSale,
-                        onDownloadInvoice,
-                    }}
-                />
-            </div>
+
+            <DataTable
+                data={filteredData}
+                columns={columns}
+                enableReordering={false}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
+                showColumnsButton={false}
+                tableMeta={{
+                    onViewDetails,
+                    onEditSale,
+                    onDownloadInvoice,
+                }}
+            />
         </div>
     );
 }
