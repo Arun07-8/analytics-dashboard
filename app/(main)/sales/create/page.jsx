@@ -243,9 +243,7 @@ export default function CreateSalePage() {
         if (!salesRefId.trim()) {
             newErrors.refId = "Reference number is required";
         }
-        if (selectedServices.length === 0) {
-            newErrors.cart = "Add at least one item to cart";
-        }
+
 
         const pAmount = Number(paidAmount);
         if (paidAmount !== '' && (isNaN(pAmount) || pAmount < 0)) {
@@ -259,7 +257,7 @@ export default function CreateSalePage() {
             // Intelligent Focus
             if (newErrors.customer) customerSearchRef.current?.focus();
             else if (newErrors.refId) salesRefIdRef.current?.focus();
-            else if (newErrors.cart) cartCardRef.current?.scrollIntoView({ behavior: 'smooth' });
+
             else if (newErrors.paidAmount) paidAmountRef.current?.focus();
             return;
         }
@@ -472,13 +470,7 @@ export default function CreateSalePage() {
                             <IconDownload className="h-4 w-4" />
                             Draft
                         </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            className="h-11 px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider gap-2 shadow-lg shadow-primary/20 transition-all rounded-lg active:scale-95"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? "Syncing..." : "Finish Sale"}
-                        </Button>
+
                     </div>
                 </div>
             </div>
@@ -796,11 +788,7 @@ export default function CreateSalePage() {
                                         <IconReceipt2 className="h-4 w-4" />
                                         Billed Cart Details
                                     </CardTitle>
-                                    {errors.cart && (
-                                        <Badge variant="destructive" className="text-[9px] font-black uppercase tracking-widest animate-pulse border-none px-4 py-1">
-                                            {errors.cart}
-                                        </Badge>
-                                    )}
+
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <div className="overflow-x-auto">
@@ -858,7 +846,7 @@ export default function CreateSalePage() {
                                                                     <IconClipboardList className="h-10 w-10 text-muted-foreground" />
                                                                 </div>
                                                                 <div className="space-y-1">
-                                                                    <p className="text-base font-black text-foreground uppercase tracking-widest">Cart is Empty</p>
+                                                                    <p className="text-base font-black text-foreground uppercase tracking-widest">Bill is Empty</p>
                                                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Add items using the entry form above</p>
                                                                 </div>
                                                             </div>

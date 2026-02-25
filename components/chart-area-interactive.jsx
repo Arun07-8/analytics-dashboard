@@ -59,35 +59,6 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
               Live transactional stream monitoring for your company.
             </CardDescription>
           </div>
-          <CardAction>
-            <ToggleGroup
-              type="single"
-              value={timeRange}
-              onValueChange={(val) => val && onTimeRangeChange(val)}
-              variant="outline"
-              className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex bg-card p-1 rounded-lg h-10 border border-border/40 shadow-sm">
-              <ToggleGroupItem value="today" className="text-xs font-medium rounded-lg">Today</ToggleGroupItem>
-              <ToggleGroupItem value="yesterday" className="text-xs font-medium rounded-lg">Yesterday</ToggleGroupItem>
-              <ToggleGroupItem value="this-week" className="text-xs font-medium rounded-lg">Week</ToggleGroupItem>
-              <ToggleGroupItem value="this-month" className="text-xs font-medium rounded-lg">Month</ToggleGroupItem>
-              <ToggleGroupItem value="this-year" className="text-xs font-medium rounded-lg">Year</ToggleGroupItem>
-            </ToggleGroup>
-            <Select value={timeRange} onValueChange={onTimeRangeChange}>
-              <SelectTrigger
-                className="flex w-32 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden h-10 bg-card border-border/40 shadow-sm font-medium text-xs rounded-lg"
-                size="sm"
-                aria-label="Select range">
-                <SelectValue placeholder="Period" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-border/40 shadow-lg">
-                <SelectItem value="today" className="text-xs font-medium">Today</SelectItem>
-                <SelectItem value="yesterday" className="text-xs font-medium">Yesterday</SelectItem>
-                <SelectItem value="this-week" className="text-xs font-medium">This Week</SelectItem>
-                <SelectItem value="this-month" className="text-xs font-medium">This Month</SelectItem>
-                <SelectItem value="this-year" className="text-xs font-medium">This Year</SelectItem>
-              </SelectContent>
-            </Select>
-          </CardAction>
         </CardHeader>
 
         <CardContent className="px-2 md:px-4 pt-4 sm:pt-6 pb-6">
