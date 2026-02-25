@@ -171,12 +171,12 @@ export function SalesTable({
                 accessorKey: "status",
                 header: "Status",
                 cell: ({ row }) => {
-                    const status = row.original.status || (row.original.closed ? "Closed" : "Pending");
-                    const isClosed = status === "Closed";
+                    const status = row.original.status?.toLowerCase() || (row.original.closed ? "paid" : "unpaid");
+                    const isPaid = status === "paid" || status === "closed";
 
                     return (
                         <Badge variant="outline" className="text-muted-foreground px-1.5 gap-1">
-                            {isClosed ? (
+                            {isPaid ? (
                                 <>
                                     <IconCircleCheckFilled className="size-3 fill-green-500 text-green-500" />
                                     Payment Closed

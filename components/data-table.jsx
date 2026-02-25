@@ -276,7 +276,7 @@ export function DataTable({
       <TabsContent
         value={currentTab}
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-black/5">
           {enableReordering ? (
             <DndContext
               collisionDetection={closestCenter}

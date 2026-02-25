@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, use } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,8 @@ import { cn } from "@/lib/utils";
 export default function EditSalePage() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
+    const from = searchParams.get('from');
     const saleId = params.id;
     const { user } = useAuth();
 
@@ -127,14 +129,22 @@ export default function EditSalePage() {
 
     useEffect(() => {
         if (currentServiceId) {
-            const service = services.find(s => s.id === currentServiceId);
-            if (service) {
-                setCustomPrice(service.price?.toString() || '0');
+            // Only auto-update price from master list if:
+            // 1. We're adding a new item (editingIndex === null)
+            // 2. We're editing an item but have changed the selected service
+            const isNewItem = editingIndex === null;
+            const hasServiceChanged = editingIndex !== null && selectedServices[editingIndex]?.serviceId !== currentServiceId;
+
+            if (isNewItem || hasServiceChanged) {
+                const service = services.find(s => s.id === currentServiceId);
+                if (service) {
+                    setCustomPrice(service.price?.toString() || '0');
+                }
             }
         } else {
             setCustomPrice('');
         }
-    }, [currentServiceId, services]);
+    }, [currentServiceId, services, editingIndex, selectedServices]);
 
     const totalAmount = useMemo(() => {
         return selectedServices.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
@@ -212,13 +222,13 @@ export default function EditSalePage() {
                 paidAmount: finalPaid,
                 excessAmount: finalTotal - finalPaid,
                 closed: isClosed,
-                status: isClosed ? 'Closed' : 'Pending',
+                status: isClosed ? 'paid' : 'unpaid',
                 salesRefId: [salesRefId],
             };
 
             await updateSale(saleId, updateData);
             toast.success("Sale updated successfully");
-            router.push('/sales');
+            router.push(from === 'dashboard' ? '/dashboard' : '/sales');
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -314,7 +324,7 @@ export default function EditSalePage() {
                         <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => router.back()}
+                            onClick={() => router.push(from === 'dashboard' ? '/dashboard' : '/sales')}
                             className="h-10 w-10 border-border hover:bg-accent transition-colors shrink-0"
                         >
                             <IconArrowLeft className="h-5 w-5 text-muted-foreground" />

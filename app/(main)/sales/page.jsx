@@ -159,13 +159,14 @@ export default function Page() {
 
     return sales.map(sale => {
       const date = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);
+      const mappedStatus = (sale.status === 'paid' || sale.status === 'Closed' || sale.closed) ? 'paid' : 'unpaid';
       return {
         ...sale,
         createdAtDate: date, // Keep a real Date object for filtering
         customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
         staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
         staffEmail: sale.staffEmail || '',
-        status: sale.status || (sale.closed ? "Closed" : "Pending"),
+        status: mappedStatus,
         verificationStatus: sale.verificationStatus || (sale.isVerified ? "Approved" : "Pending"),
         isVerified: sale.isVerified
       };
@@ -230,8 +231,8 @@ export default function Page() {
   const filteredSales = useMemo(() => {
     return periodSales.filter(sale => {
       // Tab filter logic:
-      if (activeTab === 'closed' && sale.status !== 'Closed') return false;
-      if (activeTab === 'pending' && sale.status !== 'Pending') return false;
+      if (activeTab === 'closed' && sale.status !== 'paid') return false;
+      if (activeTab === 'pending' && sale.status !== 'unpaid') return false;
 
       // Staff-only tabs
       if (activeTab === 'requests' && sale.verificationStatus !== 'Pending') return false;
@@ -264,8 +265,8 @@ export default function Page() {
     const counts = {
       // For personal stats, only count verified/approved items in main tabs
       all: periodSales.filter(s => s.isVerified !== false).length,
-      closed: periodSales.filter(s => s.isVerified !== false && s.status === 'Closed').length,
-      pending: periodSales.filter(s => s.isVerified !== false && s.status === 'Pending').length,
+      closed: periodSales.filter(s => s.isVerified !== false && s.status === 'paid').length,
+      pending: periodSales.filter(s => s.isVerified !== false && s.status === 'unpaid').length,
       // Track pending/rejected items separately for Staff
       requests: periodSales.filter(s => s.verificationStatus === 'Pending').length,
       declined: periodSales.filter(s => s.verificationStatus === 'Rejected').length
@@ -291,73 +292,49 @@ export default function Page() {
   }, [periodSales, user]);
 
   const stats = useMemo(() => {
-    let allTimeRevenue = 0;
-    const customerSalesMap = {};
+    const verifiedSales = salesWithDetails.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
+    const verifiedPeriodSales = periodSales.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
 
-    salesWithDetails.forEach(sale => {
-      // ONLY include approved/verified sales in revenue metrics
-      if (sale.isVerified === false || sale.verificationStatus === 'Rejected') return;
+    // My All-Time Stats (Verified Only)
+    const myTotalSalesAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
+    const myPaidRevenueAllTime = verifiedSales.filter(s => s.status === 'paid').reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
+    const myPendingAmountAllTime = verifiedSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
 
-      const amount = Number(sale.totalAmount) || 0;
-      allTimeRevenue += amount;
-
-      if (sale.customerId) {
-        customerSalesMap[sale.customerId] = (customerSalesMap[sale.customerId] || 0) + 1;
-      }
-    });
-
-    const uniqueCustomersCount = Object.keys(customerSalesMap).length;
-    const returningCustomersCount = Object.values(customerSalesMap).filter(count => count >= 2).length;
-    const retentionRate = uniqueCustomersCount > 0
-      ? Math.round((returningCustomersCount / uniqueCustomersCount) * 100)
-      : 0;
-
-    const periodRevenue = periodSales
-      .filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected')
-      .reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-
-    const getDynamicLabel = () => {
-      if (dateFilter === 'today') return "Today's Revenue";
-      if (dateFilter === 'yesterday') return "Yesterday's Revenue";
-      if (dateFilter === 'month') return "Monthly Revenue";
-      if (dateFilter === 'year') return "Yearly Revenue";
-      if (dateFilter === 'all') return "Total Contribution";
-      return "Selected Revenue";
-    };
+    // My Period Stats (Verified Only)
+    const myTotalSalesPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
+    const myPaidRevenuePeriod = verifiedPeriodSales.filter(s => s.status === 'paid').reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
+    const myPendingAmountPeriod = verifiedPeriodSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
 
     return [
       {
-        label: "Total Revenue",
-        value: allTimeRevenue,
+        label: "My Total Sales",
+        value: dateFilter === 'all' ? myTotalSalesAllTime : myTotalSalesPeriod,
         prefix: "₹",
         isCurrency: true,
-        description: "Your lifetime achievement"
+        description: "Gross value (Paid + Unpaid)"
       },
       {
-        label: getDynamicLabel(),
-        value: periodRevenue,
+        label: "My Paid Revenue",
+        value: dateFilter === 'all' ? myPaidRevenueAllTime : myPaidRevenuePeriod,
         prefix: "₹",
         isCurrency: true,
-        description: "Revenue in current view"
+        description: "Only confirmed payments"
+      },
+      {
+        label: "My Pending Amount",
+        value: dateFilter === 'all' ? myPendingAmountAllTime : myPendingAmountPeriod,
+        prefix: "₹",
+        isCurrency: true,
+        description: "Outstanding balance"
       },
       {
         label: "Transactions",
         value: periodSales.length,
-        description: "Orders in selected period"
-      },
-      {
-        label: "Retention Rate",
-        value: retentionRate,
-        suffix: "%",
-        description: "Returning customers"
-      },
-      {
-        label: "My Customers",
-        value: uniqueCustomersCount,
-        description: "Lifetime unique clients"
-      },
+        description: "Orders in current view"
+      }
     ];
   }, [salesWithDetails, periodSales, dateFilter]);
+
   const verifiedPeriodSales = useMemo(() => {
     return periodSales.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
   }, [periodSales]);
@@ -381,7 +358,7 @@ export default function Page() {
         const d = new Date(targetDate);
         d.setHours(h, 0, 0, 0);
         const iso = d.toISOString();
-        data[iso] = { date: iso, desktop: 0, mobile: 0, isHourly: true };
+        data[iso] = { date: iso, revenue: 0, volume: 0, isHourly: true };
       }
 
       verifiedPeriodSales.forEach(sale => {
@@ -393,8 +370,8 @@ export default function Page() {
           d.setMinutes(0, 0, 0); // Round to the nearest hour
           const iso = d.toISOString();
           if (data[iso]) { // Only add if it falls within the initialized 24 hours
-            data[iso].desktop += Number(sale.totalAmount) || 0;
-            data[iso].mobile += 1;
+            data[iso].revenue += Number(sale.totalAmount) || 0;
+            data[iso].volume += 1;
           }
         }
       });
@@ -451,7 +428,7 @@ export default function Page() {
         const temp = new Date(fillStart);
         while (temp <= fillEnd) {
           const dStr = temp.toISOString().split('T')[0];
-          data[dStr] = { date: dStr, desktop: 0, mobile: 0 };
+          data[dStr] = { date: dStr, revenue: 0, volume: 0 };
           temp.setDate(temp.getDate() + 1);
         }
       }
@@ -459,9 +436,9 @@ export default function Page() {
       // Populate actual daily data
       verifiedPeriodSales.forEach(sale => {
         const dStr = sale.createdAtDate.toISOString().split('T')[0];
-        if (!data[dStr]) data[dStr] = { date: dStr, desktop: 0, mobile: 0 };
-        data[dStr].desktop += Number(sale.totalAmount) || 0;
-        data[dStr].mobile += 1;
+        if (!data[dStr]) data[dStr] = { date: dStr, revenue: 0, volume: 0 };
+        data[dStr].revenue += Number(sale.totalAmount) || 0;
+        data[dStr].volume += 1;
       });
     }
 
@@ -469,7 +446,7 @@ export default function Page() {
 
     if (result.length === 0) {
       // Return a single point for the current day if no data, to avoid empty chart
-      return [{ date: new Date().toISOString().split('T')[0], desktop: 0, mobile: 0 }];
+      return [{ date: new Date().toISOString().split('T')[0], revenue: 0, volume: 0 }];
     }
 
     return result;

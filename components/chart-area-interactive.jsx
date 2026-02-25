@@ -28,11 +28,11 @@ import {
 export const description = "An interactive area chart"
 
 const chartConfig = {
-  desktop: {
+  revenue: {
     label: "Total Revenue",
     color: "#10b981", // Vibrant Emerald
   },
-  mobile: {
+  volume: {
     label: "Order Volume",
     color: "#6366f1", // Sleek Indigo
   }
@@ -41,7 +41,7 @@ const chartConfig = {
 export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ data = [], timeRange, onTimeRangeChange }) {
   const isMobile = useIsMobile()
 
-  const isEmpty = data.length === 0 || data.every(d => d.desktop === 0 && d.mobile === 0);
+  const isEmpty = data.length === 0 || data.every(d => d.revenue === 0 && d.volume === 0);
 
   return (
     <Card className="@container/card bg-card/40 backdrop-blur-md border-border/50 shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
@@ -99,13 +99,13 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
               margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
             >
               <defs>
-                <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-desktop)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-desktop)" stopOpacity={0.1} />
+                <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.1} />
                 </linearGradient>
-                <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-mobile)" stopOpacity={0.6} />
-                  <stop offset="95%" stopColor="var(--color-mobile)" stopOpacity={0.1} />
+                <linearGradient id="fillVolume" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-volume)" stopOpacity={0.6} />
+                  <stop offset="95%" stopColor="var(--color-volume)" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -170,7 +170,7 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                           </span>
                         </div>
                         <span className="text-xs font-black tabular-nums font-mono">
-                          {name === "desktop" ? `₹${value.toLocaleString('en-IN')}` : value.toLocaleString()}
+                          {name === "revenue" ? `₹${value.toLocaleString('en-IN')}` : value.toLocaleString()}
                         </span>
                       </div>
                     )}
@@ -179,20 +179,20 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                 }
               />
               <Area
-                dataKey="mobile"
+                dataKey="volume"
                 type="monotone"
-                fill="url(#fillMobile)"
-                stroke="var(--color-mobile)"
+                fill="url(#fillVolume)"
+                stroke="var(--color-volume)"
                 strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 stackId="a"
               />
               <Area
-                dataKey="desktop"
+                dataKey="revenue"
                 type="monotone"
-                fill="url(#fillDesktop)"
-                stroke="var(--color-desktop)"
+                fill="url(#fillRevenue)"
+                stroke="var(--color-revenue)"
                 strokeWidth={4}
                 strokeLinecap="round"
                 strokeLinejoin="round"

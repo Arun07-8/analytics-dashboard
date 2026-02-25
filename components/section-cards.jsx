@@ -28,16 +28,19 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
 
   return (
     <div
-      className={`*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-2 gap-3 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-none lg:px-6 md:grid-cols-4 ${gridClass}`}>
+      className={`dark:*:data-[slot=card]:bg-card grid grid-cols-2 gap-3 px-4 *:data-[slot=card]:bg-card *:data-[slot=card]:shadow-sm lg:px-6 md:grid-cols-4 ${gridClass}`}>
       {cards.map((card, index) => {
         const isHighlight = index === 0;
         return (
           <Card key={index} className={`@container/card border-border/40 transition-all duration-300 hover:border-primary/30 ${isHighlight ? 'xl:col-span-2 bg-primary/[0.03] border-primary/20 shadow-sm shadow-primary/5' : ''}`}>
             <CardHeader className={`${isHighlight ? 'p-4' : 'p-3.5'} space-y-0 relative`}>
               <div className="flex items-center justify-between mb-1">
-                <CardDescription className={`font-black uppercase tracking-widest line-clamp-1 ${isHighlight ? 'text-[11px] text-primary' : 'text-[10px]'}`}>
-                  {card.label}
-                </CardDescription>
+                <div className="flex items-center gap-2">
+                  {card.icon && <div className="text-muted-foreground/50">{card.icon}</div>}
+                  <CardDescription className={`font-black uppercase tracking-widest line-clamp-1 ${isHighlight ? 'text-[11px] text-primary' : 'text-[10px]'}`}>
+                    {card.label}
+                  </CardDescription>
+                </div>
                 {card.action && (
                   <div className="z-10 bg-background/50 rounded-md">
                     {card.action}

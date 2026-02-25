@@ -87,13 +87,13 @@ const columns = [
         label: "Payment Status",
         header: () => <div className="text-[10px] font-black uppercase tracking-widest text-foreground">Status</div>,
         cell: ({ row }) => {
-            const status = row.original.status || "Pending";
-            const isClosed = status === "Closed";
+            const status = row.original.status?.toLowerCase() || (row.original.closed ? "paid" : "unpaid");
+            const isPaid = status === "paid" || status === "closed";
             return (
-                <Badge variant="outline" className={`gap-1.5 px-2 py-0.5 ${isClosed ? "bg-emerald-500/5 text-emerald-500 border-emerald-500/20" : "bg-orange-500/5 text-orange-500 border-orange-500/20"}`}>
-                    {isClosed ? <IconCircleCheckFilled className="size-3" /> : <IconLoader className="size-3 animate-spin" />}
+                <Badge variant="outline" className={`gap-1.5 px-2 py-0.5 ${isPaid ? "bg-emerald-500/5 text-emerald-500 border-emerald-500/20" : "bg-orange-500/5 text-orange-500 border-orange-500/20"}`}>
+                    {isPaid ? <IconCircleCheckFilled className="size-3" /> : <IconLoader className="size-3 animate-spin" />}
                     <span className="text-[10px] font-black uppercase tracking-widest">
-                        {isClosed ? "Payment Closed" : "Payment Pending"}
+                        {isPaid ? "Payment Closed" : "Payment Pending"}
                     </span>
                 </Badge>
             );
@@ -158,31 +158,47 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                 staffFilter === "admin" ||
                 staffFilter === "staff"
                 ? (staffFilter === "all" || (item.staffRole || "admin").toLowerCase() === staffFilter)
-                : (item.staffName || "").toLowerCase() === staffFilter.toLowerCase();
+                : item.createdBy === staffFilter;
 
-            const matchesStatus = statusFilter === "all" || (item.status || "Pending") === statusFilter;
+            const matchesStatus = statusFilter === "all" ||
+                ((item.status?.toLowerCase() === statusFilter.toLowerCase()) ||
+                    (statusFilter === "paid" && item.status === "Closed") ||
+                    (statusFilter === "unpaid" && item.status === "Pending"));
             return matchesSearch && matchesStaff && matchesStatus;
         });
     }, [data, searchTerm, staffFilter, statusFilter]);
 
+    const statusCounts = React.useMemo(() => {
+        return {
+            all: data.length,
+            paid: data.filter(item => item.status?.toLowerCase() === 'paid' || item.status === 'Closed').length,
+            unpaid: data.filter(item => item.status?.toLowerCase() === 'unpaid' || item.status === 'Pending').length
+        };
+    }, [data]);
+
     return (
         <div className="flex flex-col gap-4 px-4 lg:px-6">
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-card p-4 rounded-xl border border-border/50">
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-card p-4 rounded-xl border border-border/50 shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex gap-1 bg-muted/50 p-1 rounded-lg border border-border/40">
+                    <div className="flex gap-1 bg-muted/40 p-1 rounded-lg border border-border/40">
                         {[
                             { label: "All Sales", value: "all" },
-                            { label: "Payment Closed", value: "Closed" },
-                            { label: "Payment Pending", value: "Pending" }
+                            { label: "Payment Closed", value: "paid" },
+                            { label: "Payment Pending", value: "unpaid" }
                         ].map((status) => (
                             <Button
                                 key={status.value}
                                 variant={statusFilter === status.value ? "secondary" : "ghost"}
                                 size="sm"
-                                className={`h-8 text-[10px] font-black uppercase tracking-widest px-4 rounded-md transition-all ${statusFilter === status.value ? "bg-background shadow-sm text-foreground hover:bg-background" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`h-8 text-[10px] font-black uppercase tracking-widest px-4 rounded-md transition-all relative ${statusFilter === status.value ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground"}`}
                                 onClick={() => setStatusFilter(status.value)}
                             >
-                                {status.label}
+                                <span className="flex items-center gap-2">
+                                    {status.label}
+                                    <span className={`px-1.5 py-0.5 rounded-full text-[8px] tracking-tight ${statusFilter === status.value ? "bg-primary text-primary-foreground" : "bg-slate-950 text-slate-50"}`}>
+                                        {statusCounts[status.value]}
+                                    </span>
+                                </span>
                             </Button>
                         ))}
                     </div>
@@ -190,12 +206,12 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
 
                 <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
                     <Select value={staffFilter} onValueChange={setStaffFilter}>
-                        <SelectTrigger className="h-10 w-full md:w-[220px] text-xs font-bold uppercase tracking-widest bg-background border-border/50 focus:ring-0 rounded-lg shadow-sm">
-                            <SelectValue placeholder="Select Staff/Admin" />
+                        <SelectTrigger className="h-10 w-full md:w-[150px] text-[10px] font-black uppercase tracking-widest bg-muted/20 border-border/50 focus:ring-1 focus:ring-primary/20 rounded-lg transition-all">
+                            <SelectValue placeholder="All Team" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-border/50 shadow-2xl">
                             <SelectItem value="all" className="text-xs font-bold uppercase tracking-tighter text-primary group">
-                                <span className="flex items-center gap-2">All Team Members</span>
+                                All Team Members
                             </SelectItem>
 
                             <DropdownMenuSeparator />
@@ -203,7 +219,7 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                                 👑 All Admins
                             </SelectItem>
                             {admins.filter(a => a.role?.toLowerCase() === 'admin').map(admin => (
-                                <SelectItem key={admin.id} value={admin.name} className="text-xs font-medium uppercase tracking-tighter pl-8">
+                                <SelectItem key={admin.id} value={admin.id} className="text-xs font-medium uppercase tracking-tighter pl-8">
                                     {admin.name}
                                 </SelectItem>
                             ))}
@@ -213,7 +229,7 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                                 👨‍💼 All Staff Members
                             </SelectItem>
                             {admins.filter(a => a.role?.toLowerCase() !== 'admin').map(staff => (
-                                <SelectItem key={staff.id} value={staff.name} className="text-xs font-medium uppercase tracking-tighter pl-8">
+                                <SelectItem key={staff.id} value={staff.id} className="text-xs font-medium uppercase tracking-tighter pl-8">
                                     {staff.name}
                                 </SelectItem>
                             ))}
@@ -224,7 +240,7 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                         <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                         <Input
                             placeholder="Search customer name..."
-                            className="pl-9 h-10 text-xs font-semibold bg-background border-border/50 rounded-lg focus-visible:ring-primary/20"
+                            className="pl-9 h-10 text-[10px] font-black uppercase tracking-widest bg-muted/20 border-border/50 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />

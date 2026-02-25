@@ -11,7 +11,7 @@ import { subscribeToSales } from "@/lib/firebase/collections/sale"
 import { subscribeToAdmins } from "@/lib/firebase/collections/admin"
 import { subscribeToCustomers } from "@/lib/firebase/collections/customer"
 import { format } from "date-fns";
-import { IconCalendar } from "@tabler/icons-react";
+import { IconCalendar, IconReceipt, IconChartBar, IconCalendarStats, IconUsers, IconClock, IconListCheck } from "@tabler/icons-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -148,12 +148,16 @@ export default function Page() {
 
     const allSalesWithDate = sales.map(sale => {
       const creator = staffMap[sale.createdBy] || { name: "System", role: "admin" };
+      // Ensure status is correctly mapped for consistent calculation logic
+      const mappedStatus = (sale.status === 'paid' || sale.status === 'Closed' || sale.closed) ? 'paid' : 'unpaid';
+
       return {
         ...sale,
         customerName: customerMap[sale.customerId] || "Unknown",
         staffName: creator.name,
         staffRole: creator.role,
-        date: sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt)
+        date: sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt),
+        status: mappedStatus
       };
     });
 
@@ -161,36 +165,32 @@ export default function Page() {
     const verifiedSales = allSalesWithDate.filter(s => s.isVerified === true);
 
     // Global Revenue Calculations (Independent of filter)
-
-    const todayRevenue = verifiedSales
-      .filter(s => s.date >= startOfToday)
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-
-    const yesterdayEnd = new Date(startOfToday);
-    yesterdayEnd.setMilliseconds(-1);
-    const yesterdayRevenue = verifiedSales
-      .filter(s => s.date >= startOfYesterday && s.date <= yesterdayEnd)
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-
-    const weeklyRevenue = verifiedSales
-      .filter(s => s.date >= startOfThisWeek)
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-
-    const monthlyRevenue = verifiedSales
-      .filter(s => s.date >= startOfThisMonth)
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-
-    const yearlyRevenue = verifiedSales
-      .filter(s => s.date >= startOfThisYear)
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-
+    // "Total Revenue" for Dashboard (Admin Only) should show company-wide paid amounts or totals of paid sales
     const allTimeCompanyRevenue = verifiedSales
+      .filter(s => s.status === 'paid')
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
-    // Filtered Global Revenue (Selected Period)
+    const allTimeCompanyPending = verifiedSales
+      .filter(s => s.status === 'unpaid')
+      .reduce((sum, s) => sum + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
+
+    const allTimeCompanySales = verifiedSales
+      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    // Period-based company stats (Verified Only)
     const companyPeriodRevenue = verifiedSales
+      .filter(s => s.date >= currentStart && s.date <= currentEnd && s.status === 'paid')
+      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    const companyPeriodPending = verifiedSales
+      .filter(s => s.date >= currentStart && s.date <= currentEnd && s.status === 'unpaid')
+      .reduce((sum, s) => sum + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
+
+    const companyPeriodSales = verifiedSales
       .filter(s => s.date >= currentStart && s.date <= currentEnd)
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+
 
     // Role-based visibility for Table and personal stats
     const filteredByRole = allSalesWithDate.filter(s => {
@@ -214,17 +214,21 @@ export default function Page() {
       return cDate >= currentStart && cDate <= currentEnd;
     }).length;
 
+    const previousRevenue = previous
+      .filter(s => s.status === 'paid')
+      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
     return {
       processedSales: processed,
       previousSales: previous,
       newCustomersCount: newCusts,
       allTimeCompanyRevenue,
-      todayRevenue,
-      yesterdayRevenue,
-      weeklyRevenue,
-      monthlyRevenue,
-      yearlyRevenue,
-      companyPeriodRevenue
+      allTimeCompanyPending,
+      allTimeCompanySales,
+      companyPeriodRevenue,
+      companyPeriodPending,
+      companyPeriodSales,
+      previousRevenue
     };
   }, [sales, dateFilter, fromDate, toDate, customerMap, staffMap, customers, user]);
 
@@ -232,18 +236,16 @@ export default function Page() {
     const {
       processedSales: processed,
       previousSales: previous,
-      newCustomersCount: newCusts,
       allTimeCompanyRevenue,
-      todayRevenue,
-      yesterdayRevenue,
-      weeklyRevenue,
-      monthlyRevenue,
-      yearlyRevenue,
-      companyPeriodRevenue
+      allTimeCompanyPending,
+      allTimeCompanySales,
+      companyPeriodRevenue,
+      previousRevenue,
+      newCustomersCount
     } = dataPack;
 
     const calculateStats = (data) => ({
-      revenue: data.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0),
+      revenue: data.filter(s => s.status === 'paid').reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0),
       count: data.length
     });
 
@@ -255,10 +257,6 @@ export default function Page() {
       return Math.round(((curr - prev) / prev) * 100);
     };
 
-    const uniqueCustomersInPeriod = new Set(processed.map(s => s.customerId)).size;
-    const totalCustomers = customers.length;
-    const retentionRate = totalCustomers > 0 ? Math.round((uniqueCustomersInPeriod / totalCustomers) * 100) : 0;
-
     const getDynamicLabel = () => {
       if (dateFilter === 'today') return "Today's Revenue";
       if (dateFilter === 'yesterday') return "Yesterday's Revenue";
@@ -269,46 +267,45 @@ export default function Page() {
       return "Selected Revenue";
     };
 
-    // Core requirements from user
-    // Exactly 5 cards as requested by USER
     const coreCards = [
       {
         label: "Total Revenue",
         value: allTimeCompanyRevenue,
         prefix: "₹",
         isCurrency: true,
-        description: "Lifetime Achievement"
+        icon: <IconReceipt className="size-3.5" />,
+        description: "Cumulative paid revenue"
+      },
+      {
+        label: "Total Sales",
+        value: allTimeCompanySales,
+        prefix: "₹",
+        isCurrency: true,
+        icon: <IconChartBar className="size-3.5" />,
+        description: "Company-wide gross sales"
       },
       {
         label: getDynamicLabel(),
         value: companyPeriodRevenue,
         prefix: "₹",
         isCurrency: true,
+        icon: <IconCalendarStats className="size-3.5" />,
         growth: calcGrowth(currentStats.revenue, prevStats.revenue),
-        description: `Vs. Previous ${dateFilter === 'this-week' ? 'Week' :
-            dateFilter === 'this-month' ? 'Month' :
-              dateFilter === 'this-year' ? 'Year' :
-                dateFilter === 'today' ? 'Day' :
-                  dateFilter === 'yesterday' ? 'Day' :
-                    'Period'
-          }`
+        description: `Revenue this ${dateFilter.replace('this-', '')}`
       },
       {
-        label: "Total Sales",
+        label: "Transaction Count",
         value: currentStats.count,
-        growth: calcGrowth(currentStats.count, prevStats.count),
-        description: "Orders in period"
+        icon: <IconListCheck className="size-3.5" />,
+        description: "Orders in this period"
       },
       {
-        label: "New Customers",
-        value: newCusts,
-        description: "Acquired this period"
-      },
-      {
-        label: "Retention Rate",
-        value: retentionRate,
-        suffix: "%",
-        description: "Period Engagement"
+        label: "Total Pending",
+        value: allTimeCompanyPending,
+        prefix: "₹",
+        isCurrency: true,
+        icon: <IconClock className="size-3.5" />,
+        description: "Pending collections"
       },
     ];
 
@@ -363,7 +360,7 @@ export default function Page() {
       let temp = new Date(fillStart);
       while (temp <= fillEnd) {
         const dStr = temp.toISOString().split('T')[0];
-        data[dStr] = { date: dStr, desktop: 0, mobile: 0 };
+        data[dStr] = { date: dStr, revenue: 0, volume: 0 };
         temp.setDate(temp.getDate() + 1);
       }
     }
@@ -371,9 +368,9 @@ export default function Page() {
     // Populate actual data
     dataPack.processedSales.forEach(sale => {
       const dStr = sale.date.toISOString().split('T')[0];
-      if (!data[dStr]) data[dStr] = { date: dStr, desktop: 0, mobile: 0 };
-      data[dStr].desktop += Number(sale.totalAmount) || 0;
-      data[dStr].mobile += 1;
+      if (!data[dStr]) data[dStr] = { date: dStr, revenue: 0, volume: 0 };
+      data[dStr].revenue += Number(sale.totalAmount) || 0;
+      data[dStr].volume += 1;
     });
 
     return Object.values(data).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -385,7 +382,7 @@ export default function Page() {
   }, []);
 
   const handleEditSale = useCallback((sale) => {
-    router.push(`/sales/edit/${sale.id}`);
+    router.push(`/sales/edit/${sale.id}?from=dashboard`);
   }, [router]);
 
   const handleDownloadInvoice = useCallback((sale) => {
@@ -469,10 +466,10 @@ export default function Page() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-card border border-border/50 rounded-lg pl-3 h-10 shadow-sm">
+          <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0 border-r pr-2 h-full flex items-center">Period</span>
             <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[120px] shadow-none">
+              <SelectTrigger className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 cursor-pointer outline-none h-full px-2 w-[120px] shadow-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -493,7 +490,7 @@ export default function Page() {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-lg", !fromDate && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">Date</span>
                     {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
@@ -510,7 +507,7 @@ export default function Page() {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-lg", !fromDate && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">From</span>
                     {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
@@ -523,7 +520,7 @@ export default function Page() {
               <div className="h-4 w-[1px] bg-border" />
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-lg", !toDate && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("h-10 justify-start text-left font-black text-[10px] uppercase tracking-widest bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !toDate && "text-muted-foreground")}>
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">To</span>
                     {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />

@@ -53,6 +53,12 @@ const data = {
       icon: IconChartBar,
     },
     {
+      title: "Expenses",
+      url: "/expenses",
+      icon: IconReport,
+      role: "admin",
+    },
+    {
       title: "Sales Requests",
       url: "/sales-requests",
       icon: IconClipboardList,
@@ -92,6 +98,14 @@ export function AppSidebar({ ...props }) {
       // If an item has a required role, check it
       if (item.role && item.role !== role) {
         return false
+      }
+
+      // Requirement: Staff can access Sales, Services, and Customers
+      if (role === "staff") {
+        const allowedForStaff = ["Sales", "Services", "Customers"]
+        if (!allowedForStaff.includes(item.title)) {
+          return false
+        }
       }
 
       // Backup: Hide Dashboard for non-admins if not explicitly marked
