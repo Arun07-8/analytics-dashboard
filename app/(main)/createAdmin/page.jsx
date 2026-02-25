@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,23 +22,81 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { IconUserPlus, IconShieldCheck, IconLock } from '@tabler/icons-react';
-import { createAdmin } from '@/lib/firebase/collections';
-import { registerUser } from '@/lib/firebase/auth';
+import { IconUserPlus, IconShieldCheck, IconLock, IconEye, IconEyeOff } from '@tabler/icons-react';
 
 export default function CreateAdminPage() {
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!authLoading) {
+            if (!user) {
+                router.push('/login');
+            } else if (user?.role?.trim().toLowerCase() !== 'admin') {
+                router.push('/dashboard');
+                toast.error("Access denied. Admins only.");
+            }
+        }
+    }, [user, authLoading, router]);
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         role: 'admin',
         password: '',
+        confirmPassword: '',
     });
+    const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({});
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const validateField = (name, value) => {
+        let error = '';
+        if (name === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!value) error = 'Email is required';
+            else if (!emailRegex.test(value)) error = 'Invalid email address';
+        }
+        if (name === 'password') {
+            if (!value) error = 'Password is required';
+            else if (value.length < 6) error = 'Password must be at least 6 characters';
+        }
+        if (name === 'confirmPassword') {
+            if (!value) error = 'Confirm Password is required';
+            else if (value !== formData.password) error = 'Passwords do not match';
+        }
+        if (name === 'name') {
+            if (!value) error = 'Name is required';
+        }
+        return error;
+    };
+
+    const handleBlur = (e) => {
+        const { name, value } = e.target;
+        setTouched((prev) => ({ ...prev, [name]: true }));
+        const error = validateField(name, value);
+        setErrors((prev) => ({ ...prev, [name]: error }));
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+
+        // Clear error when user types
+        if (errors[name]) {
+            setErrors((prev) => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const isFormValid = () => {
+        const emailError = validateField('email', formData.email);
+        const passwordError = validateField('password', formData.password);
+        const confirmPasswordError = validateField('confirmPassword', formData.confirmPassword);
+        const nameError = validateField('name', formData.name);
+        return !emailError && !passwordError && !nameError && !confirmPasswordError &&
+            formData.email && formData.password && formData.name && formData.confirmPassword;
     };
 
     const handleRoleChange = (value) => {
@@ -46,29 +105,80 @@ export default function CreateAdminPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate all fields on submit
+        const nameError = validateField('name', formData.name);
+        const emailError = validateField('email', formData.email);
+        const passwordError = validateField('password', formData.password);
+        const confirmPasswordError = validateField('confirmPassword', formData.confirmPassword);
+
+        const newErrors = {
+            name: nameError,
+            email: emailError,
+            password: passwordError,
+            confirmPassword: confirmPasswordError
+        };
+
+        setErrors(newErrors);
+        setTouched({
+            name: true,
+            email: true,
+            password: true,
+            confirmPassword: true
+        });
+
+        if (Object.values(newErrors).some(error => error)) {
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // 1. Create Auth User
-            // Note: This using Firebase client SDK will sign out the current user and sign in the new admin
-            await registerUser(formData.email, formData.password);
-
-            // 2. Create Firestore Document
-            await createAdmin({
-                name: formData.name,
-                email: formData.email,
-                role: formData.role,
+            const response = await fetch('/api/create-admin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                    role: formData.role,
+                }),
             });
 
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(data.error || 'Failed to create admin');
+                return;
+            }
+
             toast.success('Admin account created successfully');
-            router.push('/dashboard');
+
+            setFormData({
+                name: '',
+                email: '',
+                role: 'admin',
+                password: '',
+                confirmPassword: '',
+            });
+            setTouched({});
+            setErrors({});
+
+            router.push('/createAdmin');
         } catch (error) {
             console.error('Error creating admin:', error);
-            toast.error(error.message || 'Failed to create admin');
+            toast.error(error.message || 'An unexpected error occurred');
         } finally {
             setLoading(false);
         }
     };
+
+
+    if (authLoading || !user || user?.role?.trim().toLowerCase() !== 'admin') {
+        return null;
+    }
 
     return (
         <div className="flex flex-1 items-center justify-center p-4 md:p-8">
@@ -100,11 +210,14 @@ export default function CreateAdminPage() {
                                     id="name"
                                     name="name"
                                     placeholder="e.g. Shibili"
-                                    required
-                                    className="h-10"
                                     value={formData.name}
                                     onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`h-10 ${errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.name && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
@@ -113,11 +226,14 @@ export default function CreateAdminPage() {
                                     name="email"
                                     type="email"
                                     placeholder="admin@foxonhub.com"
-                                    required
-                                    className="h-10"
                                     value={formData.email}
                                     onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`h-10 ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.email && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+                                )}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -137,25 +253,58 @@ export default function CreateAdminPage() {
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="staff">Staff</SelectItem>
-                                            <SelectItem value="viewer">Viewer</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="password" title="At least 6 characters" className="text-sm font-medium">Set Password</Label>
-                                    <div className="relative">
-                                        <Input
-                                            id="password"
-                                            name="password"
-                                            type="password"
-                                            placeholder="••••••••"
-                                            required
-                                            minLength={6}
-                                            className="h-10 pr-9"
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                        />
-                                        <IconLock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password" title="At least 6 characters" className="text-sm font-medium">Set Password</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="password"
+                                                name="password"
+                                                type={showPassword ? "text" : "password"}
+                                                placeholder="••••••••"
+                                                minLength={6}
+                                                value={formData.password}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                className={`h-10 pr-9 ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                            />
+                                            <div
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                            >
+                                                {showPassword ? <IconEyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
+                                            </div>
+                                        </div>
+                                        {errors.password && (
+                                            <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="confirmPassword" title="Must match password" className="text-sm font-medium">Confirm Password</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="confirmPassword"
+                                                name="confirmPassword"
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                placeholder="••••••••"
+                                                value={formData.confirmPassword}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                className={`h-10 pr-9 ${errors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                            />
+                                            <div
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            >
+                                                {showConfirmPassword ? <IconEyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
+                                            </div>
+                                        </div>
+                                        {errors.confirmPassword && (
+                                            <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>

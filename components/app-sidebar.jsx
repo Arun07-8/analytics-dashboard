@@ -1,6 +1,9 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { getFirestore, collection, query, where, getDocs } from "firebase/firestore"
+import { onAuthStateChanged } from "firebase/auth"
 import {
   IconCamera,
   IconChartBar,
@@ -19,8 +22,10 @@ import {
   IconUsers,
   IconPlus,
   IconUserPlus,
+  IconClipboardList,
 } from "@tabler/icons-react"
 
+import { ExpenseModal } from "@/components/expenses/expense-modal"
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -34,13 +39,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/contexts/AuthContext"
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -51,6 +52,18 @@ const data = {
       title: "Sales",
       url: "/sales",
       icon: IconChartBar,
+    },
+    {
+      title: "Expenses",
+      url: "/expenses",
+      icon: IconReport,
+      role: "admin",
+    },
+    {
+      title: "Sales Requests",
+      url: "/sales-requests",
+      icon: IconClipboardList,
+      role: "admin",
     },
     {
       title: "Services",
@@ -66,108 +79,63 @@ const data = {
       title: "Create Admin",
       url: "/createAdmin",
       icon: IconUserPlus,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
+      role: "admin",
     },
   ],
 }
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
+  const { user, loading } = useAuth()
+  const db = getFirestore()
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = React.useState(false)
+
+
+
+  const role = user?.role?.trim().toLowerCase()
+
+  // Filter navigation based on role
+  const filteredNavMain = data.navMain
+    .filter((item) => {
+      // If an item has a required role, check it
+      if (item.role && item.role !== role) {
+        return false
+      }
+
+      // Requirement: Staff can access Sales, Services, and Customers
+      if (role === "staff") {
+        const allowedForStaff = ["Sales", "Services", "Customers"]
+        if (!allowedForStaff.includes(item.title)) {
+          return false
+        }
+      }
+
+      // Backup: Hide Dashboard for non-admins if not explicitly marked
+      if (item.title === "Dashboard" && role !== "admin") {
+        return false
+      }
+
+      return true
+    })
+    .map((item) => ({
+      ...item,
+      hasSeparator:
+        (item.title === "Customers" && role !== "admin") ||
+        (item.title === "Create Admin" && role === "admin"),
+    }))
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
+        <SidebarMenu className="gap-2">
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="h-14 mb-4 p-0 hover:bg-transparent focus-visible:ring-0">
-              <a href="/" className="flex h-full w-full items-center justify-start px-3">
+              <Link href="/" className="flex h-full w-full items-center justify-start px-3">
                 <img
                   src="/Foxon Final Logo-02.png"
                   alt="FoxonHub Logo"
-                  className="h-25 pl-4 w-full object-contain object-left"
+                  className="h-25 pl-4 w-full object-contain object-left dark:brightness-0 dark:invert"
                 />
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -175,21 +143,42 @@ export function AppSidebar({
               asChild
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground justify-center gap-2 shadow-md h-10"
             >
-              <a href="/sales/create">
+              <Link href="/sales/create">
                 <IconPlus className="size-4" />
                 <span className="font-semibold">Create Sale</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={filteredNavMain} />
+        {role === "admin" && (
+          <SidebarMenu className="px-3 pb-4">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setIsExpenseModalOpen(true)}
+                className="bg-primary/10 text-primary hover:bg-primary/20 justify-center gap-2 border border-primary/20 h-10 shadow-sm transition-all"
+              >
+                <IconPlus className="size-4" />
+                <span className="font-black text-[10px] uppercase tracking-widest">Add Expense</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <ExpenseModal
+          isOpen={isExpenseModalOpen}
+          onOpenChange={setIsExpenseModalOpen}
+        />
+        {loading ? (
+          <div className="h-14 px-4 flex items-center text-sm text-muted-foreground">
+            Loading profile...
+          </div>
+        ) : user ? (
+          <NavUser user={user} />
+        ) : null}
       </SidebarFooter>
     </Sidebar>
   );

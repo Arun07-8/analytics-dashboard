@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { IconPackage, IconPencil } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 
 export function ServiceModal({
     isOpen,
@@ -15,7 +16,8 @@ export function ServiceModal({
     onInputChange,
     onCheckedChange,
     onSubmit,
-    onCancel
+    onCancel,
+    errors = {}
 }) {
     const isEdit = mode === 'edit';
 
@@ -45,12 +47,15 @@ export function ServiceModal({
                         <Input
                             id={`${mode}-name`}
                             name="name"
-                            value={formData.name}
+                            value={formData.name || ''}
                             onChange={onInputChange}
                             placeholder="e.g., Web Development"
-                            required
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.name && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -58,11 +63,15 @@ export function ServiceModal({
                         <Input
                             id={`${mode}-description`}
                             name="description"
-                            value={formData.description}
+                            value={formData.description || ''}
                             onChange={onInputChange}
                             placeholder="Brief description of the service"
-                            className="transition-all duration-200 focus:ring-2"
+                            className={cn(
+                                "transition-all duration-200 focus:ring-2",
+                                errors.description && "border-destructive focus:ring-destructive"
+                            )}
                         />
+                        {errors.description && <p className="text-xs text-destructive mt-1">{errors.description}</p>}
                     </div>
 
                     <div className="space-y-4">

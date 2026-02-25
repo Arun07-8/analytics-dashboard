@@ -73,7 +73,8 @@ export default function CustomersPage() {
 
     const customerActivityMap = useMemo(() => {
         const map = new Map();
-        sales.forEach(sale => {
+        // Only count verified sales for activity status
+        sales.filter(s => s.isVerified === true).forEach(sale => {
             map.set(sale.customerId, (map.get(sale.customerId) || 0) + 1);
         });
         return map;
@@ -120,10 +121,11 @@ export default function CustomersPage() {
         if (!selectedCustomer) return [];
         const adminMap = new Map(admins.map(a => [a.id, a.name]));
 
-        return sales.filter(sale => sale.customerId === selectedCustomer.id)
+        // Only show verified orders in the customer history for consistency with revenue
+        return sales.filter(sale => sale.customerId === selectedCustomer.id && sale.isVerified === true)
             .map(sale => ({
                 ...sale,
-                staffName: adminMap.get(sale.staffId) || "Unknown"
+                staffName: adminMap.get(sale.staffId) || adminMap.get(sale.createdBy) || "Unknown"
             }))
             .sort((a, b) => {
                 const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
@@ -132,12 +134,22 @@ export default function CustomersPage() {
             });
     }, [selectedCustomer, sales, admins]);
 
+
     const stats = useMemo(() => {
         const totalCustomers = customers.length;
-        const activeCustomers = new Set(sales.map(s => s.customerId)).size;
+        const isAdmin = user?.role?.trim().toLowerCase() === 'admin';
 
-        // Calculate revenue
-        const totalRevenue = sales.reduce((acc, sale) => acc + (Number(sale.totalAmount) || 0), 0);
+        // Filter for verified sales only, and apply role-based filtering
+        const verifiedSales = sales.filter(s => {
+            if (s.isVerified !== true) return false;
+            if (isAdmin) return true;
+            return s.createdBy === user?.uid;
+        });
+
+        const activeCustomers = new Set(verifiedSales.map(s => s.customerId)).size;
+
+        // Calculate revenue from verified sales only
+        const totalRevenue = verifiedSales.reduce((acc, sale) => acc + (Number(sale.totalAmount) || 0), 0);
 
         // Calculate growth (customers and revenue)
         const now = new Date();
@@ -156,25 +168,34 @@ export default function CustomersPage() {
 
         const customerGrowth = newLastMonth > 0 ? ((newThisMonth - newLastMonth) / newLastMonth) * 100 : (newThisMonth > 0 ? 100 : 0);
 
-        const revenueThisMonth = sales.filter(s => getDate(s.createdAt) >= startOfCurrentMonth)
+        const revenueThisMonth = verifiedSales.filter(s => getDate(s.createdAt) >= startOfCurrentMonth)
             .reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-        const revenueLastMonth = sales.filter(s => {
+        const revenueLastMonth = verifiedSales.filter(s => {
             const date = getDate(s.createdAt);
             return date >= startOfLastMonth && date <= endOfLastMonth;
         }).reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
 
         const revenueGrowth = revenueLastMonth > 0 ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100 : (revenueThisMonth > 0 ? 100 : 0);
 
-        return {
-            totalRevenue: totalRevenue,
-            revenueGrowth: Number(revenueGrowth.toFixed(1)),
-            newCustomers: totalCustomers, // Showing Total Customers here
-            customerGrowth: Number(customerGrowth.toFixed(1)),
-            activeAccounts: newThisMonth, // Showing New This Month here
-            activeAccountsGrowth: 0,
-            growthRate: activeCustomers, // Showing Active Customers count here
-        };
-    }, [customers, sales]);
+        return [
+            {
+                label: "Total Customers",
+                value: totalCustomers,
+                growth: Number(customerGrowth.toFixed(1)),
+                description: "All-time registered clients"
+            },
+            {
+                label: "New This Month",
+                value: newThisMonth,
+                description: "Customer growth this month"
+            },
+            {
+                label: isAdmin ? "Active Customers" : "My Active Clients",
+                value: activeCustomers,
+                description: isAdmin ? "With transaction history" : "Customers you've served"
+            },
+        ];
+    }, [customers, sales, user]);
 
     const handleViewOrders = (customer) => {
         setSelectedCustomer(customer);
@@ -223,6 +244,10 @@ export default function CustomersPage() {
         );
     }
 
+    if (!user) {
+        return null;
+    }
+
     return (
         <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -239,25 +264,7 @@ export default function CustomersPage() {
                     </div>
                 </div>
 
-                <SectionCards
-                    stats={stats}
-                    labels={{
-                        totalRevenue: "Total Revenue",
-                        newCustomers: "Total Customers",
-                        activeAccounts: "New This Month",
-                        growthRate: "Active Customers",
-                        growthRateDescription: "Currently active"
-                    }}
-                    prefixes={{
-                        totalRevenue: "₹",
-                        newCustomers: "",
-                        activeAccounts: "",
-                        growthRate: ""
-                    }}
-                    suffixes={{
-                        growthRate: ""
-                    }}
-                />
+                <SectionCards cards={stats} />
 
                 <div className="px-4 lg:px-6">
                     <CustomersTable

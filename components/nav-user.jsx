@@ -42,13 +42,16 @@ export function NavUser({
   const handleLogout = async () => {
     try {
       await signOut(auth)
-      
+
       // Clear auth cookies
       document.cookie = "authToken=; path=/; max-age=0"
       document.cookie = "userId=; path=/; max-age=0"
-      
+
+      // Trigger logout in other tabs
+      localStorage.setItem('logout-event', Date.now().toString())
+
       toast.success("✅ Logged out successfully!")
-      
+
       setTimeout(() => {
         router.push("/login")
       }, 500)
@@ -99,7 +102,7 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
+            {/* <DropdownMenuGroup>
               <DropdownMenuItem>
                 <IconUserCircle />
                 Account
@@ -112,7 +115,7 @@ export function NavUser({
                 <IconNotification />
                 Notifications
               </DropdownMenuItem>
-            </DropdownMenuGroup>
+            </DropdownMenuGroup> */}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <IconLogout />

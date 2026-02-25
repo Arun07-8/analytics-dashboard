@@ -7,6 +7,7 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogClose,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,7 +31,8 @@ import {
     IconMapPin,
     IconDeviceMobile,
     IconMail,
-    IconDownload
+    IconDownload,
+    IconX
 } from "@tabler/icons-react"
 
 export function SaleDetailsModal({
@@ -40,28 +42,46 @@ export function SaleDetailsModal({
     customer,
     onDownloadInvoice
 }) {
+
     if (!sale) return null;
 
     const date = sale.createdAt?.toDate ? sale.createdAt.toDate() : new Date(sale.createdAt);
     const balance = (Number(sale.totalAmount) || 0) - (Number(sale.paidAmount) || 0);
     const isClosed = sale.status === "Closed" || sale.closed;
+    const isRejected = sale.verificationStatus === "Rejected";
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-none rounded-3xl overflow-hidden shadow-2xl [&>button]:text-white">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-none rounded-3xl overflow-hidden shadow-2xl">
+                {/* Fixed Close Button - HIGH VISIBILITY */}
+                <div className="absolute right-6 top-6 z-[100]">
+                    <DialogClose asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-full bg-white shadow-xl border border-border/50 text-black hover:bg-slate-100 hover:scale-110 active:scale-95 transition-all duration-200"
+                        >
+                            <IconX className="h-5 w-5 stroke-[2.5]" />
+                            <span className="sr-only">Close</span>
+                        </Button>
+                    </DialogClose>
+                </div>
+
                 {/* Modern Header Section */}
                 <div className="bg-foreground text-background p-8 relative overflow-hidden">
-                    <div className="absolute right-8 top-8 z-20">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-background/10 border-background/20 text-background hover:bg-background/20 hover:text-background font-black uppercase text-[10px] tracking-widest gap-2 h-9 px-4 rounded-xl backdrop-blur-md"
-                            onClick={() => onDownloadInvoice?.(sale)}
-                        >
-                            <IconDownload className="h-4 w-4" />
-                            Download Invoice
-                        </Button>
-                    </div>
+                    {!isRejected && (
+                        <div className="absolute right-8 top-8 z-20">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-background/10 border-background/20 text-background hover:bg-background/20 hover:text-background font-black uppercase text-[10px] tracking-widest gap-2 h-9 px-4 rounded-xl backdrop-blur-md"
+                                onClick={() => onDownloadInvoice?.(sale)}
+                            >
+                                <IconDownload className="h-4 w-4" />
+                                Download Invoice
+                            </Button>
+                        </div>
+                    )}
                     <div className="absolute right-0 top-0 p-8 opacity-10 -mr-12 -mt-12">
                         <IconReceipt2 className="h-48 w-48" />
                     </div>
@@ -82,6 +102,42 @@ export function SaleDetailsModal({
                 </div>
 
                 <div className="p-8 space-y-10 bg-background">
+                    {/* CRITICAL DECLINE BANNER */}
+                    {/* CLEAR DECLINE BANNER */}
+                    {sale.verificationStatus === "Rejected" && sale.declineReason && (
+                        <div className="bg-red-50 border border-red-100 rounded-[2rem] p-1 mb-8 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700 shadow-md">
+                            <div className="bg-red-600 px-8 py-3.5 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-6 w-6 rounded-lg bg-white/20 flex items-center justify-center">
+                                        <IconX className="h-4 w-4 text-white stroke-[3]" />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Official Rejection Notice</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Action Required</span>
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-white">
+                                <div className="relative">
+                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-600 rounded-full" />
+                                    <div className="pl-6">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">Message from Administrator</p>
+                                        <h2 className="text-xl font-black text-red-600 tracking-tight leading-snug italic">
+                                            "{sale.declineReason}"
+                                        </h2>
+                                        <div className="mt-4 flex items-center gap-4">
+                                            <div className="h-[1px] flex-1 bg-red-50" />
+                                            <p className="text-[9px] font-bold text-red-600/40 uppercase tracking-[0.3em]">Ref: {sale.salesRefId?.[0] || "SALE_OBJ"}</p>
+                                            <div className="h-[1px] flex-1 bg-red-50" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Top Info Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         {/* Customer Info */}
