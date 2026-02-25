@@ -53,11 +53,6 @@ async function createAdminDocument() {
     };
 
     const docRef = await addDoc(collection(db, 'admins'), adminData);
-    console.log('✓ Admin document created with ID:', docRef.id);
-
-    console.log('\n✅ Admin document created successfully!');
-    console.log('Email:', adminEmail);
-
     process.exit(0);
   } catch (error) {
     console.error('❌ Error creating admin document:', error.message);

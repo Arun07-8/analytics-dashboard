@@ -25,6 +25,7 @@ import {
   IconClipboardList,
 } from "@tabler/icons-react"
 
+import { ExpenseModal } from "@/components/expenses/expense-modal"
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -81,12 +82,12 @@ const data = {
       role: "admin",
     },
   ],
-
 }
 
 export function AppSidebar({ ...props }) {
   const { user, loading } = useAuth()
   const db = getFirestore()
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = React.useState(false)
 
 
 
@@ -125,7 +126,7 @@ export function AppSidebar({ ...props }) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
+        <SidebarMenu className="gap-2">
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="h-14 mb-4 p-0 hover:bg-transparent focus-visible:ring-0">
               <Link href="/" className="flex h-full w-full items-center justify-start px-3">
@@ -152,8 +153,25 @@ export function AppSidebar({ ...props }) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={filteredNavMain} />
+        {role === "admin" && (
+          <SidebarMenu className="px-3 pb-4">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setIsExpenseModalOpen(true)}
+                className="bg-primary/10 text-primary hover:bg-primary/20 justify-center gap-2 border border-primary/20 h-10 shadow-sm transition-all"
+              >
+                <IconPlus className="size-4" />
+                <span className="font-black text-[10px] uppercase tracking-widest">Add Expense</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarContent>
       <SidebarFooter>
+        <ExpenseModal
+          isOpen={isExpenseModalOpen}
+          onOpenChange={setIsExpenseModalOpen}
+        />
         {loading ? (
           <div className="h-14 px-4 flex items-center text-sm text-muted-foreground">
             Loading profile...
