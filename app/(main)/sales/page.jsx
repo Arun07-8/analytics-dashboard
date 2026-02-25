@@ -526,7 +526,9 @@ export default function Page() {
       errors.mobile = "Invalid mobile number format";
     }
 
-    if (customerFormData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerFormData.email)) {
+    if (!customerFormData.email.trim()) {
+      errors.email = "Email Address is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerFormData.email)) {
       errors.email = "Invalid email format";
     }
 
@@ -607,9 +609,9 @@ export default function Page() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 bg-card border rounded-lg pl-3 h-10 shadow-sm">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground shrink-0 border-r pr-2 h-full flex items-center">Period</span>
+              <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
               <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[120px] shadow-none">
+                <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -635,11 +637,11 @@ export default function Page() {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
+                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
                         !fromDate && "text-muted-foreground"
                       )}
                     >
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">Date</span>
+                      <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
                       {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
                       <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                     </Button>
@@ -665,11 +667,11 @@ export default function Page() {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
+                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
                         !fromDate && "text-muted-foreground"
                       )}
                     >
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">From</span>
+                      <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
                       {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                       <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                     </Button>
@@ -693,11 +695,11 @@ export default function Page() {
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-10 justify-start text-left font-bold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
+                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
                         !toDate && "text-muted-foreground"
                       )}
                     >
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">To</span>
+                      <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
                       {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                       <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                     </Button>

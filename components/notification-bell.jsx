@@ -150,7 +150,7 @@ export function NotificationBell() {
                 >
                     <Bell className={cn("h-5 w-5 transition-transform duration-300", open && "rotate-12")} />
                     {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-red-500 text-[10px] font-black text-white shadow-lg animate-in zoom-in duration-300">
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-red-500 text-[10px] font-bold text-white shadow-lg animate-in zoom-in duration-300">
                             {unreadCount}
                         </span>
                     )}
@@ -160,7 +160,7 @@ export function NotificationBell() {
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 bg-muted/30 border-b border-border/50">
                     <div>
-                        <h3 className="text-xs font-black uppercase tracking-widest text-foreground">Notifications</h3>
+                        <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
                         <p className="text-[10px] font-medium text-muted-foreground mt-0.5">
                             {unreadCount > 0 ? `${unreadCount} unread messages` : 'All caught up'}
                         </p>
@@ -169,7 +169,7 @@ export function NotificationBell() {
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllRead}
-                                className="text-[9px] font-black uppercase text-primary hover:text-primary/80 transition-colors"
+                                className="text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors"
                             >
                                 Mark All Read
                             </button>
@@ -177,7 +177,7 @@ export function NotificationBell() {
                         {notifications.length > 0 && (
                             <button
                                 onClick={handleClearAll}
-                                className="text-[9px] font-black uppercase text-destructive hover:text-destructive/80 transition-colors"
+                                className="text-[10px] font-semibold text-destructive hover:text-destructive/80 transition-colors"
                             >
                                 Clear All
                             </button>
@@ -214,7 +214,7 @@ export function NotificationBell() {
                                             <p className={cn("text-xs leading-tight transition-all", !n.isRead ? "font-black text-foreground" : "font-semibold text-muted-foreground")}>
                                                 {n.title}
                                             </p>
-                                            <span className="text-[9px] font-black uppercase text-muted-foreground shrink-0 tabular-nums bg-muted px-1.5 py-0.5 rounded leading-none">
+                                            <span className="text-[9px] font-semibold text-muted-foreground shrink-0 tabular-nums bg-muted px-1.5 py-0.5 rounded leading-none">
                                                 {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
                                             </span>
                                         </div>
@@ -246,7 +246,7 @@ export function NotificationBell() {
 
                 {/* Footer */}
                 <div className="px-5 py-3 border-t border-border/50 bg-muted/20 text-center">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+                    <p className="text-[10px] font-semibold text-muted-foreground/60">
                         {notifications.length > 0 ? `Showing last ${notifications.length} messages` : 'Notification Terminal'}
                     </p>
                 </div>

@@ -47,11 +47,11 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
     <Card className="@container/card bg-card/40 backdrop-blur-md border-border/50 shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2">
         <div className="space-y-1">
-          <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+          <CardTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
             Performance Analytics
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
           </CardTitle>
-          <CardDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 leading-none">
+          <CardDescription className="text-xs font-medium text-muted-foreground/60 leading-none">
             Live transactional stream monitoring
           </CardDescription>
         </div>
@@ -62,25 +62,25 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
             onValueChange={(val) => val && onTimeRangeChange(val)}
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex bg-background/50 p-1 rounded-xl h-10 border-border/40">
-            <ToggleGroupItem value="today" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Today</ToggleGroupItem>
-            <ToggleGroupItem value="yesterday" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Yesterday</ToggleGroupItem>
-            <ToggleGroupItem value="this-week" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Week</ToggleGroupItem>
-            <ToggleGroupItem value="this-month" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Month</ToggleGroupItem>
-            <ToggleGroupItem value="this-year" className="text-[10px] font-black uppercase tracking-widest rounded-lg">Year</ToggleGroupItem>
+            <ToggleGroupItem value="today" className="text-xs font-medium rounded-lg">Today</ToggleGroupItem>
+            <ToggleGroupItem value="yesterday" className="text-xs font-medium rounded-lg">Yesterday</ToggleGroupItem>
+            <ToggleGroupItem value="this-week" className="text-xs font-medium rounded-lg">Week</ToggleGroupItem>
+            <ToggleGroupItem value="this-month" className="text-xs font-medium rounded-lg">Month</ToggleGroupItem>
+            <ToggleGroupItem value="this-year" className="text-xs font-medium rounded-lg">Year</ToggleGroupItem>
           </ToggleGroup>
           <Select value={timeRange} onValueChange={onTimeRangeChange}>
             <SelectTrigger
-              className="flex w-32 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden h-10 bg-background/50 font-black text-[10px] uppercase tracking-widest"
+              className="flex w-32 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden h-10 bg-background/50 font-medium text-xs"
               size="sm"
               aria-label="Select range">
               <SelectValue placeholder="Period" />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-border/50 shadow-2xl">
-              <SelectItem value="today" className="text-xs font-bold uppercase tracking-widest">Today</SelectItem>
-              <SelectItem value="yesterday" className="text-xs font-bold uppercase tracking-widest">Yesterday</SelectItem>
-              <SelectItem value="this-week" className="text-xs font-bold uppercase tracking-widest">This Week</SelectItem>
-              <SelectItem value="this-month" className="text-xs font-bold uppercase tracking-widest">This Month</SelectItem>
-              <SelectItem value="this-year" className="text-xs font-bold uppercase tracking-widest">This Year</SelectItem>
+              <SelectItem value="today" className="text-xs font-medium">Today</SelectItem>
+              <SelectItem value="yesterday" className="text-xs font-medium">Yesterday</SelectItem>
+              <SelectItem value="this-week" className="text-xs font-medium">This Week</SelectItem>
+              <SelectItem value="this-month" className="text-xs font-medium">This Month</SelectItem>
+              <SelectItem value="this-year" className="text-xs font-medium">This Year</SelectItem>
             </SelectContent>
           </Select>
         </CardAction>
@@ -127,7 +127,7 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                     day: "numeric",
                   });
                 }}
-                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80"
+                className="text-xs font-medium text-muted-foreground/80"
               />
               <YAxis
                 hide={isMobile}
@@ -135,7 +135,7 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                 axisLine={false}
                 tickMargin={8}
                 tickFormatter={(value) => value === 0 ? "₹0" : value > 1000 ? `₹${(value / 1000).toFixed(0)}k` : `₹${value}`}
-                className="text-[10px] font-black text-muted-foreground/70"
+                className="text-xs font-medium text-muted-foreground/70"
               />
               <ChartTooltip
                 cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
@@ -146,8 +146,8 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                       const date = new Date(value);
                       return (
                         <div className="flex flex-col gap-0.5 mb-2 border-b border-border/20 pb-2">
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Timeline Snapshot</span>
-                          <span className="text-xs font-black text-foreground">
+                          <span className="text-[10px] font-semibold text-primary">Timeline Snapshot</span>
+                          <span className="text-xs font-bold text-foreground">
                             {date.toLocaleDateString("en-IN", {
                               weekday: 'long',
                               month: 'long',
@@ -165,11 +165,11 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                             className="size-1.5 rounded-full ring-2 ring-offset-1 ring-offset-background"
                             style={{ backgroundColor: chartConfig[name]?.color, ringColor: chartConfig[name]?.color }}
                           />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">
+                          <span className="text-[11px] font-medium text-muted-foreground/80">
                             {chartConfig[name]?.label}
                           </span>
                         </div>
-                        <span className="text-xs font-black tabular-nums font-mono">
+                        <span className="text-xs font-bold tabular-nums">
                           {name === "revenue" ? `₹${value.toLocaleString('en-IN')}` : value.toLocaleString()}
                         </span>
                       </div>

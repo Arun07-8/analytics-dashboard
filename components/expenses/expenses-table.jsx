@@ -29,13 +29,13 @@ export function ExpensesTable({ data, onEdit, onDelete, staffMap = {} }) {
         {
             accessorKey: "title",
             header: "Title",
-            cell: ({ row }) => <div className="text-base font-bold text-foreground">{row.getValue("title")}</div>,
+            cell: ({ row }) => <div className="text-sm font-semibold text-foreground">{row.getValue("title")}</div>,
         },
         {
             accessorKey: "amount",
             header: "Amount",
             cell: ({ row }) => (
-                <div className="text-base font-black text-destructive">₹{row.getValue("amount").toLocaleString()}</div>
+                <div className="text-sm font-bold text-destructive">₹{row.getValue("amount").toLocaleString()}</div>
             ),
         },
         {
@@ -43,7 +43,7 @@ export function ExpensesTable({ data, onEdit, onDelete, staffMap = {} }) {
             header: "Date",
             cell: ({ row }) => {
                 const date = new Date(row.getValue("date"));
-                return <div className="text-sm text-foreground/90 font-bold">{date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>;
+                return <div className="text-sm text-foreground/90 font-semibold">{date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>;
             },
         },
         {
@@ -107,7 +107,7 @@ export function ExpensesTable({ data, onEdit, onDelete, staffMap = {} }) {
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="text-[11px] font-black uppercase tracking-widest h-11">
+                                    <TableHead key={header.id} className="text-[11px] font-semibold text-muted-foreground/70 uppercase h-11">
                                         {flexRender(header.column.columnDef.header, header.getContext())}
                                     </TableHead>
                                 ))}
@@ -127,7 +127,7 @@ export function ExpensesTable({ data, onEdit, onDelete, staffMap = {} }) {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground font-bold">
+                                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground font-medium">
                                     No expenses recorded.
                                 </TableCell>
                             </TableRow>
@@ -136,7 +136,7 @@ export function ExpensesTable({ data, onEdit, onDelete, staffMap = {} }) {
                 </Table>
             </div>
             <div className="flex items-center justify-between px-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                <p className="text-[11px] font-semibold text-muted-foreground/60">
                     Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                 </p>
                 <div className="flex items-center gap-2">
@@ -160,6 +160,6 @@ export function ExpensesTable({ data, onEdit, onDelete, staffMap = {} }) {
                     </Button>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

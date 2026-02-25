@@ -34,7 +34,7 @@ export function SalesRequestTable({
             accessorKey: "salesRefId",
             header: "Sale ID",
             cell: ({ row }) => (
-                <div className="font-mono font-bold text-xs uppercase tracking-tighter">
+                <div className="font-mono font-semibold text-xs text-muted-foreground">
                     {row.original.salesRefId?.[0] || "N/A"}
                 </div>
             ),
@@ -66,7 +66,7 @@ export function SalesRequestTable({
             accessorKey: "totalAmount",
             header: "Amount",
             cell: ({ row }) => (
-                <div className="font-black text-sm tracking-tighter">
+                <div className="font-bold text-sm tracking-tight">
                     ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </div>
             ),
@@ -86,7 +86,7 @@ export function SalesRequestTable({
             cell: ({ row }) => {
                 const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
                 return (
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                    <div className="text-[11px] font-semibold text-muted-foreground/70">
                         {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </div>
                 );
@@ -101,7 +101,7 @@ export function SalesRequestTable({
                         <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest gap-1"
+                            className="h-8 px-3 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all font-semibold text-xs gap-1"
                             onClick={() => onAccept(row.original)}
                         >
                             <IconCheck className="size-3" />
@@ -110,7 +110,7 @@ export function SalesRequestTable({
                         <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500 hover:text-white transition-all font-bold uppercase text-[10px] tracking-widest gap-1"
+                            className="h-8 px-3 bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500 hover:text-white transition-all font-semibold text-xs gap-1"
                             onClick={() => onDecline(row.original)}
                         >
                             <IconX className="size-3" />
@@ -128,13 +128,13 @@ export function SalesRequestTable({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                                <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest gap-2 py-2" onClick={() => onView(row.original)}>
+                                <DropdownMenuItem className="text-xs font-semibold gap-2 py-2" onClick={() => onView(row.original)}>
                                     <IconEye className="size-3.5" /> View Sale
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest gap-2 py-2" onClick={() => onEdit(row.original)}>
+                                <DropdownMenuItem className="text-xs font-semibold gap-2 py-2" onClick={() => onEdit(row.original)}>
                                     <IconPencil className="size-3.5" /> Edit Sale
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-xs font-bold uppercase tracking-widest gap-2 py-2" onClick={() => onDownloadInvoice(row.original)}>
+                                <DropdownMenuItem className="text-xs font-semibold gap-2 py-2" onClick={() => onDownloadInvoice(row.original)}>
                                     <IconDownload className="size-3.5" /> Download Invoice
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
