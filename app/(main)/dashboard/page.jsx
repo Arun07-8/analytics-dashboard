@@ -155,7 +155,12 @@ export default function Page() {
     }
 
     const allSalesWithDate = sales.map(sale => {
-      const creator = staffMap[sale.createdBy] || { name: "System", role: "admin" };
+      // Robust Fallback: Try mapping first, then check stored direct name, finally default to System.
+      const creator = staffMap[sale.createdBy] || {
+        name: sale.staffName || "System",
+        role: sale.createdByRole || "admin"
+      };
+
       // Ensure status is correctly mapped for consistent calculation logic
       const mappedStatus = (sale.status === 'paid' || sale.status === 'Closed' || sale.closed) ? 'paid' : 'unpaid';
 

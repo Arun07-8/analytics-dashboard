@@ -115,17 +115,10 @@ export default function Page() {
   useEffect(() => {
     if (!user) return;
 
-    // Updated Requirement: 
-    // Admins see ALL approved sales to manage the business.
-    // Staff see ONLY their own records (Pending/Approved/Rejected).
-    let filterConstraints = {};
-    const isAdmin = user.role?.trim().toLowerCase() === 'admin';
-
-    if (isAdmin) {
-      filterConstraints.isVerified = true;
-    } else {
-      filterConstraints.createdBy = user.uid;
-    }
+    // Personal Record Tracking: Both Admins and Staff see ONLY their own records here.
+    let filterConstraints = {
+      createdBy: user.uid
+    };
 
     setLoadingData(true);
     const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
@@ -164,7 +157,7 @@ export default function Page() {
         ...sale,
         createdAtDate: date, // Keep a real Date object for filtering
         customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
-        staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
+        staffName: adminMap.get(sale.createdBy) || sale.staffName || "Unknown Staff",
         staffEmail: sale.staffEmail || '',
         status: mappedStatus,
         verificationStatus: sale.verificationStatus || (sale.isVerified ? "Approved" : "Pending"),
