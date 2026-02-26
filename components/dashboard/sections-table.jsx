@@ -160,7 +160,7 @@ const columns = [
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-border/40 p-1.5">
                             <DropdownMenuItem className="text-sm font-medium cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onViewDetails?.(sale)}>View Details</DropdownMenuItem>
-                            <DropdownMenuItem className="text-sm font-medium cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onEditSale?.(sale)}>Edit Entry</DropdownMenuItem>
+
                             <DropdownMenuSeparator className="bg-border/40 my-1" />
                             <DropdownMenuItem className="text-sm font-semibold text-primary cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>
                         </DropdownMenuContent>

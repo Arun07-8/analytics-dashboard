@@ -95,6 +95,11 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                   minTickGap={30}
                   tickFormatter={(value) => {
                     const date = new Date(value);
+                    if (timeRange === 'this-week' || timeRange === 'week') {
+                      return date.toLocaleDateString("en-IN", {
+                        weekday: "short",
+                      }).toLowerCase();
+                    }
                     return date.toLocaleDateString("en-IN", {
                       month: "short",
                       day: "numeric",

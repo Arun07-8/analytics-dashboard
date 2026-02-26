@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { getAllCustomers, getAllSales, createCustomer, getCustomerByMobile, getCustomerByEmail, getAllAdmins } from "@/lib/firebase/collections";
+import { getAllCustomers, getAllSales, createCustomer, updateCustomer, getCustomerByMobile, getCustomerByEmail, getAllAdmins, deleteCustomer } from "@/lib/firebase/collections";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,8 @@ export default function CustomersPage() {
     // Modal states
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState('add');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Customer Form State
@@ -202,19 +203,43 @@ export default function CustomersPage() {
         setIsOrdersModalOpen(true);
     };
 
-    const handleAddCustomer = async (e) => {
+    const handleDeleteCustomer = async (customer) => {
+        try {
+            await deleteCustomer(customer.id);
+            toast.success(`${customer.name} removed successfully`);
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting customer:", error);
+            toast.error("Failed to delete customer");
+        }
+    };
+    const handleEditCustomer = (customer) => {
+        setCustomerFormData({
+            ...customer,
+            id: customer.id
+        });
+        setModalMode('edit');
+        setIsModalOpen(true);
+    };
+
+    const handleSubmitCustomer = async (e) => {
         e.preventDefault();
         const errors = {};
         if (!customerFormData.name.trim()) errors.name = "Full Name is required";
-        if (!customerFormData.mobile.trim()) {
-            errors.mobile = "Mobile Number is required";
-        } else if (!/^\+?[\d\s-]{10,}$/.test(customerFormData.mobile)) {
+
+        const hasMobile = customerFormData.mobile?.trim();
+        const hasEmail = customerFormData.email?.trim();
+
+        if (!hasMobile && !hasEmail) {
+            errors.mobile = "Either Mobile or Email is required";
+            errors.email = "Either Mobile or Email is required";
+        }
+
+        if (hasMobile && !/^\+?[\d\s-]{10,}$/.test(customerFormData.mobile)) {
             errors.mobile = "Invalid mobile number format";
         }
 
-        if (!customerFormData.email.trim()) {
-            errors.email = "Email Address is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerFormData.email)) {
+        if (hasEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerFormData.email)) {
             errors.email = "Invalid email format";
         }
 
@@ -225,18 +250,39 @@ export default function CustomersPage() {
 
         try {
             setIsSubmitting(true);
-            const mobileExists = await getCustomerByMobile(customerFormData.mobile);
-            if (mobileExists) {
-                setCustomerErrors(prev => ({ ...prev, mobile: "Mobile number already exists" }));
-                return;
+
+            // Uniqueness check
+            if (hasMobile) {
+                const mobileExists = await getCustomerByMobile(customerFormData.mobile);
+                if (mobileExists && (modalMode === 'add' || mobileExists.id !== customerFormData.id)) {
+                    setCustomerErrors(prev => ({ ...prev, mobile: "Mobile number already exists" }));
+                    setIsSubmitting(false);
+                    return;
+                }
             }
-            await createCustomer(customerFormData);
-            toast.success("Customer added successfully");
-            setIsAddModalOpen(false);
+            if (hasEmail) {
+                const emailExists = await getCustomerByEmail(customerFormData.email);
+                if (emailExists && (modalMode === 'add' || emailExists.id !== customerFormData.id)) {
+                    setCustomerErrors(prev => ({ ...prev, email: "Email address already exists" }));
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            if (modalMode === 'add') {
+                await createCustomer(customerFormData);
+                toast.success("Customer added successfully");
+            } else {
+                const { id, ...data } = customerFormData;
+                await updateCustomer(id, data);
+                toast.success("Customer profile updated");
+            }
+
+            setIsModalOpen(false);
             setCustomerFormData(initialCustomerFormData);
             fetchData();
         } catch (error) {
-            toast.error("Failed to add customer");
+            toast.error(modalMode === 'add' ? "Failed to add customer" : "Failed to update customer");
         } finally {
             setIsSubmitting(false);
         }
@@ -276,7 +322,11 @@ export default function CustomersPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <Button
-                        onClick={() => setIsAddModalOpen(true)}
+                        onClick={() => {
+                            setCustomerFormData(initialCustomerFormData);
+                            setModalMode('add');
+                            setIsModalOpen(true);
+                        }}
                         className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
                     >
                         <IconUserPlus className="size-4" />
@@ -291,11 +341,17 @@ export default function CustomersPage() {
                 <CustomersTable
                     data={filteredCustomers}
                     onViewOrders={handleViewOrders}
-                    onAddClick={() => setIsAddModalOpen(true)}
+                    onAddClick={() => {
+                        setCustomerFormData(initialCustomerFormData);
+                        setModalMode('add');
+                        setIsModalOpen(true);
+                    }}
                     onSearchChange={setSearchQuery}
                     tabs={customerTabs}
                     activeTab={activeTab}
                     onTabChange={setActiveTab}
+                    onDeleteCustomer={handleDeleteCustomer}
+                    onEditCustomer={handleEditCustomer}
                 />
             </div>
 
@@ -307,15 +363,15 @@ export default function CustomersPage() {
             />
 
             <CustomerModal
-                isOpen={isAddModalOpen}
-                onOpenChange={setIsAddModalOpen}
-                mode="add"
+                isOpen={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                mode={modalMode}
                 formData={customerFormData}
                 onInputChange={(e) => setCustomerFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                onSubmit={handleAddCustomer}
+                onSubmit={handleSubmitCustomer}
                 isLoading={isSubmitting}
                 errors={customerErrors}
-                onCancel={() => setIsAddModalOpen(false)}
+                onCancel={() => setIsModalOpen(false)}
             />
         </div>
     );

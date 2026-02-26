@@ -216,7 +216,9 @@ export default function ExpensesPage() {
             const diff = fillStart.getDate() - day + (day === 0 ? -6 : 1);
             fillStart.setDate(diff);
             fillStart.setHours(0, 0, 0, 0);
-            fillEnd = new Date(fillStart.getTime() + 7 * 86400000 - 1);
+            fillEnd = new Date(fillStart);
+            fillEnd.setDate(fillStart.getDate() + 6);
+            fillEnd.setHours(23, 59, 59, 999);
         } else if (dateFilter === 'this-month') {
             fillStart = new Date(now.getFullYear(), now.getMonth(), 1);
         } else if (dateFilter === 'this-year') {

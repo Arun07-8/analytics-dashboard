@@ -394,8 +394,13 @@ export default function Page() {
         fillEnd.setHours(23, 59, 59, 999);
       } else if (dateFilter === 'week') {
         fillStart = new Date(now);
-        fillStart.setDate(now.getDate() - now.getDay());
+        const day = fillStart.getDay();
+        const diff = fillStart.getDate() - day + (day === 0 ? -6 : 1);
+        fillStart.setDate(diff);
         fillStart.setHours(0, 0, 0, 0);
+        fillEnd = new Date(fillStart);
+        fillEnd.setDate(fillStart.getDate() + 6);
+        fillEnd.setHours(23, 59, 59, 999);
       } else if (dateFilter === 'month') {
         fillStart = new Date(now.getFullYear(), now.getMonth(), 1);
       } else if (dateFilter === 'year') {
@@ -752,17 +757,17 @@ export default function Page() {
       <div className="space-y-6">
         <SectionCards cards={stats} />
 
-        
-          <ChartAreaInteractive
-            data={chartData}
-            timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter}
-            onTimeRangeChange={(val) => {
-              if (val === 'this-month') setDateFilter('month');
-              else if (val === 'this-year') setDateFilter('year');
-              else setDateFilter(val);
-            }}
-          />
-        
+
+        <ChartAreaInteractive
+          data={chartData}
+          timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter}
+          onTimeRangeChange={(val) => {
+            if (val === 'this-month') setDateFilter('month');
+            else if (val === 'this-year') setDateFilter('year');
+            else setDateFilter(val);
+          }}
+        />
+
       </div>
 
       <div className="space-y-4 pt-4">

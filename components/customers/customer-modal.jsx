@@ -56,7 +56,7 @@ export function CustomerModal({
 
                     <div className="space-y-2">
                         <Label htmlFor="mobile">
-                            Mobile Number <span className="text-destructive">*</span>
+                            Mobile Number
                         </Label>
                         <Input
                             id="mobile"
@@ -71,7 +71,7 @@ export function CustomerModal({
 
                     <div className="space-y-2">
                         <Label htmlFor="email">
-                            Email Address <span className="text-destructive">*</span>
+                            Email Address
                         </Label>
                         <Input
                             id="email"
@@ -83,6 +83,7 @@ export function CustomerModal({
                             className={`transition-all duration-200 focus:ring-2 ${errors.email ? 'border-destructive focus:ring-destructive' : ''}`}
                         />
                         {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+                        <p className="text-[10px] text-muted-foreground italic">Provide at least a mobile number or email address</p>
                     </div>
 
 
