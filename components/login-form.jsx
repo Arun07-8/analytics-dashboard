@@ -84,10 +84,8 @@ export function LoginForm({
       setEmail('');
       setPassword('');
 
-      // Redirect to dashboard
-      setTimeout(() => {
-        router.push('/');
-      }, 500);
+      // Redirect directly to dashboard without delay
+      router.push('/dashboard');
     } catch (err) {
       let errorMessage = 'Login failed';
 
