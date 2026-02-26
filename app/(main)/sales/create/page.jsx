@@ -298,14 +298,13 @@ export default function CreateSalePage() {
                 toast.success("Sale synchronized successfully");
             } else {
                 // Send notification only to users with 'admin' role
-                const allUsers = await getAllAdmins();
-                const actualAdmins = allUsers.filter(acc =>
+                const actualAdmins = admins.filter(acc =>
                     acc.role?.trim().toLowerCase() === 'admin' &&
-                    acc.id !== user.uid
+                    (acc.uid !== user.uid && acc.id !== user.uid)
                 );
 
                 const notificationPromises = actualAdmins.map(admin => createNotification({
-                    userId: admin.id,
+                    userId: admin.uid || admin.id,
                     title: "New Sales Request",
                     message: `${staffName} has submitted a new sales request for ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
                     type: "warning",

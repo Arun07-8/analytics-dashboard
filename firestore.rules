@@ -15,11 +15,14 @@ service cloud.firestore {
 
     // Sales Collection Rules
     match /sales/{saleId} {
-      // Allow read/update/delete if the document's staffId matches the requesting user's UID
-      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.staffId);
+      allow read: if isAuthenticated() && isOwner(resource.data.createdBy);
       
-      // Allow create if the new document's staffId matches the requesting user's UID
-      allow create: if isAuthenticated() && isOwner(request.resource.data.staffId);
+      // Strict rule: Staff can only edit or delete if the sale request is still pending. 
+      // (Admins bypassing this via Admin SDK will not be affected by client rules)
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.createdBy) && resource.data.verificationStatus == 'Pending';
+      
+      // Allow create if the new document's creator matches the requesting user's UID
+      allow create: if isAuthenticated() && isOwner(request.resource.data.createdBy);
     }
 
     // Default deny for other collections (add more specific rules as needed)

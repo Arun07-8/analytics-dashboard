@@ -100,6 +100,13 @@ export default function EditSalePage() {
             setServices(servicesData);
 
             if (saleData) {
+                // Security check for staff trying to edit a processed record via direct URL
+                if (saleData.verificationStatus !== 'Pending' && user?.role?.trim().toLowerCase() !== 'admin') {
+                    toast.error("Cannot edit a processed sales record");
+                    router.push('/sales');
+                    return;
+                }
+
                 const customer = customersData.find(c => c.id === saleData.customerId);
                 setSelectedCustomer(customer || { id: saleData.customerId, name: 'Unknown Customer' });
                 setSelectedServices(saleData.services || []);

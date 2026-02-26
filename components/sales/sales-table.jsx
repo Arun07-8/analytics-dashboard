@@ -281,16 +281,35 @@ export function SalesTable({
                 // 1. Specialized logic for Staff Pending Requests
                 if (!isAdmin && vStatus === "Pending") {
                     return (
-                        <div className="flex justify-end pr-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onViewDetails?.(sale)}
-                                className="h-8 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                            >
-                                <IconEye className="size-3.5 mr-1" />
-                                View Details
-                            </Button>
+                        <div className="flex items-center justify-end gap-2 pr-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                                        size="icon">
+                                        <IconDotsVertical className="size-4" />
+                                        <span className="sr-only">Open menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[160px] font-semibold text-xs">
+                                    <DropdownMenuItem onClick={() => onViewDetails?.(sale)} className="gap-2">
+                                        <IconEye className="size-3.5 text-muted-foreground" />
+                                        View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onEditSale?.(sale)} className="gap-2">
+                                        <IconPencil className="size-3.5 text-muted-foreground" />
+                                        Edit Request
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive font-bold gap-2"
+                                        onClick={() => setDeletingSale(sale)}
+                                    >
+                                        <IconTrash className="size-3.5" />
+                                        Delete Request
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     );
                 }
@@ -335,10 +354,12 @@ export function SalesTable({
                                     <IconEye className="size-3.5 text-muted-foreground" />
                                     View Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onEditSale?.(sale)} className="gap-2">
-                                    <IconPencil className="size-3.5 text-muted-foreground" />
-                                    Edit Sale
-                                </DropdownMenuItem>
+                                {isAdmin && (
+                                    <DropdownMenuItem onClick={() => onEditSale?.(sale)} className="gap-2">
+                                        <IconPencil className="size-3.5 text-muted-foreground" />
+                                        Edit Sale
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem className="text-primary gap-2" onClick={() => onDownloadInvoice?.(sale)}>
                                     <IconDownload className="size-3.5" />
                                     Download Invoice
