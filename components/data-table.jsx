@@ -18,6 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { cn } from "@/lib/utils"
 import {
   IconChevronDown,
   IconChevronLeft,
@@ -193,90 +194,95 @@ export function DataTable({
   const currentTab = activeTab || tabs[0]?.value || "all";
 
   return (
-    <Tabs value={currentTab} onValueChange={onTabChange} className="w-full flex-col justify-start gap-6">
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
+    <Tabs value={currentTab} onValueChange={onTabChange} className="w-full flex flex-col gap-6">
+      <div className="flex flex-col @4xl/main:flex-row @4xl/main:items-center justify-between gap-4">
         {tabs.length > 0 && (
-          <>
-            <Select value={currentTab} onValueChange={onTabChange}>
-              <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id="view-selector">
-                <SelectValue placeholder="Select a view" />
-              </SelectTrigger>
-              <SelectContent>
-                {tabs.map((tab) => (
-                  <SelectItem key={tab.value} value={tab.value}>
-                    {tab.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <TabsList
-              className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value}>
-                  {tab.label} {tab.badge && <Badge variant="secondary" className="ml-1">{tab.badge}</Badge>}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </>
+          <div className="inline-flex items-center p-1 bg-muted/40 rounded-xl border border-border/40 w-fit">
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => onTabChange?.(tab.value)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap",
+                  currentTab === tab.value
+                    ? "bg-card text-foreground shadow-sm ring-1 ring-border/10"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab.label}
+                {tab.badge && (
+                  <span className={cn(
+                    "px-1.5 py-0.5 rounded-full text-[10px] tracking-tight",
+                    currentTab === tab.value ? "bg-primary text-primary-foreground" : "bg-muted-foreground/20 text-muted-foreground"
+                  )}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         )}
 
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-3 ml-auto w-full @4xl/main:w-auto">
           {onSearchChange && (
-            <div className="relative hidden md:block">
+            <div className="relative flex-1 @4xl/main:w-72">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              </div>
               <Input
                 placeholder={searchPlaceholder}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="h-9 w-64 bg-background pl-3"
+                className="h-10 w-full bg-card border-border/60 pl-10 text-xs font-semibold rounded-xl focus:ring-1 focus:ring-primary/20 transition-all shadow-sm"
               />
             </div>
           )}
-          {showColumnsButton && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <IconLayoutColumns />
-                  <span className="hidden lg:inline">Customize Columns</span>
-                  <span className="lg:hidden">Columns</span>
-                  <IconChevronDown />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {table
-                  .getAllColumns()
-                  .filter((column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }>
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          {onAddClick && (
-            <Button variant="outline" size="sm" onClick={onAddClick}>
-              <IconPlus />
-              <span className="hidden lg:inline">{addLabel}</span>
-            </Button>
-          )}
+
+          <div className="flex items-center gap-2">
+            {showColumnsButton && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-10 text-xs font-bold gap-2 px-4 border-border/60 rounded-xl bg-card hover:bg-muted/30 shadow-sm transition-all text-muted-foreground">
+                    <IconLayoutColumns className="size-4" />
+                    <span className="hidden @xl/main:inline capitalize">Columns</span>
+                    <IconChevronDown className="size-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-xl border-border/40 shadow-2xl p-1.5">
+                  {table
+                    .getAllColumns()
+                    .filter((column) =>
+                      typeof column.accessorFn !== "undefined" &&
+                      column.getCanHide())
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize text-xs font-semibold py-2 rounded-lg"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }>
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {onAddClick && (
+              <Button onClick={onAddClick} className="h-10 text-xs font-bold gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                <IconPlus className="size-4" />
+                <span className="hidden @xl/main:inline">{addLabel}</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+
       <TabsContent
         value={currentTab}
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-black/5">
+        className="relative flex flex-col gap-6 p-0 outline-none">
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.02),0_1px_2px_0_rgba(0,0,0,0.04)]">
           {enableReordering ? (
             <DndContext
               collisionDetection={closestCenter}
@@ -285,11 +291,11 @@ export function DataTable({
               sensors={sensors}
               id={sortableId}>
               <Table>
-                <TableHeader className="bg-muted sticky top-0 z-10">
+                <TableHeader className="bg-muted/50 sticky top-0 z-10 border-b border-border">
                   {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
+                    <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
                       {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id} colSpan={header.colSpan}>
+                        <TableHead key={header.id} className="h-11 text-[11px] font-extrabold text-foreground uppercase tracking-widest px-6" colSpan={header.colSpan}>
                           {header.isPlaceholder
                             ? null
                             : flexRender(header.column.columnDef.header, header.getContext())}
@@ -307,8 +313,8 @@ export function DataTable({
                     </SortableContext>
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={columns.length} className="h-24 text-center">
-                        No results.
+                      <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground font-medium text-sm">
+                        No results found.
                       </TableCell>
                     </TableRow>
                   )}
@@ -317,11 +323,11 @@ export function DataTable({
             </DndContext>
           ) : (
             <Table>
-              <TableHeader className="bg-muted sticky top-0 z-10">
+              <TableHeader className="bg-muted/50 sticky top-0 z-10 border-b border-border">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
+                      <TableHead key={header.id} className="h-11 text-[11px] font-extrabold text-foreground uppercase tracking-widest px-6" colSpan={header.colSpan}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header, header.getContext())}
@@ -333,9 +339,9 @@ export function DataTable({
               <TableBody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="group border-border/40 hover:bg-muted/20">
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} className="py-4 px-6 border-0">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                       ))}
@@ -343,8 +349,8 @@ export function DataTable({
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                      No results.
+                    <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground font-medium text-sm">
+                      No results found.
                     </TableCell>
                   </TableRow>
                 )}

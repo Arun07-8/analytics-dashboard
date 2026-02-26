@@ -243,9 +243,7 @@ export default function CreateSalePage() {
         if (!salesRefId.trim()) {
             newErrors.refId = "Reference number is required";
         }
-        if (selectedServices.length === 0) {
-            newErrors.cart = "Add at least one item to cart";
-        }
+
 
         const pAmount = Number(paidAmount);
         if (paidAmount !== '' && (isNaN(pAmount) || pAmount < 0)) {
@@ -259,7 +257,7 @@ export default function CreateSalePage() {
             // Intelligent Focus
             if (newErrors.customer) customerSearchRef.current?.focus();
             else if (newErrors.refId) salesRefIdRef.current?.focus();
-            else if (newErrors.cart) cartCardRef.current?.scrollIntoView({ behavior: 'smooth' });
+
             else if (newErrors.paidAmount) paidAmountRef.current?.focus();
             return;
         }
@@ -300,14 +298,13 @@ export default function CreateSalePage() {
                 toast.success("Sale synchronized successfully");
             } else {
                 // Send notification only to users with 'admin' role
-                const allUsers = await getAllAdmins();
-                const actualAdmins = allUsers.filter(acc =>
+                const actualAdmins = admins.filter(acc =>
                     acc.role?.trim().toLowerCase() === 'admin' &&
-                    acc.id !== user.uid
+                    (acc.uid !== user.uid && acc.id !== user.uid)
                 );
 
                 const notificationPromises = actualAdmins.map(admin => createNotification({
-                    userId: admin.id,
+                    userId: admin.uid || admin.id,
                     title: "New Sales Request",
                     message: `${staffName} has submitted a new sales request for ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
                     type: "warning",
@@ -457,9 +454,9 @@ export default function CreateSalePage() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <IconLayoutDashboard className="h-4 w-4 text-primary" />
-                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sales Terminal</span>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">Sales Terminal</span>
                             </div>
-                            <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Create Sale</h1>
+                            <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">Create Sale</h1>
                         </div>
                     </div>
 
@@ -472,13 +469,7 @@ export default function CreateSalePage() {
                             <IconDownload className="h-4 w-4" />
                             Draft
                         </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            className="h-11 px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider gap-2 shadow-lg shadow-primary/20 transition-all rounded-lg active:scale-95"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? "Syncing..." : "Finish Sale"}
-                        </Button>
+
                     </div>
                 </div>
             </div>
@@ -796,11 +787,7 @@ export default function CreateSalePage() {
                                         <IconReceipt2 className="h-4 w-4" />
                                         Billed Cart Details
                                     </CardTitle>
-                                    {errors.cart && (
-                                        <Badge variant="destructive" className="text-[9px] font-black uppercase tracking-widest animate-pulse border-none px-4 py-1">
-                                            {errors.cart}
-                                        </Badge>
-                                    )}
+
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <div className="overflow-x-auto">
@@ -858,7 +845,7 @@ export default function CreateSalePage() {
                                                                     <IconClipboardList className="h-10 w-10 text-muted-foreground" />
                                                                 </div>
                                                                 <div className="space-y-1">
-                                                                    <p className="text-base font-black text-foreground uppercase tracking-widest">Cart is Empty</p>
+                                                                    <p className="text-base font-black text-foreground uppercase tracking-widest">Bill is Empty</p>
                                                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Add items using the entry form above</p>
                                                                 </div>
                                                             </div>

@@ -216,7 +216,9 @@ export default function ExpensesPage() {
             const diff = fillStart.getDate() - day + (day === 0 ? -6 : 1);
             fillStart.setDate(diff);
             fillStart.setHours(0, 0, 0, 0);
-            fillEnd = new Date(fillStart.getTime() + 7 * 86400000 - 1);
+            fillEnd = new Date(fillStart);
+            fillEnd.setDate(fillStart.getDate() + 6);
+            fillEnd.setHours(23, 59, 59, 999);
         } else if (dateFilter === 'this-month') {
             fillStart = new Date(now.getFullYear(), now.getMonth(), 1);
         } else if (dateFilter === 'this-year') {
@@ -304,21 +306,24 @@ export default function ExpensesPage() {
     if (loading || !user || !isAdmin) return null
 
     return (
-        <div className="flex flex-col gap-8 py-8 animate-in fade-in duration-700">
+        <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
             {/* Page Header */}
-            <div className="px-4 lg:px-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-1.5">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">
+                        <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                        </div>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
                             Expenditure Terminal
                         </span>
                     </div>
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight leading-none">
-                        Business <span className="text-destructive italic">Expenses</span>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Business Expenses
                     </h1>
-                    <p className="text-xs text-muted-foreground font-medium">
-                        Monitor and audit all operational outflows and overheads.
+                    <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        Monitor and audit all operational outflows and overheads
                     </p>
                 </div>
 
@@ -347,7 +352,7 @@ export default function ExpensesPage() {
                         <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
+                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all", !fromDate && "text-muted-foreground")}>
                                         <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
                                         {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
@@ -364,7 +369,7 @@ export default function ExpensesPage() {
                         <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !fromDate && "text-muted-foreground")}>
+                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all", !fromDate && "text-muted-foreground")}>
                                         <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
                                         {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
@@ -374,10 +379,10 @@ export default function ExpensesPage() {
                                     <CalendarComponent mode="single" selected={fromDate} onSelect={setFromDate} disabled={(date) => date > new Date()} initialFocus />
                                 </PopoverContent>
                             </Popover>
-                            <div className="h-4 w-[1px] bg-border" />
+                            <div className="h-4 w-[1px] bg-border/50" />
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-muted/20 pl-3 pr-4 border border-border/50 shadow-sm rounded-xl", !toDate && "text-muted-foreground")}>
+                                    <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all", !toDate && "text-muted-foreground")}>
                                         <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
                                         {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
@@ -400,35 +405,25 @@ export default function ExpensesPage() {
                 </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="w-full">
+            <div className="space-y-6">
                 <SectionCards cards={stats} />
-            </div>
 
-            {/* Chart Section */}
-            <div className="px-4 lg:px-6">
+
                 <ChartAreaInteractive
                     data={chartData}
                     timeRange={dateFilter === 'this-month' ? 'this-month' : dateFilter === 'this-year' ? 'this-year' : dateFilter}
                     onTimeRangeChange={handleTimeRangeChange}
                 />
+
             </div>
 
             {/* Expenses Table Section */}
-            <div className="px-4 lg:px-6 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive shadow-inner">
-                        <span className="font-bold text-xs">EX</span>
-                    </div>
-                    <h2 className="text-sm font-semibold text-muted-foreground">Expense Records</h2>
-                </div>
-                <div className="bg-card/50 rounded-2xl border border-border/50 p-6 shadow-sm">
-                    <ExpensesTable
-                        data={dataPack.filtered}
-                        onEdit={handleEdit}
-                        onDelete={setDeletingExpenseId}
-                    />
-                </div>
+            <div className="pt-4">
+                <ExpensesTable
+                    data={dataPack.filtered}
+                    onEdit={handleEdit}
+                    onDelete={setDeletingExpenseId}
+                />
             </div>
 
             {/* Modal */}

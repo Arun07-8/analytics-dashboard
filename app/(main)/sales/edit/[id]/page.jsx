@@ -100,6 +100,13 @@ export default function EditSalePage() {
             setServices(servicesData);
 
             if (saleData) {
+                // Security check for staff trying to edit a processed record via direct URL
+                if (saleData.verificationStatus !== 'Pending' && user?.role?.trim().toLowerCase() !== 'admin') {
+                    toast.error("Cannot edit a processed sales record");
+                    router.push('/sales');
+                    return;
+                }
+
                 const customer = customersData.find(c => c.id === saleData.customerId);
                 setSelectedCustomer(customer || { id: saleData.customerId, name: 'Unknown Customer' });
                 setSelectedServices(saleData.services || []);
@@ -328,9 +335,9 @@ export default function EditSalePage() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <IconLayoutDashboard className="h-4 w-4 text-primary" />
-                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sales Terminal</span>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">Sales Terminal</span>
                             </div>
-                            <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Edit Sale</h1>
+                            <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">Edit Sale</h1>
                         </div>
                     </div>
 

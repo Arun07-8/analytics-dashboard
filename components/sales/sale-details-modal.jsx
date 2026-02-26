@@ -52,7 +52,7 @@ export function SaleDetailsModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-none rounded-3xl overflow-hidden shadow-2xl">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0 border-none rounded-3xl shadow-2xl">
                 {/* Fixed Close Button - HIGH VISIBILITY */}
                 <div className="absolute right-6 top-6 z-[100]">
                     <DialogClose asChild>

@@ -218,25 +218,28 @@ export default function SalesRequestsPage() {
     if (loading || !isAdmin) return null;
 
     return (
-        <div className="flex flex-1 flex-col gap-8 py-8 animate-in fade-in duration-700">
-            <div className="px-4 lg:px-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-1.5">
+        <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">
+                        <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                        </div>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
                             Admin Approval Queue
                         </span>
                     </div>
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight leading-none">
-                        Sales <span className="text-primary italic">Requests</span>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Sales Requests
                     </h1>
-                    <p className="text-xs text-muted-foreground font-medium">
+                    <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
                         Manage and verify staff submissions before they affect revenue.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="bg-card border border-border/50 px-4 py-2 rounded-xl flex items-center gap-3">
+                    <div className="bg-card border border-border/50 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
                         <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
                             <IconAlertCircle className="size-5" />
                         </div>
@@ -248,17 +251,15 @@ export default function SalesRequestsPage() {
                 </div>
             </div>
 
-            <div className="px-4 lg:px-6">
-                <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-                    <SalesRequestTable
-                        data={processedSales}
-                        onAccept={handleAccept}
-                        onDecline={handleDecline}
-                        onView={handleView}
-                        onEdit={handleEdit}
-                        onDownloadInvoice={handleDownload}
-                    />
-                </div>
+            <div className="pt-4">
+                <SalesRequestTable
+                    data={processedSales}
+                    onAccept={handleAccept}
+                    onDecline={handleDecline}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDownloadInvoice={handleDownload}
+                />
             </div>
 
             {/* Hidden Template for PDF */}

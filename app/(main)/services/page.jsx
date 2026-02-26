@@ -3,19 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
     IconPackage,
     IconCircleCheckFilled,
     IconCircleXFilled,
     IconAlertTriangle,
-    IconTrendingUp,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { getAllServices, createService, updateService, deleteService } from "@/lib/firebase";
 
 // Reusable components
+import { SectionCards } from "@/components/section-cards";
 import { ServiceModal } from "@/components/services/service-modal";
 import { ServicesTable } from "@/components/services/services-table";
 
@@ -212,15 +211,34 @@ export default function ServicesPage() {
         return matchesSearch;
     });
 
+    const stats = [
+        {
+            label: "Total Services",
+            value: services.length,
+            icon: <IconPackage />,
+            description: "All registered service offerings"
+        },
+        {
+            label: "Active Services",
+            value: services.filter(s => s.isActive).length,
+            icon: <IconCircleCheckFilled />,
+            description: "Available for customers"
+        },
+        {
+            label: "Inactive Services",
+            value: services.filter(s => !s.isActive).length,
+            icon: <IconCircleXFilled />,
+            description: "Hidden from public view"
+        }
+    ];
+
     // Show loading state
     if (loading || isLoadingData) {
         return (
-            <div className="@container/main flex flex-1 flex-col gap-2">
-                <div className="flex items-center justify-center h-screen">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p className="text-muted-foreground">Loading services...</p>
-                    </div>
+            <div className="flex items-center justify-center h-screen bg-background text-foreground">
+                <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-xs font-medium animate-pulse">Loading Services...</p>
                 </div>
             </div>
         );
@@ -232,70 +250,30 @@ export default function ServicesPage() {
     }
 
     return (
-        <div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
-            {/* Stats Cards - Matching Dashboard SectionCards style */}
-            <div
-                className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
-                <Card className="@container/card relative overflow-hidden">
-                    <CardHeader>
-                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total Services</CardDescription>
-                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                            {services.length}
-                        </CardTitle>
-                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-primary/10">
-                            <IconPackage className="size-6 text-primary" />
+        <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                         </div>
-                    </CardHeader>
-                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
-                        <div className="line-clamp-1 flex gap-2 font-medium">
-                            Full catalog <IconPackage className="size-4" />
-                        </div>
-                        <div className="text-muted-foreground">
-                            All registered service offerings
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="@container/card relative overflow-hidden">
-                    <CardHeader>
-                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Active Services</CardDescription>
-                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-green-600">
-                            {services.filter(s => s.isActive).length}
-                        </CardTitle>
-                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-green-500/10">
-                            <IconCircleCheckFilled className="size-6 text-green-600" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
-                        <div className="line-clamp-1 flex gap-2 font-medium">
-                            Currently live <IconTrendingUp className="size-4 text-green-600" />
-                        </div>
-                        <div className="text-muted-foreground">
-                            Available for customers
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="@container/card relative overflow-hidden">
-                    <CardHeader>
-                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Inactive Services</CardDescription>
-                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-orange-600">
-                            {services.filter(s => !s.isActive).length}
-                        </CardTitle>
-                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-orange-500/10">
-                            <IconCircleXFilled className="size-6 text-orange-600" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
-                        <div className="line-clamp-1 flex gap-2 font-medium">
-                            Service pause <IconCircleXFilled className="size-4 text-orange-600" />
-                        </div>
-                        <div className="text-muted-foreground">
-                            Hidden from public view
-                        </div>
-                    </CardContent>
-                </Card>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                            Service Catalog
+                        </span>
+                    </div>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Business Services
+                    </h1>
+                    <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        Manage and configure your service offerings.
+                    </p>
+                </div>
             </div>
+
+            {/* Stats Cards - Unified Dashboard Design */}
+            <SectionCards cards={stats} />
 
             {/* Services Table Content - Using REUSABLE Components */}
             <ServicesTable
