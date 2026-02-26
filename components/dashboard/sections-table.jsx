@@ -9,6 +9,8 @@ import {
     IconFilter,
     IconLayoutColumns,
     IconChevronDown,
+    IconPencil,
+    IconTrash
 } from "@tabler/icons-react"
 
 import { cn } from "@/lib/utils"
@@ -31,6 +33,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const columns = [
     {
@@ -159,10 +171,28 @@ const columns = [
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-border/40 p-1.5">
-                            <DropdownMenuItem className="text-sm font-medium cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onViewDetails?.(sale)}>View Details</DropdownMenuItem>
+                            <DropdownMenuItem className="text-sm font-medium cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2 gap-2" onClick={() => meta?.onViewDetails?.(sale)}>
+                                <IconSearch className="size-3.5" />
+                                View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-sm font-medium cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2 gap-2" onClick={() => meta?.onEditSale?.(sale)}>
+                                <IconPencil className="size-3.5" />
+                                Edit Sale
+                            </DropdownMenuItem>
 
                             <DropdownMenuSeparator className="bg-border/40 my-1" />
-                            <DropdownMenuItem className="text-sm font-semibold text-primary cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2" onClick={() => meta?.onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>
+                            <DropdownMenuItem className="text-sm font-semibold text-primary cursor-pointer rounded-md focus:bg-primary/5 focus:text-primary transition-colors py-2 gap-2" onClick={() => meta?.onDownloadInvoice?.(sale)}>
+                                <IconCircleCheckFilled className="size-3.5" />
+                                Download Invoice
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-border/40 my-1" />
+                            <DropdownMenuItem
+                                className="text-sm font-bold text-destructive cursor-pointer rounded-md focus:bg-destructive/5 focus:text-destructive transition-colors py-2 gap-2"
+                                onClick={() => meta?.onDeleteSale?.(sale)}
+                            >
+                                <IconTrash className="size-3.5" />
+                                Delete Record
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -171,11 +201,12 @@ const columns = [
     },
 ];
 
-export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSale, onDownloadInvoice }) {
+export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSale, onDownloadInvoice, onDeleteSale }) {
     const [searchTerm, setSearchTerm] = React.useState("");
     const [staffFilter, setStaffFilter] = React.useState("all");
     const [statusFilter, setStatusFilter] = React.useState("all");
     const [columnVisibility, setColumnVisibility] = React.useState({});
+    const [deletingSale, setDeletingSale] = React.useState(null);
 
     const filteredData = React.useMemo(() => {
         return data.filter(item => {
@@ -316,8 +347,34 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                     onViewDetails,
                     onEditSale,
                     onDownloadInvoice,
+                    onDeleteSale: (sale) => setDeletingSale(sale),
                 }}
             />
+
+            <AlertDialog open={!!deletingSale} onOpenChange={() => setDeletingSale(null)}>
+                <AlertDialogContent className="rounded-2xl border-border bg-card">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold tracking-tight text-destructive">Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground pt-2">
+                            Are you sure you want to remove this sale record? This action cannot be undone and will permanently delete the transaction data from the database.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 gap-3">
+                        <AlertDialogCancel className="rounded-xl font-semibold text-xs h-11 border-border">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (deletingSale) {
+                                    onDeleteSale?.(deletingSale);
+                                    setDeletingSale(null);
+                                }
+                            }}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl font-semibold text-xs h-11 px-6 shadow-lg shadow-destructive/20"
+                        >
+                            Delete Record
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

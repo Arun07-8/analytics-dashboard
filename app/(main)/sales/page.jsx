@@ -115,16 +115,16 @@ export default function Page() {
   useEffect(() => {
     if (!user) return;
 
-    // The Sales page is for personal record tracking. 
-    // Both Admins and Staff see ONLY their own records here.
-    let filterConstraints = {
-      createdBy: user.uid
-    };
-
-    // Requirement: "Admin Sales Page -> Show only approved sales records"
+    // Updated Requirement: 
+    // Admins see ALL approved sales to manage the business.
+    // Staff see ONLY their own records (Pending/Approved/Rejected).
+    let filterConstraints = {};
     const isAdmin = user.role?.trim().toLowerCase() === 'admin';
+
     if (isAdmin) {
       filterConstraints.isVerified = true;
+    } else {
+      filterConstraints.createdBy = user.uid;
     }
 
     setLoadingData(true);

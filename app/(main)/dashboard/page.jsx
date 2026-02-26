@@ -7,7 +7,7 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DashboardTable } from "@/components/dashboard/sections-table"
 import { SectionCards } from "@/components/section-cards"
 import { Button } from "@/components/ui/button"
-import { subscribeToSales } from "@/lib/firebase/collections/sale"
+import { subscribeToSales, deleteSale } from "@/lib/firebase/collections/sale"
 import { subscribeToAdmins } from "@/lib/firebase/collections/admin"
 import { subscribeToCustomers } from "@/lib/firebase/collections/customer"
 import { format } from "date-fns";
@@ -452,6 +452,16 @@ export default function Page() {
     }, 500);
   }, [previewSaleData]);
 
+  const handleDeleteSale = useCallback(async (sale) => {
+    try {
+      await deleteSale(sale.id);
+      toast.success("Record removed successfully");
+    } catch (error) {
+      toast.error("Failed to remove record");
+      console.error(error);
+    }
+  }, []);
+
   if (loading || !user || user?.role?.trim().toLowerCase() !== 'admin') {
     if (loading) {
       return (
@@ -605,6 +615,7 @@ export default function Page() {
           onViewDetails={handleViewDetails}
           onEditSale={handleEditSale}
           onDownloadInvoice={handleDownloadInvoice}
+          onDeleteSale={handleDeleteSale}
         />
       </div>
 
