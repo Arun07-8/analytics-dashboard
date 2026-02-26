@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button"
 import { subscribeToSales, deleteSale } from "@/lib/firebase/collections/sale"
 import { subscribeToAdmins } from "@/lib/firebase/collections/admin"
 import { subscribeToCustomers } from "@/lib/firebase/collections/customer"
+import { subscribeToExpenses } from "@/lib/firebase/collections/expense"
 import { format } from "date-fns";
-import { IconCalendar, IconReceipt, IconChartBar, IconCalendarStats, IconUsers, IconClock, IconListCheck } from "@tabler/icons-react";
+import { IconCalendar, IconReceipt, IconChartBar, IconCalendarStats, IconUsers, IconClock, IconListCheck, IconCash, IconCreditCard } from "@tabler/icons-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export default function Page() {
   const [sales, setSales] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [dateFilter, setDateFilter] = useState('this-month'); // match chart default
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
@@ -67,11 +69,13 @@ export default function Page() {
     const unsubSales = subscribeToSales({}, (data) => setSales(data));
     const unsubAdmins = subscribeToAdmins((data) => setAdmins(data));
     const unsubCustomers = subscribeToCustomers((data) => setCustomers(data));
+    const unsubExpenses = subscribeToExpenses((data) => setExpenses(data));
 
     return () => {
       unsubSales();
       unsubAdmins();
       unsubCustomers();
+      unsubExpenses();
     };
   }, [user]);
 
@@ -182,30 +186,38 @@ export default function Page() {
       verifiedSales = verifiedSales.filter(s => s.createdBy === selectedStaffId);
     }
 
-    // Global Revenue Calculations (Respects staff filter if applied)
-    const allTimeCompanyRevenue = verifiedSales
+    // Roles & Expenses
+    const isAdmin = user?.role === 'admin';
+    const isStaffSelected = selectedStaffId !== 'all';
+
+    // Expense calculations (Only for admins, or 0 if staff selected)
+    const allExpenses = isAdmin && !isStaffSelected ? expenses : [];
+
+    // Total Revenue = Total Paid Sales - Total Expenses
+    const allTimeCompanyGross = verifiedSales
       .filter(s => s.status === 'paid')
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+    const totalAllTimeExpenses = allExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const allTimeCompanyNet = allTimeCompanyGross - totalAllTimeExpenses;
 
     const allTimeCompanyPending = verifiedSales
       .filter(s => s.status === 'unpaid')
       .reduce((sum, s) => sum + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
 
-    const allTimeCompanySales = verifiedSales
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+    const allTimeCompanySalesCount = verifiedSales.length;
 
-    // Period-based stats (Respected context)
-    const companyPeriodRevenue = verifiedSales
+    // Period-based stats
+    const periodGrossRevenue = verifiedSales
       .filter(s => s.date >= currentStart && s.date <= currentEnd && s.status === 'paid')
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
-    const companyPeriodPending = verifiedSales
-      .filter(s => s.date >= currentStart && s.date <= currentEnd && s.status === 'unpaid')
-      .reduce((sum, s) => sum + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
-
-    const companyPeriodSales = verifiedSales
-      .filter(s => s.date >= currentStart && s.date <= currentEnd)
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+    const periodExpensesList = allExpenses.filter(e => {
+      const eDate = e.date?.toDate ? e.date.toDate() : new Date(e.date);
+      return eDate >= currentStart && eDate <= currentEnd;
+    });
+    const totalPeriodExpenses = periodExpensesList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const periodNetRevenue = periodGrossRevenue - totalPeriodExpenses;
 
     // Role-based visibility for Table and personal stats
     const filteredByRole = allSalesWithDate.filter(s => {
@@ -229,48 +241,44 @@ export default function Page() {
     const previous = filteredByRole
       .filter(s => s.date >= prevStart && s.date < currentStart);
 
-    const newCusts = customers.filter(c => {
-      const cDate = c.createdAt?.toDate ? c.createdAt.toDate() : new Date(c.createdAt);
-      return cDate >= currentStart && cDate <= currentEnd;
-    }).length;
-
-    const previousRevenue = previous
+    const previousGross = previous
       .filter(s => s.status === 'paid')
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
+    // Previous Net (roughly, for growth)
+    const previousExpenses = allExpenses.filter(e => {
+      const eDate = e.date?.toDate ? e.date.toDate() : new Date(e.date);
+      return eDate >= prevStart && eDate < currentStart;
+    }).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const previousNet = previousGross - previousExpenses;
+
     return {
       processedSales: processed,
-      previousSales: previous,
-      newCustomersCount: newCusts,
-      allTimeCompanyRevenue,
+      allTimeCompanyNet,
+      allTimeCompanyGross,
+      allTimeCompanyExpenses: totalAllTimeExpenses,
       allTimeCompanyPending,
-      allTimeCompanySales,
-      companyPeriodRevenue,
-      companyPeriodPending,
-      companyPeriodSales,
-      previousRevenue
+      allTimeCompanySales: allTimeCompanyGross, // Matching label
+      periodGrossRevenue,
+      periodExpenses: totalPeriodExpenses,
+      periodNetRevenue,
+      previousRevenue: previousNet,
     };
-  }, [sales, dateFilter, fromDate, toDate, customerMap, staffMap, customers, user, selectedStaffId]);
+  }, [sales, expenses, dateFilter, fromDate, toDate, customerMap, staffMap, customers, user, selectedStaffId]);
 
   const stats = useMemo(() => {
     const {
       processedSales: processed,
-      previousSales: previous,
-      allTimeCompanyRevenue,
+      allTimeCompanyNet,
+      allTimeCompanyGross,
+      allTimeCompanyExpenses,
       allTimeCompanyPending,
-      allTimeCompanySales,
-      companyPeriodRevenue,
-      previousRevenue,
-      newCustomersCount
+      periodGrossRevenue,
+      periodExpenses,
+      periodNetRevenue,
+      previousRevenue
     } = dataPack;
-
-    const calculateStats = (data) => ({
-      revenue: data.filter(s => s.status === 'paid').reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0),
-      count: data.length
-    });
-
-    const currentStats = calculateStats(processed);
-    const prevStats = calculateStats(previous);
 
     const calcGrowth = (curr, prev) => {
       if (prev === 0) return curr > 0 ? 100 : 0;
@@ -281,48 +289,48 @@ export default function Page() {
       const isStaffSelected = selectedStaffId !== 'all';
       const suffix = isStaffSelected ? " (Member)" : "";
 
-      if (dateFilter === 'today') return "Today's Revenue" + suffix;
-      if (dateFilter === 'yesterday') return "Yesterday's Revenue" + suffix;
-      if (dateFilter === 'this-week') return "Weekly Revenue" + suffix;
-      if (dateFilter === 'this-month') return "Monthly Revenue" + suffix;
-      if (dateFilter === 'this-year') return "Yearly Revenue" + suffix;
-      if (dateFilter === 'all') return "Total Revenue" + suffix;
-      return "Selected Revenue" + suffix;
+      const period = dateFilter === 'today' ? "Today" :
+        dateFilter === 'yesterday' ? "Yesterday" :
+          dateFilter === 'this-week' ? "Weekly" :
+            dateFilter === 'this-month' ? "Monthly" :
+              dateFilter === 'this-year' ? "Yearly" : "Period";
+
+      return `Net ${period} Revenue${suffix}`;
     };
 
     const isStaffSelected = selectedStaffId !== 'all';
 
-    const coreCards = [
+    const fmt = (val) => (val || 0).toLocaleString('en-IN');
+
+    return [
       {
-        label: isStaffSelected ? "Member Revenue" : "Total Revenue",
-        value: allTimeCompanyRevenue,
+        label: isStaffSelected ? "Member Revenue" : "Net Total Revenue",
+        value: allTimeCompanyNet,
         prefix: "₹",
         isCurrency: true,
         icon: <IconReceipt className="size-3.5" />,
-        description: isStaffSelected ? "Paid revenue by selection" : "Cumulative paid revenue"
+        description: isStaffSelected
+          ? "Selected contribution"
+          : `Calc: ₹${fmt(allTimeCompanyGross)} - ₹${fmt(allTimeCompanyExpenses)}`
       },
       {
-        label: isStaffSelected ? "Member Sales" : "Total Sales",
-        value: allTimeCompanySales,
+        label: isStaffSelected ? "Member Sales" : "Net Total Sale",
+        value: allTimeCompanyGross,
         prefix: "₹",
         isCurrency: true,
         icon: <IconChartBar className="size-3.5" />,
-        description: isStaffSelected ? "Gross sales by selection" : "Company-wide gross sales"
+        description: isStaffSelected ? "Gross sales by selection" : "All-time company gross sales"
       },
       {
         label: getDynamicLabel(),
-        value: companyPeriodRevenue,
+        value: periodNetRevenue,
         prefix: "₹",
         isCurrency: true,
         icon: <IconCalendarStats className="size-3.5" />,
-        growth: calcGrowth(currentStats.revenue, prevStats.revenue),
-        description: `Revenue this ${dateFilter.replace('this-', '')}`
-      },
-      {
-        label: "Transactions",
-        value: currentStats.count,
-        icon: <IconListCheck className="size-3.5" />,
-        description: isStaffSelected ? "Orders by selection" : "Orders in this period"
+        growth: calcGrowth(periodNetRevenue, previousRevenue),
+        description: isStaffSelected
+          ? `Money earned this ${dateFilter.replace('this-', '')}`
+          : `Calc: ₹${fmt(periodGrossRevenue)} - ₹${fmt(periodExpenses)}`
       },
       {
         label: isStaffSelected ? "Member Pending" : "Total Pending",
@@ -330,12 +338,16 @@ export default function Page() {
         prefix: "₹",
         isCurrency: true,
         icon: <IconClock className="size-3.5" />,
-        description: isStaffSelected ? "Pending by selection" : "Pending collections"
+        description: "Outstanding collections"
       },
+      {
+        label: "Transactions",
+        value: processed.length,
+        icon: <IconListCheck className="size-3.5" />,
+        description: "Verified orders in period"
+      }
     ];
-
-    return coreCards;
-  }, [dataPack, customers, user, dateFilter]);
+  }, [dataPack, user, dateFilter, selectedStaffId]);
 
   const chartData = useMemo(() => {
     const data = {};
