@@ -10,6 +10,7 @@ import {
     subscribeToSales,
     approveSale,
     declineSale,
+    deleteSale,
     createNotification,
     getAllAdmins,
     getAllCustomers
@@ -186,6 +187,16 @@ export default function SalesRequestsPage() {
         router.push(`/sales/edit/${sale.id}`);
     };
 
+    const handleDelete = async (sale) => {
+        try {
+            await deleteSale(sale.id);
+            toast.success("Record removed successfully");
+        } catch (error) {
+            toast.error("Failed to remove record");
+            console.error(error);
+        }
+    };
+
     const handleDownload = (sale) => {
         setSelectedSale(sale);
         setIsInvoicePreviewOpen(true);
@@ -258,6 +269,7 @@ export default function SalesRequestsPage() {
                     onDecline={handleDecline}
                     onView={handleView}
                     onEdit={handleEdit}
+                    onDelete={handleDelete}
                     onDownloadInvoice={handleDownload}
                 />
             </div>

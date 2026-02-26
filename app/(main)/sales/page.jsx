@@ -115,17 +115,10 @@ export default function Page() {
   useEffect(() => {
     if (!user) return;
 
-    // The Sales page is for personal record tracking. 
-    // Both Admins and Staff see ONLY their own records here.
+    // Personal Record Tracking: Both Admins and Staff see ONLY their own records here.
     let filterConstraints = {
       createdBy: user.uid
     };
-
-    // Requirement: "Admin Sales Page -> Show only approved sales records"
-    const isAdmin = user.role?.trim().toLowerCase() === 'admin';
-    if (isAdmin) {
-      filterConstraints.isVerified = true;
-    }
 
     setLoadingData(true);
     const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
@@ -164,7 +157,7 @@ export default function Page() {
         ...sale,
         createdAtDate: date, // Keep a real Date object for filtering
         customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
-        staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
+        staffName: adminMap.get(sale.createdBy) || sale.staffName || "Unknown Staff",
         staffEmail: sale.staffEmail || '',
         status: mappedStatus,
         verificationStatus: sale.verificationStatus || (sale.isVerified ? "Approved" : "Pending"),

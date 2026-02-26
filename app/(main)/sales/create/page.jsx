@@ -294,13 +294,32 @@ export default function CreateSalePage() {
             setCompletedSale({ ...saleData, id: docId });
             setErrors({});
 
+            const currentUserId = user.uid || user.id;
+
             if (user?.role?.trim().toLowerCase() === 'admin') {
-                toast.success("Sale synchronized successfully");
+                // Admin creates sale: Notify all OTHER Admins only
+                const otherAdmins = admins.filter(acc =>
+                    (acc.uid !== currentUserId && acc.id !== currentUserId) &&
+                    acc.role?.trim().toLowerCase() === 'admin' &&
+                    !acc.isDeleted
+                );
+
+                const broadcastPromises = otherAdmins.map(admin => createNotification({
+                    userId: admin.uid || admin.id,
+                    title: "New Company Sale",
+                    message: `${staffName} (Admin) recorded a new sale of ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
+                    type: "info",
+                    actionUrl: "/sales"
+                }));
+                await Promise.all(broadcastPromises);
+
+                toast.success("Sale synchronized and Admins notified");
             } else {
-                // Send notification only to users with 'admin' role
+                // Staff creates request: Notify all ADMINS for approval
                 const actualAdmins = admins.filter(acc =>
                     acc.role?.trim().toLowerCase() === 'admin' &&
-                    (acc.uid !== user.uid && acc.id !== user.uid)
+                    (acc.uid !== currentUserId && acc.id !== currentUserId) &&
+                    !acc.isDeleted
                 );
 
                 const notificationPromises = actualAdmins.map(admin => createNotification({
@@ -312,7 +331,7 @@ export default function CreateSalePage() {
                 }));
                 await Promise.all(notificationPromises);
 
-                toast.success("Sales request has been sent to Admin for approval.");
+                toast.success("Sales request has been sent for approval.");
             }
         } catch (error) {
             toast.error("Sync error: " + error.message);

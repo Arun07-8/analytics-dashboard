@@ -8,7 +8,8 @@ import {
     IconX,
     IconEye,
     IconDownload,
-    IconPencil
+    IconPencil,
+    IconTrash
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +21,16 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DataTable } from "@/components/data-table"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function SalesRequestTable({
     data = [],
@@ -27,9 +38,11 @@ export function SalesRequestTable({
     onDecline,
     onView,
     onEdit,
+    onDelete,
     onDownloadInvoice
 }) {
     const [searchTerm, setSearchTerm] = React.useState("");
+    const [deletingSale, setDeletingSale] = React.useState(null);
 
     const filteredData = React.useMemo(() => {
         return data.filter(item => {
@@ -163,21 +176,51 @@ export function SalesRequestTable({
                                 <DropdownMenuItem className="text-xs font-bold gap-2 py-2.5 rounded-lg cursor-pointer" onClick={() => onDownloadInvoice(row.original)}>
                                     <IconDownload className="size-4 text-emerald-500" /> Save Invoice
                                 </DropdownMenuItem>
+                                <DropdownMenuItem className="text-xs font-bold gap-2 py-2.5 rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5" onClick={() => setDeletingSale(row.original)}>
+                                    <IconTrash className="size-4" /> Delete Request
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 )
             },
         },
-    ], [onAccept, onDecline, onView, onEdit, onDownloadInvoice]);
+    ], [onAccept, onDecline, onView, onEdit, onDelete, onDownloadInvoice]);
 
     return (
-        <DataTable
-            data={filteredData}
-            columns={columns}
-            enableReordering={false}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search sale ID, customer or staff..."
-        />
+        <>
+            <DataTable
+                data={filteredData}
+                columns={columns}
+                enableReordering={false}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Search sale ID, customer or staff..."
+            />
+
+            <AlertDialog open={!!deletingSale} onOpenChange={() => setDeletingSale(null)}>
+                <AlertDialogContent className="rounded-2xl border-border bg-card">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold tracking-tight text-destructive">Delete Request</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground pt-2">
+                            Are you sure you want to delete this pending sales request? This will permanently remove it from the system.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 gap-3">
+                        <AlertDialogCancel className="rounded-xl font-semibold text-xs h-11 border-border">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (deletingSale) {
+                                    onDelete?.(deletingSale);
+                                    setDeletingSale(null);
+                                }
+                            }}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl font-semibold text-xs h-11 px-6 shadow-lg shadow-destructive/20"
+                        >
+                            Confirm Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }
