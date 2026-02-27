@@ -66,6 +66,12 @@ export default function ExpensesPage() {
         }
     }, [user, isAdmin])
 
+    React.useEffect(() => {
+        if (dateFilter === 'specific-day' && !fromDate) {
+            setFromDate(new Date())
+        }
+    }, [dateFilter])
+
 
     const dataPack = React.useMemo(() => {
         const now = new Date();
@@ -354,7 +360,7 @@ export default function ExpensesPage() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all", !fromDate && "text-muted-foreground")}>
                                         <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
-                                        {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
+                                        {fromDate ? format(fromDate, "dd - M - yyyy") : <span className="opacity-50">Select Date</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
@@ -371,7 +377,7 @@ export default function ExpensesPage() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all", !fromDate && "text-muted-foreground")}>
                                         <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
-                                        {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                                        {fromDate ? format(fromDate, "dd - M - yyyy") : <span className="opacity-50">Select</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
@@ -384,7 +390,7 @@ export default function ExpensesPage() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all", !toDate && "text-muted-foreground")}>
                                         <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
-                                        {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                                        {toDate ? format(toDate, "dd - M - yyyy") : <span className="opacity-50">Select</span>}
                                         <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
