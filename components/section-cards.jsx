@@ -59,7 +59,7 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
 
               <div className="pt-1">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl lg:text-4xl font-bold tabular-nums tracking-tighter text-foreground">
+                  <span className={`text-3xl lg:text-4xl font-bold tabular-nums tracking-tighter ${typeof card.value === 'number' && card.value < 0 ? 'text-red-500' : 'text-foreground'}`}>
                     {card.prefix || ""}{typeof card.value === 'number' ? card.value.toLocaleString(undefined, {
                       minimumFractionDigits: card.isCurrency ? (card.value % 1 === 0 ? 0 : 2) : 0,
                       maximumFractionDigits: card.isCurrency ? 2 : 0

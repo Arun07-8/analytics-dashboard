@@ -266,6 +266,7 @@ export default function Page() {
       periodExpenses: totalPeriodExpenses,
       periodNetRevenue,
       previousRevenue: previousNet,
+      periodExpensesList,
     };
   }, [sales, expenses, dateFilter, fromDate, toDate, customerMap, staffMap, customers, user, selectedStaffId]);
 
@@ -415,8 +416,16 @@ export default function Page() {
       data[dStr].volume += 1;
     });
 
+    // Subtract period expenses per day for true net revenue
+    (dataPack.periodExpensesList || []).forEach(expense => {
+      const eDate = expense.date?.toDate ? expense.date.toDate() : new Date(expense.date);
+      const dStr = eDate.toISOString().split('T')[0];
+      if (!data[dStr]) data[dStr] = { date: dStr, revenue: 0, volume: 0 };
+      data[dStr].revenue = data[dStr].revenue - (Number(expense.amount) || 0);
+    });
+
     return Object.values(data).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [dataPack.processedSales, dateFilter, fromDate, toDate]);
+  }, [dataPack.processedSales, dataPack.periodExpensesList, dateFilter, fromDate, toDate]);
 
   const handleViewDetails = useCallback((sale) => {
     setSelectedSale(sale);

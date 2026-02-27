@@ -308,7 +308,7 @@ export default function Page() {
         description: "Gross value (Paid + Unpaid)"
       },
       {
-        label: "My Paid Revenue",
+        label: "My Paid Amount",
         value: dateFilter === 'all' ? myPaidRevenueAllTime : myPaidRevenuePeriod,
         prefix: "₹",
         isCurrency: true,
