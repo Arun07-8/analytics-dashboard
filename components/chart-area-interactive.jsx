@@ -29,7 +29,7 @@ export const description = "An interactive area chart"
 
 const chartConfig = {
   revenue: {
-    label: "Total Revenue",
+    label: "Paid Revenue",
     color: "#10b981", // Vibrant Emerald
   },
   volume: {
@@ -164,7 +164,6 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                   strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  stackId="a"
                 />
                 <Area
                   dataKey="revenue"
@@ -174,7 +173,6 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                   strokeWidth={3}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  stackId="a"
                 />
               </AreaChart>
             </ChartContainer>

@@ -193,9 +193,12 @@ export default function Page() {
     // Expense calculations (Only for admins, or 0 if staff selected)
     const allExpenses = isAdmin && !isStaffSelected ? expenses : [];
 
-    // Total Revenue = Total Paid Sales - Total Expenses
+    // Total Revenue = Actual collected amount (paidAmount) across all verified sales
     const allTimeCompanyGross = verifiedSales
-      .filter(s => s.status === 'paid')
+      .reduce((sum, s) => sum + (Number(s.paidAmount) || 0), 0);
+
+    // Total Sales = All verified sales regardless of payment status
+    const allTimeCompanyTotalSales = verifiedSales
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
     const totalAllTimeExpenses = allExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -209,8 +212,8 @@ export default function Page() {
 
     // Period-based stats
     const periodGrossRevenue = verifiedSales
-      .filter(s => s.date >= currentStart && s.date <= currentEnd && s.status === 'paid')
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+      .filter(s => s.date >= currentStart && s.date <= currentEnd)
+      .reduce((sum, s) => sum + (Number(s.paidAmount) || 0), 0);
 
     const periodExpensesList = allExpenses.filter(e => {
       const eDate = e.date?.toDate ? e.date.toDate() : new Date(e.date);
@@ -242,8 +245,7 @@ export default function Page() {
       .filter(s => s.date >= prevStart && s.date < currentStart);
 
     const previousGross = previous
-      .filter(s => s.status === 'paid')
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+      .reduce((sum, s) => sum + (Number(s.paidAmount) || 0), 0);
 
     // Previous Net (roughly, for growth)
     const previousExpenses = allExpenses.filter(e => {
@@ -257,9 +259,9 @@ export default function Page() {
       processedSales: processed,
       allTimeCompanyNet,
       allTimeCompanyGross,
+      allTimeCompanyTotalSales,
       allTimeCompanyExpenses: totalAllTimeExpenses,
       allTimeCompanyPending,
-      allTimeCompanySales: allTimeCompanyGross, // Matching label
       periodGrossRevenue,
       periodExpenses: totalPeriodExpenses,
       periodNetRevenue,
@@ -272,6 +274,7 @@ export default function Page() {
       processedSales: processed,
       allTimeCompanyNet,
       allTimeCompanyGross,
+      allTimeCompanyTotalSales,
       allTimeCompanyExpenses,
       allTimeCompanyPending,
       periodGrossRevenue,
@@ -314,14 +317,6 @@ export default function Page() {
           : `Calc: ₹${fmt(allTimeCompanyGross)} - ₹${fmt(allTimeCompanyExpenses)}`
       },
       {
-        label: isStaffSelected ? "Member Sales" : "Net Total Sale",
-        value: allTimeCompanyGross,
-        prefix: "₹",
-        isCurrency: true,
-        icon: <IconChartBar className="size-3.5" />,
-        description: isStaffSelected ? "Gross sales by selection" : "All-time company gross sales"
-      },
-      {
         label: getDynamicLabel(),
         value: periodNetRevenue,
         prefix: "₹",
@@ -331,6 +326,14 @@ export default function Page() {
         description: isStaffSelected
           ? `Money earned this ${dateFilter.replace('this-', '')}`
           : `Calc: ₹${fmt(periodGrossRevenue)} - ₹${fmt(periodExpenses)}`
+      },
+      {
+        label: isStaffSelected ? "Member Sales" : "Net Total Sale",
+        value: allTimeCompanyTotalSales,
+        prefix: "₹",
+        isCurrency: true,
+        icon: <IconChartBar className="size-3.5" />,
+        description: isStaffSelected ? "Gross sales by selection" : "All-time company total sales"
       },
       {
         label: isStaffSelected ? "Member Pending" : "Total Pending",
@@ -404,11 +407,11 @@ export default function Page() {
       }
     }
 
-    // Populate actual data
+    // Populate actual data — use paidAmount so chart matches revenue stat cards
     dataPack.processedSales.forEach(sale => {
       const dStr = sale.date.toISOString().split('T')[0];
       if (!data[dStr]) data[dStr] = { date: dStr, revenue: 0, volume: 0 };
-      data[dStr].revenue += Number(sale.totalAmount) || 0;
+      data[dStr].revenue += Number(sale.paidAmount) || 0;
       data[dStr].volume += 1;
     });
 

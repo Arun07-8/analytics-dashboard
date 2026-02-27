@@ -290,12 +290,12 @@ export default function Page() {
 
     // My All-Time Stats (Verified Only)
     const myTotalSalesAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPaidRevenueAllTime = verifiedSales.filter(s => s.status === 'paid').reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
+    const myPaidRevenueAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.paidAmount) || 0), 0);
     const myPendingAmountAllTime = verifiedSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
 
     // My Period Stats (Verified Only)
     const myTotalSalesPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPaidRevenuePeriod = verifiedPeriodSales.filter(s => s.status === 'paid').reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
+    const myPaidRevenuePeriod = verifiedPeriodSales.reduce((acc, s) => acc + (Number(s.paidAmount) || 0), 0);
     const myPendingAmountPeriod = verifiedPeriodSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
 
     return [
@@ -367,7 +367,7 @@ export default function Page() {
           d.setMinutes(0, 0, 0); // Round to the nearest hour
           const iso = d.toISOString();
           if (data[iso]) { // Only add if it falls within the initialized 24 hours
-            data[iso].revenue += Number(sale.totalAmount) || 0;
+            data[iso].revenue += Number(sale.paidAmount) || 0;
             data[iso].volume += 1;
           }
         }
@@ -439,7 +439,7 @@ export default function Page() {
       verifiedPeriodSales.forEach(sale => {
         const dStr = sale.createdAtDate.toISOString().split('T')[0];
         if (!data[dStr]) data[dStr] = { date: dStr, revenue: 0, volume: 0 };
-        data[dStr].revenue += Number(sale.totalAmount) || 0;
+        data[dStr].revenue += Number(sale.paidAmount) || 0;
         data[dStr].volume += 1;
       });
     }
