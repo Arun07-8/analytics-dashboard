@@ -61,7 +61,10 @@ function TableHeader() {
     );
 }
 
-function TableBody({ services, startIndex, totalAmount, isLastPage }) {
+function TableBody({ services, startIndex, totalAmount, paidAmount, isLastPage }) {
+    const isPartial = isLastPage && paidAmount > 0 && paidAmount < totalAmount;
+    const balanceDue = totalAmount - paidAmount;
+
     return (
         <div className="border-x border-b border-slate-200 rounded-b-lg overflow-hidden">
             {services.map((s, i) => (
@@ -90,15 +93,42 @@ function TableBody({ services, startIndex, totalAmount, isLastPage }) {
             ))}
 
             {isLastPage && (
-                <div className="grid grid-cols-12 py-5 px-6 items-center bg-slate-50 border-t border-slate-200">
-                    <div className="col-span-10 text-right font-black text-slate-500 uppercase tracking-[0.2em] text-[12px]">
-                        Total Amount
+                <>
+                    {/* Total Amount row */}
+                    <div className="grid grid-cols-12 py-5 px-6 items-center bg-slate-50 border-t border-slate-200">
+                        <div className="col-span-10 text-right font-black text-slate-500 uppercase tracking-[0.2em] text-[12px]">
+                            Total Amount
+                        </div>
+                        <div className="col-span-2 text-right text-[20px] font-black text-[#ff5722] tabular-nums">
+                            {"\u20B9"}
+                            {totalAmount?.toLocaleString("en-IN")}
+                        </div>
                     </div>
-                    <div className="col-span-2 text-right text-[20px] font-black text-[#ff5722] tabular-nums">
-                        {"\u20B9"}
-                        {totalAmount?.toLocaleString("en-IN")}
-                    </div>
-                </div>
+
+                    {/* Partial payment breakdown */}
+                    {isPartial && (
+                        <>
+                            <div className="grid grid-cols-12 py-3 px-6 items-center bg-emerald-50 border-t border-emerald-100">
+                                <div className="col-span-10 text-right font-black text-emerald-700 uppercase tracking-[0.2em] text-[11px]">
+                                    Advance Paid
+                                </div>
+                                <div className="col-span-2 text-right text-[16px] font-black text-emerald-600 tabular-nums">
+                                    {"\u20B9"}
+                                    {paidAmount?.toLocaleString("en-IN")}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-12 py-4 px-6 items-center bg-orange-50 border-t border-orange-100">
+                                <div className="col-span-10 text-right font-black text-orange-700 uppercase tracking-[0.2em] text-[12px]">
+                                    Balance Due
+                                </div>
+                                <div className="col-span-2 text-right text-[18px] font-black text-orange-600 tabular-nums">
+                                    {"\u20B9"}
+                                    {balanceDue?.toLocaleString("en-IN")}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </>
             )}
         </div>
     );
@@ -312,6 +342,7 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                                 services={pageServices}
                                 startIndex={startIndex}
                                 totalAmount={sale.totalAmount}
+                                paidAmount={sale.paidAmount}
                                 isLastPage={isLastPage}
                             />
                         </div>
