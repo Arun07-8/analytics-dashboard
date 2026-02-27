@@ -4,14 +4,8 @@ import { format } from "date-fns";
 const FIRST_PAGE_MAX_ROWS = 7;
 const CONTINUATION_PAGE_MAX_ROWS = 16;
 
-/**
- * Splits services into chunks for multi-page rendering.
- * First page gets fewer rows (header takes space), continuation pages get more.
- */
 function paginateServices(services) {
-    if (services.length <= FIRST_PAGE_MAX_ROWS) {
-        return [services];
-    }
+    if (services.length <= FIRST_PAGE_MAX_ROWS) return [services];
     const pages = [];
     let remaining = [...services];
     pages.push(remaining.slice(0, FIRST_PAGE_MAX_ROWS));
@@ -23,112 +17,114 @@ function paginateServices(services) {
     return pages;
 }
 
-/* ─── Reusable sub-components ─── */
-
-function TopBorder() {
-    return (
-        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#ff5722] via-[#ff7043] to-[#ff8a65]" />
-    );
-}
-
-function BottomBorder() {
-    return (
-        <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-[#ff5722] via-[#ff7043] to-[#ff8a65]" />
-    );
-}
-
 function PageNumber({ current, total }) {
     return (
-        <div className="absolute bottom-5 left-0 right-0 text-center">
-            <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">
+        <div className="absolute bottom-6 left-0 right-0 text-center">
+            <span className="text-[10px] font-medium text-slate-300 tracking-widest uppercase">
                 Page {current} of {total}
             </span>
         </div>
     );
 }
 
+function StatusBadge({ paidAmount, totalAmount }) {
+    const isPaid = Number(paidAmount) >= Number(totalAmount);
+    const isPartial = Number(paidAmount) > 0 && Number(paidAmount) < Number(totalAmount);
+
+    if (isPaid) {
+        return (
+            <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                Paid in Full
+            </span>
+        );
+    }
+    if (isPartial) {
+        return (
+            <span className="inline-flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-700 text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" />
+                Partial Payment
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-700 text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+            Unpaid
+        </span>
+    );
+}
+
 function TableHeader() {
     return (
-        <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2c5282] rounded-t-lg px-6 py-3">
-            <div className="grid grid-cols-12 text-[11px] font-black text-white uppercase tracking-[0.15em]">
-                <div className="col-span-1 text-left">SL</div>
-                <div className="col-span-5 text-left">DESCRIPTION</div>
-                <div className="col-span-2 text-right">RATE</div>
-                <div className="col-span-2 text-right">QTY</div>
-                <div className="col-span-2 text-right">AMOUNT</div>
+        <div className="bg-[#1e3a5f] px-6 py-3.5 rounded-t-lg">
+            <div className="grid grid-cols-12 text-[10px] font-black text-white/90 uppercase tracking-[0.18em]">
+                <div className="col-span-1">#</div>
+                <div className="col-span-5">Description</div>
+                <div className="col-span-2 text-right">Rate</div>
+                <div className="col-span-2 text-center">Qty</div>
+                <div className="col-span-2 text-right">Amount</div>
             </div>
         </div>
     );
 }
 
 function TableBody({ services, startIndex, totalAmount, paidAmount, isLastPage }) {
-    const isPartial = isLastPage && paidAmount > 0 && paidAmount < totalAmount;
-    const balanceDue = totalAmount - paidAmount;
+    const isPartial = isLastPage && Number(paidAmount) > 0 && Number(paidAmount) < Number(totalAmount);
+    const balanceDue = Number(totalAmount) - Number(paidAmount);
 
     return (
-        <div className="border-x border-b border-slate-200 rounded-b-lg overflow-hidden">
+        <div className="border border-t-0 border-slate-200 rounded-b-lg overflow-hidden">
             {services.map((s, i) => (
                 <div
                     key={i}
-                    className="grid grid-cols-12 py-4 px-6 text-[14px] border-b border-slate-100 last:border-0 items-center hover:bg-slate-50/30 transition-colors"
+                    className={`grid grid-cols-12 py-3.5 px-6 text-[13px] border-b border-slate-100 last:border-0 items-center ${i % 2 === 1 ? 'bg-slate-50/60' : 'bg-white'}`}
                 >
-                    <div className="col-span-1 font-medium text-slate-500 text-left">
-                        {startIndex + i + 1}
+                    <div className="col-span-1 text-slate-400 font-semibold">{startIndex + i + 1}</div>
+                    <div className="col-span-5 text-slate-700 font-semibold">{s.name}</div>
+                    <div className="col-span-2 text-right text-slate-500 font-medium tabular-nums">
+                        ₹{s.price?.toLocaleString("en-IN")}
                     </div>
-                    <div className="col-span-5 font-semibold text-slate-700 text-left">
-                        {s.name}
-                    </div>
-                    <div className="col-span-2 text-right text-slate-600 font-medium tabular-nums">
-                        {"\u20B9"}
-                        {s.price?.toLocaleString("en-IN")}
-                    </div>
-                    <div className="col-span-2 text-right text-slate-600 font-medium">
-                        1
-                    </div>
+                    <div className="col-span-2 text-center text-slate-500 font-medium">1</div>
                     <div className="col-span-2 text-right text-slate-900 font-bold tabular-nums">
-                        {"\u20B9"}
-                        {s.price?.toLocaleString("en-IN")}
+                        ₹{s.price?.toLocaleString("en-IN")}
                     </div>
                 </div>
             ))}
 
             {isLastPage && (
-                <>
-                    {/* Total Amount row */}
-                    <div className="grid grid-cols-12 py-5 px-6 items-center bg-slate-50 border-t border-slate-200">
-                        <div className="col-span-10 text-right font-black text-slate-500 uppercase tracking-[0.2em] text-[12px]">
-                            Total Amount
-                        </div>
-                        <div className="col-span-2 text-right text-[20px] font-black text-[#ff5722] tabular-nums">
-                            {"\u20B9"}
-                            {totalAmount?.toLocaleString("en-IN")}
-                        </div>
+                <div className="border-t-2 border-slate-200">
+                    {/* Total */}
+                    <div className="flex justify-between items-center px-6 py-4 bg-slate-50">
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.18em]">Total Amount</span>
+                        <span className="text-[22px] font-black text-[#1e3a5f] tabular-nums">
+                            ₹{Number(totalAmount)?.toLocaleString("en-IN")}
+                        </span>
                     </div>
 
-                    {/* Partial payment breakdown */}
                     {isPartial && (
                         <>
-                            <div className="grid grid-cols-12 py-3 px-6 items-center bg-emerald-50 border-t border-emerald-100">
-                                <div className="col-span-10 text-right font-black text-emerald-700 uppercase tracking-[0.2em] text-[11px]">
-                                    Advance Paid
+                            <div className="flex justify-between items-center px-6 py-3 bg-emerald-50 border-t border-emerald-100">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                                    <span className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.15em]">Advance Paid</span>
                                 </div>
-                                <div className="col-span-2 text-right text-[16px] font-black text-emerald-600 tabular-nums">
-                                    {"\u20B9"}
-                                    {paidAmount?.toLocaleString("en-IN")}
-                                </div>
+                                <span className="text-[17px] font-black text-emerald-600 tabular-nums">
+                                    ₹{Number(paidAmount)?.toLocaleString("en-IN")}
+                                </span>
                             </div>
-                            <div className="grid grid-cols-12 py-4 px-6 items-center bg-orange-50 border-t border-orange-100">
-                                <div className="col-span-10 text-right font-black text-orange-700 uppercase tracking-[0.2em] text-[12px]">
-                                    Balance Due
+                            <div className="flex justify-between items-center px-6 py-4 bg-orange-50 border-t border-orange-200">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-orange-500 inline-block" />
+                                    <span className="text-[12px] font-black text-orange-700 uppercase tracking-[0.18em]">Balance Due</span>
                                 </div>
-                                <div className="col-span-2 text-right text-[18px] font-black text-orange-600 tabular-nums">
-                                    {"\u20B9"}
-                                    {balanceDue?.toLocaleString("en-IN")}
-                                </div>
+                                <span className="text-[20px] font-black text-orange-600 tabular-nums">
+                                    ₹{balanceDue?.toLocaleString("en-IN")}
+                                </span>
                             </div>
                         </>
                     )}
-                </>
+                </div>
             )}
         </div>
     );
@@ -136,57 +132,64 @@ function TableBody({ services, startIndex, totalAmount, paidAmount, isLastPage }
 
 function ContinuationHeader({ invoiceNo, pageNum }) {
     return (
-        <div className="flex justify-between items-center mb-8 px-2">
-            <div className="flex items-center gap-3 -mt-8">
-                <img
-                    src="/Foxon Final Logo-01.png"
-                    alt="Foxon Career Hub Logo"
-                    className="h-36 w-auto object-contain"
-                />
-            </div>
+        <div className="flex justify-between items-center mb-8 pb-5 border-b border-slate-100">
+            <img
+                src="/Foxon Final Logo-01.png"
+                alt="Foxon Career Hub Logo"
+                className="h-28 w-auto object-contain -mt-6"
+            />
             <div className="text-right">
-                <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">
-                    Invoice No:{" "}
-                    <span className="text-[#1e3a5f]">{invoiceNo}</span>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                    Invoice <span className="text-[#1e3a5f] font-black">{invoiceNo}</span> · Continued
                 </p>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    Continued - Page {pageNum}
-                </p>
+                <p className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest">Page {pageNum}</p>
             </div>
         </div>
     );
 }
 
-/* ─── Summary + Seal + Signature section (last page only) ─── */
-
 function InvoiceFooter({ staffName }) {
     return (
-        <div className="mt-auto px-2">
-            {/* Seal & Signature on right */}
-            <div className="flex justify-end mb-12">
-                <div className="flex flex-col items-center shrink-0">
+        <div className="mt-auto">
+            <div className="h-px bg-slate-100 mb-8" />
+
+            {/* Terms + Signature row */}
+            <div className="flex justify-between items-end mb-8">
+                {/* Payment Terms */}
+                <div className="max-w-[260px]">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-3">Payment Terms</p>
+                    <p className="text-[12px] text-slate-500 font-medium leading-relaxed mb-2">
+                        Payment is due upon receipt. Please retain this invoice for your records.
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-medium">
+                        foxonhub@gmail.com · +91 9072 121 714
+                    </p>
+                </div>
+
+                {/* Seal + Signature */}
+                <div className="flex flex-col items-center">
                     <img
                         src="/ciel.png"
                         alt="Company Seal"
-                        className="h-[100px] w-[100px] object-contain opacity-90"
+                        className="h-[88px] w-[88px] object-contain opacity-90 mb-3"
                     />
-                    <div className="border-t-2 border-slate-300 pt-3 mt-4 min-w-[200px] text-center">
-                        <p className="text-[14px] font-black text-slate-800 uppercase tracking-wider mb-0.5">
+                    <div className="border-t-2 border-slate-300 pt-2.5 min-w-[190px] text-center">
+                        <p className="text-[13px] font-black text-slate-800 uppercase tracking-wide mb-0.5">
                             {staffName}
                         </p>
-                        <p className="text-[11px] text-[#ff5722] font-black uppercase tracking-widest">
+                        <p className="text-[10px] font-black text-[#ff5722] uppercase tracking-[0.18em]">
                             Authorized Signature
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* Thank You */}
-            <div className="text-center pb-8 border-t border-slate-100 pt-8">
-                <p className="text-[13px] font-black text-[#ff5722] uppercase tracking-[0.25em] mb-1.5">
+            {/* Thank You Banner */}
+            <div className="bg-[#1e3a5f] rounded-xl px-8 py-5 text-center">
+                <p className="text-[13px] font-black text-white uppercase tracking-[0.25em] mb-1">
                     Thank You For Your Business!
                 </p>
-                <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+                <p className="text-[11px] text-white/50 font-medium tracking-wide">
                     We appreciate your trust in Foxon Career Hub
                 </p>
             </div>
@@ -208,7 +211,11 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
             : new Date(sale.createdAt || Date.now());
 
     const staffName =
-        admins.find((a) => a.id === sale.staffId)?.name || "Authorized Signatory";
+        admins.find((a) => a.id === sale.staffId)?.name ||
+        admins.find((a) => a.id === sale.createdBy)?.name ||
+        sale.staffName ||
+        "Authorized Signatory";
+
     const services = sale.services || [];
     const pages = paginateServices(services);
     const totalPages = pages.length;
@@ -221,14 +228,12 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                 const isLastPage = pageIndex === totalPages - 1;
 
                 let startIndex = 0;
-                for (let i = 0; i < pageIndex; i++) {
-                    startIndex += pages[i].length;
-                }
+                for (let i = 0; i < pageIndex; i++) startIndex += pages[i].length;
 
                 return (
                     <div
                         key={pageIndex}
-                        className="w-[794px] bg-white px-16 pt-16 pb-20 mx-auto text-slate-800 relative flex flex-col"
+                        className="w-[794px] bg-white px-14 pt-14 pb-20 mx-auto text-slate-800 relative flex flex-col"
                         style={{
                             fontFamily: "'Inter', sans-serif",
                             boxSizing: "border-box",
@@ -236,107 +241,76 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                             pageBreakAfter: isLastPage ? "auto" : "always",
                         }}
                     >
-                        <TopBorder />
+                        {/* Top accent */}
+                        <div className="absolute top-0 left-0 right-0 h-[5px] bg-gradient-to-r from-[#1e3a5f] to-[#ff5722]" />
 
                         {isFirstPage ? (
                             <>
                                 {/* HEADER */}
-                                <div className="flex justify-between items-start mb-14 px-2">
-                                    <div className="-mt-8">
-                                        <img
-                                            src="/Foxon Final Logo-01.png"
-                                            alt="Foxon Career Hub Logo"
-                                            className="h-60 w-auto object-contain"
-                                        />
-                                    </div>
-                                    <div className="text-right">
-                                        <h1 className="text-[56px] font-black tracking-[-0.04em] text-[#1e3a5f] uppercase leading-none mb-2">
-                                            INVOICE
+                                <div className="flex justify-between items-start mb-10">
+                                    <img
+                                        src="/Foxon Final Logo-01.png"
+                                        alt="Foxon Career Hub Logo"
+                                        className="h-64 w-auto object-contain -mt-6"
+                                    />
+                                    <div className="text-right mt-2">
+                                        <h1 className="text-[50px] font-black text-[#1e3a5f] tracking-[-0.04em] leading-none uppercase mb-2">
+                                            Invoice
                                         </h1>
-                                        <div className="h-1 w-32 bg-gradient-to-r from-[#ff5722] to-[#ff8a65] ml-auto" />
+                                        <div className="h-[3px] w-28 bg-gradient-to-r from-[#ff5722] to-[#ff8a65] rounded-full ml-auto mb-3" />
+                                        <StatusBadge paidAmount={sale.paidAmount} totalAmount={sale.totalAmount} />
                                     </div>
                                 </div>
 
-                                {/* INFO BOX */}
-                                <div className="bg-gradient-to-br from-[#f8f9fa] to-[#f1f3f5] rounded-lg p-10 mb-14 mx-2 border border-slate-200 shadow-sm">
-                                    <div className="grid grid-cols-2 gap-12 mb-8 border-b-2 border-[#ff5722]/20 pb-8">
+                                {/* INFO SECTION */}
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-7 mb-8">
+                                    <div className="grid grid-cols-2 gap-10 pb-6 mb-6 border-b border-slate-200">
+                                        {/* Billed To */}
                                         <div>
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="w-1 h-5 bg-[#ff5722] rounded-full" />
-                                                <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.15em]">
-                                                    BILLED TO
-                                                </p>
-                                            </div>
-                                            <p className="text-[17px] font-bold text-slate-800 leading-tight mb-1">
-                                                {customer.name}
-                                            </p>
-                                            <p className="text-[13px] text-slate-600 font-medium">
-                                                {customer.mobile}
-                                            </p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-3">Billed To</p>
+                                            <p className="text-[17px] font-bold text-slate-900 leading-tight mb-1.5">{customer.name}</p>
+                                            <p className="text-[13px] text-slate-500 font-medium mb-0.5">{customer.mobile}</p>
                                             {customer.email && (
-                                                <p className="text-[13px] text-slate-600 font-medium">
-                                                    {customer.email}
-                                                </p>
+                                                <p className="text-[13px] text-slate-500 font-medium">{customer.email}</p>
                                             )}
                                         </div>
-                                        <div className="text-right">
-                                            <div className="bg-white rounded-lg p-5 shadow-sm border border-slate-200">
-                                                <div className="space-y-3">
-                                                    <div className="flex justify-between items-center gap-8">
-                                                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                                                            Invoice No
-                                                        </p>
-                                                        <p className="text-[15px] font-bold text-[#1e3a5f] tracking-wide">
-                                                            {invoiceNo}
-                                                        </p>
-                                                    </div>
-                                                    <div className="h-px bg-slate-200" />
-                                                    <div className="flex justify-between items-center gap-8">
-                                                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                                                            Date
-                                                        </p>
-                                                        <p className="text-[15px] font-bold text-[#1e3a5f]">
-                                                            {format(date, "dd MMM yyyy")}
-                                                        </p>
-                                                    </div>
+
+                                        {/* Invoice Meta */}
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-3">Invoice Details</p>
+                                            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Invoice No</span>
+                                                    <span className="text-[14px] font-black text-[#1e3a5f]">{invoiceNo}</span>
+                                                </div>
+                                                <div className="h-px bg-slate-100" />
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Date</span>
+                                                    <span className="text-[14px] font-bold text-[#1e3a5f]">{format(date, "dd MMM yyyy")}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-6">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="w-1 h-5 bg-[#ff5722] rounded-full" />
-                                            <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.15em]">
-                                                FROM
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <p className="text-[15px] font-bold text-[#ff5722]">
-                                                Foxon Career Hub
-                                            </p>
-                                            <p className="text-[13px] font-semibold text-slate-700">
-                                                Malappuram, Kerala - 676523
-                                            </p>
-                                            <p className="text-[13px] font-medium text-slate-600">
-                                                foxonhub@gmail.com
-                                            </p>
-                                            <p className="text-[13px] font-medium text-slate-600">
-                                                +91 9072 121 714
+                                    {/* From */}
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-[3px] h-10 bg-[#ff5722] rounded-full shrink-0" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-1.5">From</p>
+                                            <p className="text-[15px] font-black text-[#ff5722]">Foxon Career Hub</p>
+                                            <p className="text-[12px] text-slate-500 font-medium">
+                                                Malappuram, Kerala - 676523 · foxonhub@gmail.com · +91 9072 121 714
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                             </>
                         ) : (
-                            <ContinuationHeader
-                                invoiceNo={invoiceNo}
-                                pageNum={pageIndex + 1}
-                            />
+                            <ContinuationHeader invoiceNo={invoiceNo} pageNum={pageIndex + 1} />
                         )}
 
                         {/* TABLE */}
-                        <div className="px-2 mb-8">
+                        <div className="mb-8">
                             <TableHeader />
                             <TableBody
                                 services={pageServices}
@@ -347,33 +321,25 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                             />
                         </div>
 
-                        {/* "Continued..." indicator on non-last pages */}
                         {!isLastPage && (
-                            <div className="px-2 mt-4 mb-4 text-right">
-                                <p className="text-[11px] font-semibold text-slate-400 italic tracking-wide">
-                                    Continued on next page...
-                                </p>
+                            <div className="text-right mb-4">
+                                <p className="text-[11px] text-slate-300 font-medium italic">Continued on next page...</p>
                             </div>
                         )}
 
-                        {/* FOOTER: Seal + Totals (LAST PAGE ONLY) */}
-                        {isLastPage && (
-                            <InvoiceFooter
-                                staffName={staffName}
-                            />
-                        )}
+                        {isLastPage && <InvoiceFooter staffName={staffName} />}
 
-                        {totalPages > 1 && (
-                            <PageNumber current={pageIndex + 1} total={totalPages} />
-                        )}
-                        <BottomBorder />
+                        {totalPages > 1 && <PageNumber current={pageIndex + 1} total={totalPages} />}
+
+                        {/* Bottom accent */}
+                        <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-gradient-to-r from-[#1e3a5f] to-[#ff5722]" />
                     </div>
                 );
             })}
 
             <style jsx>{`
-        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
-      `}</style>
+                @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+            `}</style>
         </div>
     );
 };
