@@ -247,13 +247,13 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                         {isFirstPage ? (
                             <>
                                 {/* HEADER */}
-                                <div className="flex justify-between items-start mb-10">
+                                <div className="flex justify-between items-center mb-6 -mt-14">
                                     <img
                                         src="/Foxon Final Logo-01.png"
                                         alt="Foxon Career Hub Logo"
-                                        className="h-64 w-auto object-contain -mt-6"
+                                        className="h-80 w-auto object-contain -ml-14"
                                     />
-                                    <div className="text-right mt-2">
+                                    <div className="text-right">
                                         <h1 className="text-[50px] font-black text-[#1e3a5f] tracking-[-0.04em] leading-none uppercase mb-2">
                                             Invoice
                                         </h1>
