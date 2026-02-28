@@ -461,10 +461,8 @@ export default function Page() {
     // Give state a moment to update and render the template
     setTimeout(async () => {
       try {
-        const refId = Array.isArray(previewSaleData.salesRefId)
-          ? previewSaleData.salesRefId[0]
-          : previewSaleData.salesRefId;
-        const success = await downloadInvoice('dashboard-invoice-template', `Invoice-${refId || previewSaleData.id}.pdf`);
+        const customerName = customers.find(c => c.id === previewSaleData?.customerId)?.name || 'Customer';
+        const success = await downloadInvoice('dashboard-invoice-template', `${customerName}'s Invoice.pdf`);
         if (success) {
           toast.success("Invoice downloaded successfully");
         } else {

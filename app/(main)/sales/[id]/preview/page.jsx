@@ -63,8 +63,8 @@ export default function InvoicePreviewPage() {
 
         setIsDownloading(true);
         try {
-            const refId = Array.isArray(sale.salesRefId) ? sale.salesRefId[0] : sale.salesRefId;
-            const fileName = `Invoice-${refId || sale.id}.pdf`;
+            const customerName = customer?.name || 'Customer';
+            const fileName = `${customerName}'s Invoice.pdf`;
 
             await downloadInvoice('invoice-preview-container', fileName);
             toast.success("Invoice downloaded successfully");

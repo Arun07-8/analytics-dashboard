@@ -211,7 +211,8 @@ export default function SalesRequestsPage() {
 
         setTimeout(async () => {
             try {
-                const success = await downloadInvoice('hidden-invoice-template', `Sale-Request-${selectedSale.salesRefId?.[0] || selectedSale.id}.pdf`);
+                const customerName = selectedSale.customerName || customers.find(c => c.id === selectedSale.customerId)?.name || 'Customer';
+                const success = await downloadInvoice('hidden-invoice-template', `${customerName}'s Invoice.pdf`);
                 if (success) {
                     toast.success("Invoice downloaded successfully");
                 } else {

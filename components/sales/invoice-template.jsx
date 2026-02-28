@@ -157,9 +157,9 @@ function InvoiceFooter({ staffName }) {
             <div className="flex justify-between items-end mb-8">
                 {/* Payment Terms */}
                 <div className="max-w-[260px]">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-3">Payment Terms</p>
+        
                     <p className="text-[12px] text-slate-500 font-medium leading-relaxed mb-2">
-                        Payment is due upon receipt. Please retain this invoice for your records.
+                       “We appreciate your continued trust in us!, just let us know — we’re happy to help.”
                     </p>
                     <p className="text-[11px] text-slate-400 font-medium">
                         foxonhub@gmail.com · +91 9072 121 714
@@ -189,10 +189,13 @@ function InvoiceFooter({ staffName }) {
                 <p className="text-[13px] font-black text-white uppercase tracking-[0.25em] mb-1">
                     Thank You For Your Business!
                 </p>
-                <p className="text-[11px] text-white/50 font-medium tracking-wide">
-                    We appreciate your trust in Foxon Career Hub
-                </p>
+               
             </div>
+
+            {/* Digital Validity Notice */}
+            <p className="mt-4 text-center text-[8px] text-slate-300 tracking-[0.15em]">
+                This is a digitally-generated invoice. No signature is required for validity.
+            </p>
         </div>
     );
 }
@@ -327,7 +330,7 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                             </div>
                         )}
 
-                        {isLastPage && <InvoiceFooter staffName={staffName} />}
+                        {isLastPage && <InvoiceFooter staffName={"Fayis U"} />}
 
                         {totalPages > 1 && <PageNumber current={pageIndex + 1} total={totalPages} />}
 
