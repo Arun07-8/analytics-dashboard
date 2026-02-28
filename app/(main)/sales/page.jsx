@@ -294,43 +294,56 @@ export default function Page() {
   const stats = useMemo(() => {
     const verifiedSales = salesWithDetails.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
     const verifiedPeriodSales = periodSales.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
-
     // My All-Time Stats (Verified Only)
     const myTotalSalesAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPaidRevenueAllTime = verifiedSales.filter(s => s.status === 'paid').reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPendingAmountAllTime = verifiedSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
-
+    const myPaidAmountAllTime = verifiedSales.reduce((acc, s) => acc + (s.status === 'paid' ? (Number(s.totalAmount) || 0) : (Number(s.paidAmount) || 0)), 0);
+    const myPendingAmountAllTime = verifiedSales.reduce((acc, s) => acc + (s.status === 'unpaid' ? (Number(s.totalAmount) - (Number(s.paidAmount) || 0)) : 0), 0);
     // My Period Stats (Verified Only)
     const myTotalSalesPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPaidRevenuePeriod = verifiedPeriodSales.filter(s => s.status === 'paid').reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPendingAmountPeriod = verifiedPeriodSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
+    const myPaidAmountPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (s.status === 'paid' ? (Number(s.totalAmount) || 0) : (Number(s.paidAmount) || 0)), 0);
+    const myPendingAmountPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (s.status === 'unpaid' ? (Number(s.totalAmount) - (Number(s.paidAmount) || 0)) : 0), 0);
+
+    const getDynamicPrefix = () => {
+      if (dateFilter === 'today') return "Today's ";
+      if (dateFilter === 'yesterday') return "Yesterday's ";
+      if (dateFilter === 'week') return "Weekly ";
+      if (dateFilter === 'month') return "Monthly ";
+      if (dateFilter === 'last6months') return "6-Month ";
+      if (dateFilter === 'year') return "Yearly ";
+      if (dateFilter === 'specific-day') return "Selected Date ";
+      if (dateFilter === 'custom') return "Selected Range ";
+      if (dateFilter === 'all') return "Total ";
+      return "Selected Period ";
+    };
 
     return [
       {
-        label: "My Total Sales",
-        value: dateFilter === 'all' ? myTotalSalesAllTime : myTotalSalesPeriod,
+        label: "Total Amount",
+        value: myTotalSalesAllTime,
         prefix: "₹",
         isCurrency: true,
-        description: "Gross value (Paid + Unpaid)"
+        description: "All-time Gross value (Paid + Unpaid)"
       },
       {
-        label: "My Paid Revenue",
-        value: dateFilter === 'all' ? myPaidRevenueAllTime : myPaidRevenuePeriod,
+        label: "Paid Amount",
+        value: myPaidAmountAllTime,
         prefix: "₹",
         isCurrency: true,
-        description: "Only confirmed payments"
+        description: "All-time Total Collected"
       },
       {
-        label: "My Pending Amount",
-        value: dateFilter === 'all' ? myPendingAmountAllTime : myPendingAmountPeriod,
+        label: "Balance Amount",
+        value: myPendingAmountAllTime,
         prefix: "₹",
         isCurrency: true,
-        description: "Outstanding balance"
+        description: "All-time Outstanding balance"
       },
       {
-        label: "Transactions",
-        value: periodSales.length,
-        description: "Orders in current view"
+        label: `${getDynamicPrefix()}Revenue`,
+        value: myPaidAmountPeriod,
+        prefix: "₹",
+        isCurrency: true,
+        description: `Revenue in selected period`
       }
     ];
   }, [salesWithDetails, periodSales, dateFilter]);
@@ -740,10 +753,11 @@ export default function Page() {
         <div className="px-4 lg:px-6">
           <ChartAreaInteractive
             data={chartData}
-            timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter}
+            timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter === 'week' ? 'this-week' : dateFilter}
             onTimeRangeChange={(val) => {
               if (val === 'this-month') setDateFilter('month');
               else if (val === 'this-year') setDateFilter('year');
+              else if (val === 'this-week') setDateFilter('week');
               else setDateFilter(val);
             }}
           />

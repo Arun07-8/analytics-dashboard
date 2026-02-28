@@ -75,12 +75,40 @@ const columns = [
     {
         accessorKey: "totalAmount",
         label: "Total Amount",
-        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70">Amount</div>,
+        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70 text-right pr-2">Total Amount</div>,
         cell: ({ row }) => (
-            <div className="font-black text-sm tracking-tighter">
+            <div className="font-black text-sm tracking-tighter text-right pr-2">
                 ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </div>
         ),
+    },
+    {
+        accessorKey: "paidAmount",
+        label: "Paid Amount",
+        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70 text-right pr-2">Paid Amount</div>,
+        cell: ({ row }) => {
+            const paid = Number(row.original.paidAmount) || 0;
+            return (
+                <div className="font-black text-sm tracking-tighter text-right pr-2 text-emerald-600 dark:text-emerald-400">
+                    ₹{paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+            )
+        },
+    },
+    {
+        accessorKey: "balanceAmount",
+        label: "Balance Amount",
+        header: () => <div className="text-[11px] font-semibold text-muted-foreground/70 text-right pr-2">Balance Amount</div>,
+        cell: ({ row }) => {
+            const total = Number(row.original.totalAmount) || 0;
+            const paid = Number(row.original.paidAmount) || 0;
+            const balance = total - paid;
+            return (
+                <div className="font-black text-sm tracking-tighter text-right pr-2 text-rose-600 dark:text-rose-400">
+                    ₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+            )
+        },
     },
     {
         accessorKey: "status",

@@ -142,6 +142,9 @@ export default function Page() {
       currentStart.setHours(0, 0, 0, 0);
       currentEnd = toDate ? new Date(toDate) : new Date(now.getFullYear() + 10, 0, 1);
       currentEnd.setHours(23, 59, 59, 999);
+    } else if (dateFilter === "all") {
+      currentStart = new Date(0); // Epoch
+      currentEnd = new Date(now.getFullYear() + 10, 0, 1);
     } else {
       currentStart = startOfThisMonth;
     }
@@ -167,24 +170,22 @@ export default function Page() {
     // Global Revenue Calculations (Independent of filter)
     // "Total Revenue" for Dashboard (Admin Only) should show company-wide paid amounts or totals of paid sales
     const allTimeCompanyRevenue = verifiedSales
-      .filter(s => s.status === 'paid')
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+      .reduce((sum, s) => sum + (s.status === 'paid' ? (Number(s.totalAmount) || 0) : (Number(s.paidAmount) || 0)), 0);
 
     const allTimeCompanyPending = verifiedSales
-      .filter(s => s.status === 'unpaid')
-      .reduce((sum, s) => sum + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
+      .reduce((sum, s) => sum + (s.status === 'unpaid' ? (Number(s.totalAmount) - (Number(s.paidAmount) || 0)) : 0), 0);
 
     const allTimeCompanySales = verifiedSales
       .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
     // Period-based company stats (Verified Only)
     const companyPeriodRevenue = verifiedSales
-      .filter(s => s.date >= currentStart && s.date <= currentEnd && s.status === 'paid')
-      .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+      .filter(s => s.date >= currentStart && s.date <= currentEnd)
+      .reduce((sum, s) => sum + (s.status === 'paid' ? (Number(s.totalAmount) || 0) : (Number(s.paidAmount) || 0)), 0);
 
     const companyPeriodPending = verifiedSales
-      .filter(s => s.date >= currentStart && s.date <= currentEnd && s.status === 'unpaid')
-      .reduce((sum, s) => sum + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
+      .filter(s => s.date >= currentStart && s.date <= currentEnd)
+      .reduce((sum, s) => sum + (s.status === 'unpaid' ? (Number(s.totalAmount) - (Number(s.paidAmount) || 0)) : 0), 0);
 
     const companyPeriodSales = verifiedSales
       .filter(s => s.date >= currentStart && s.date <= currentEnd)
@@ -240,6 +241,8 @@ export default function Page() {
       allTimeCompanyPending,
       allTimeCompanySales,
       companyPeriodRevenue,
+      companyPeriodPending,
+      companyPeriodSales,
       previousRevenue,
       newCustomersCount
     } = dataPack;
@@ -257,56 +260,52 @@ export default function Page() {
       return Math.round(((curr - prev) / prev) * 100);
     };
 
-    const getDynamicLabel = () => {
-      if (dateFilter === 'today') return "Today's Revenue";
-      if (dateFilter === 'yesterday') return "Yesterday's Revenue";
-      if (dateFilter === 'this-week') return "Weekly Revenue";
-      if (dateFilter === 'this-month') return "Monthly Revenue";
-      if (dateFilter === 'this-year') return "Yearly Revenue";
-      if (dateFilter === 'all') return "Total Revenue";
-      return "Selected Revenue";
+    const getDynamicPrefix = () => {
+      if (dateFilter === 'today') return "Today's ";
+      if (dateFilter === 'yesterday') return "Yesterday's ";
+      if (dateFilter === 'this-week') return "Weekly ";
+      if (dateFilter === 'this-month') return "Monthly ";
+      if (dateFilter === 'this-year') return "Yearly ";
+      if (dateFilter === 'specific-day') return "Selected Date ";
+      if (dateFilter === 'custom') return "Selected Range ";
+      if (dateFilter === 'all') return "Total ";
+      return "Selected Period ";
     };
 
     const coreCards = [
       {
-        label: "Total Revenue",
-        value: allTimeCompanyRevenue,
-        prefix: "₹",
-        isCurrency: true,
-        icon: <IconReceipt className="size-3.5" />,
-        description: "Cumulative paid revenue"
-      },
-      {
-        label: "Total Sales",
+        label: "Total Amount",
         value: allTimeCompanySales,
         prefix: "₹",
         isCurrency: true,
         icon: <IconChartBar className="size-3.5" />,
-        description: "Company-wide gross sales"
+        description: "Company-wide gross amount"
       },
       {
-        label: getDynamicLabel(),
+        label: "Paid Amount",
+        value: allTimeCompanyRevenue,
+        prefix: "₹",
+        isCurrency: true,
+        icon: <IconReceipt className="size-3.5" />,
+        description: "Cumulative paid amount"
+      },
+      {
+        label: "Balance Amount",
+        value: allTimeCompanyPending,
+        prefix: "₹",
+        isCurrency: true,
+        icon: <IconClock className="size-3.5" />,
+        description: "Outstanding balance"
+      },
+      {
+        label: `${getDynamicPrefix()}Revenue`,
         value: companyPeriodRevenue,
         prefix: "₹",
         isCurrency: true,
         icon: <IconCalendarStats className="size-3.5" />,
         growth: calcGrowth(currentStats.revenue, prevStats.revenue),
-        description: `Revenue this ${dateFilter.replace('this-', '')}`
-      },
-      {
-        label: "Transaction Count",
-        value: currentStats.count,
-        icon: <IconListCheck className="size-3.5" />,
-        description: "Orders in this period"
-      },
-      {
-        label: "Total Pending",
-        value: allTimeCompanyPending,
-        prefix: "₹",
-        isCurrency: true,
-        icon: <IconClock className="size-3.5" />,
-        description: "Pending collections"
-      },
+        description: `Revenue in selected period`
+      }
     ];
 
     return coreCards;
