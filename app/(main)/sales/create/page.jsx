@@ -353,7 +353,8 @@ export default function CreateSalePage() {
 
         setTimeout(async () => {
             try {
-                await downloadInvoice('invoice-template', `Invoice-${completedSale.salesRefId[0]}.pdf`);
+                const customerName = selectedCustomer?.name || 'Customer';
+                await downloadInvoice('invoice-template', `${customerName}'s Invoice.pdf`);
                 toast.success("Invoice downloaded successfully");
                 router.push('/sales');
             } catch (error) {
