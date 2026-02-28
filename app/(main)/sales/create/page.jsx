@@ -1111,14 +1111,23 @@ export default function CreateSalePage() {
                                     <h2 className="text-2xl font-black text-foreground mb-2">Sales Request Sent to Admin</h2>
                                     <p className="text-muted-foreground text-sm mb-8 italic">Your sales request has been successfully sent to the admin for approval.</p>
 
-                                    <Button
-                                        className="w-full h-12 bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg"
-                                        onClick={() => {
-                                            router.push('/sales');
-                                        }}
-                                    >
-                                        Go Back
-                                    </Button>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Button
+                                            variant="outline"
+                                            className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
+                                            onClick={() => router.push('/sales')}
+                                        >
+                                            <IconLayoutDashboard className="h-4 w-4" />
+                                            Go to Sales
+                                        </Button>
+                                        <Button
+                                            className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-primary/20"
+                                            onClick={() => window.location.reload()}
+                                        >
+                                            <IconPlus className="h-4 w-4" />
+                                            Add New Sale
+                                        </Button>
+                                    </div>
                                 </>
                             )}
                         </Card>
