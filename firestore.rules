@@ -8,23 +8,67 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Helper to check if the user is an admin
+    // We use getExists() or catch exceptions safely
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // Helper to check if the user is accessing their own data
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Sales Collection Rules
-    match /sales/{saleId} {
-      // Allow read/update/delete if the document's staffId matches the requesting user's UID
-      allow read, update, delete: if isAuthenticated() && isOwner(resource.data.staffId);
-      
-      // Allow create if the new document's staffId matches the requesting user's UID
-      allow create: if isAuthenticated() && isOwner(request.resource.data.staffId);
+    // Admins Collection Rules
+    match /admins/{adminId} {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated() && isOwner(adminId);
+      allow delete: if isAdmin();
+      allow create: if isAuthenticated();
     }
 
-    // Default deny for other collections (add more specific rules as needed)
+    // Services Collection Rules
+    match /services/{serviceId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Sales Collection Rules
+    match /sales/{saleId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        isOwner(resource.data.createdBy) || 
+        isOwner(resource.data.staffId) || 
+        isAdmin()
+      );
+    }
+
+    // Customers Collection Rules
+    match /customers/{customerId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Expenses Collection Rules
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Notifications Collection Rules
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Metrics Collection Rules
+    match /metrics/{metricId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Default deny for other collections
     match /{document=**} {
-      allow read, write: if false; // Strict default, modify as needed for other collections
+      allow read, write: if false;
     }
   }
 }

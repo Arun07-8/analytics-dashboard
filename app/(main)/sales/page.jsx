@@ -734,8 +734,7 @@ export default function Page() {
               onClick={() => router.push('/sales/create')}
               className="flex items-center gap-2 w-full sm:w-auto"
             >
-              <IconPlus className="h-4 w-4" />
-              Create Sale
+              <IconPlus className="h-4 w-4" />Create Sale
             </Button>
             <Button
               onClick={() => setIsCustomerModalOpen(true)}
