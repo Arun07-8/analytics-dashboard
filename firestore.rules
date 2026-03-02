@@ -8,6 +8,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Helper to check if the user is an admin
+    // We use getExists() or catch exceptions safely
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // Helper to check if the user is accessing their own data
     function isOwner(userId) {
       return request.auth.uid == userId;
@@ -34,9 +42,9 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isOwner(request.resource.data.createdBy);
     }
 
-    // Default deny for other collections (add more specific rules as needed)
+    // Default deny for other collections
     match /{document=**} {
-      allow read, write: if false; // Strict default, modify as needed for other collections
+      allow read, write: if false;
     }
   }
 }

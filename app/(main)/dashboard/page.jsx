@@ -153,6 +153,9 @@ export default function Page() {
       currentStart.setHours(0, 0, 0, 0);
       currentEnd = toDate ? new Date(toDate) : new Date(now.getFullYear() + 10, 0, 1);
       currentEnd.setHours(23, 59, 59, 999);
+    } else if (dateFilter === "all") {
+      currentStart = new Date(0); // Epoch
+      currentEnd = new Date(now.getFullYear() + 10, 0, 1);
     } else {
       currentStart = startOfThisMonth;
       currentEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);

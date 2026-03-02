@@ -287,7 +287,6 @@ export default function Page() {
   const stats = useMemo(() => {
     const verifiedSales = salesWithDetails.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
     const verifiedPeriodSales = periodSales.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
-
     // My All-Time Stats (Verified Only)
     const myTotalSalesAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
     const myPaidRevenueAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.paidAmount) || 0), 0);
@@ -300,8 +299,8 @@ export default function Page() {
 
     return [
       {
-        label: "My Total Sales",
-        value: dateFilter === 'all' ? myTotalSalesAllTime : myTotalSalesPeriod,
+        label: "Total Amount",
+        value: myTotalSalesAllTime,
         prefix: "₹",
         isCurrency: true,
         icon: <IconReceipt className="size-4" />,
@@ -316,8 +315,8 @@ export default function Page() {
         description: "Only confirmed payments"
       },
       {
-        label: "My Pending Amount",
-        value: dateFilter === 'all' ? myPendingAmountAllTime : myPendingAmountPeriod,
+        label: "Balance Amount",
+        value: myPendingAmountAllTime,
         prefix: "₹",
         isCurrency: true,
         icon: <IconClock className="size-4" />,

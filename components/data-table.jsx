@@ -116,6 +116,7 @@ export function DataTable({
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
   showColumnsButton = true,
+  initialPageSize = 10,
 }) {
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -127,7 +128,7 @@ export function DataTable({
   const [sorting, setSorting] = React.useState([])
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: initialPageSize,
   })
 
   // Update internal data when initialData changes
@@ -377,7 +378,7 @@ export function DataTable({
                   <SelectValue placeholder={table.getState().pagination.pageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
+                  {[5, 10, 20, 30, 40, 50].map((pageSize) => (
                     <SelectItem key={pageSize} value={`${pageSize}`}>
                       {pageSize}
                     </SelectItem>
