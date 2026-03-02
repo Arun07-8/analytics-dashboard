@@ -243,9 +243,7 @@ export default function CreateSalePage() {
         if (!salesRefId.trim()) {
             newErrors.refId = "Reference number is required";
         }
-        if (selectedServices.length === 0) {
-            newErrors.cart = "Add at least one item to cart";
-        }
+
 
         const pAmount = Number(paidAmount);
         if (paidAmount !== '' && (isNaN(pAmount) || pAmount < 0)) {
@@ -259,7 +257,7 @@ export default function CreateSalePage() {
             // Intelligent Focus
             if (newErrors.customer) customerSearchRef.current?.focus();
             else if (newErrors.refId) salesRefIdRef.current?.focus();
-            else if (newErrors.cart) cartCardRef.current?.scrollIntoView({ behavior: 'smooth' });
+
             else if (newErrors.paidAmount) paidAmountRef.current?.focus();
             return;
         }
@@ -296,18 +294,36 @@ export default function CreateSalePage() {
             setCompletedSale({ ...saleData, id: docId });
             setErrors({});
 
+            const currentUserId = user.uid || user.id;
+
             if (user?.role?.trim().toLowerCase() === 'admin') {
-                toast.success("Sale synchronized successfully");
-            } else {
-                // Send notification only to users with 'admin' role
-                const allUsers = await getAllAdmins();
-                const actualAdmins = allUsers.filter(acc =>
+                // Admin creates sale: Notify all OTHER Admins only
+                const otherAdmins = admins.filter(acc =>
+                    (acc.uid !== currentUserId && acc.id !== currentUserId) &&
                     acc.role?.trim().toLowerCase() === 'admin' &&
-                    acc.id !== user.uid
+                    !acc.isDeleted
+                );
+
+                const broadcastPromises = otherAdmins.map(admin => createNotification({
+                    userId: admin.uid || admin.id,
+                    title: "New Company Sale",
+                    message: `${staffName} (Admin) recorded a new sale of ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
+                    type: "info",
+                    actionUrl: "/sales"
+                }));
+                await Promise.all(broadcastPromises);
+
+                toast.success("Sale synchronized and Admins notified");
+            } else {
+                // Staff creates request: Notify all ADMINS for approval
+                const actualAdmins = admins.filter(acc =>
+                    acc.role?.trim().toLowerCase() === 'admin' &&
+                    (acc.uid !== currentUserId && acc.id !== currentUserId) &&
+                    !acc.isDeleted
                 );
 
                 const notificationPromises = actualAdmins.map(admin => createNotification({
-                    userId: admin.id,
+                    userId: admin.uid || admin.id,
                     title: "New Sales Request",
                     message: `${staffName} has submitted a new sales request for ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
                     type: "warning",
@@ -315,7 +331,7 @@ export default function CreateSalePage() {
                 }));
                 await Promise.all(notificationPromises);
 
-                toast.success("Sales request has been sent to Admin for approval.");
+                toast.success("Sales request has been sent for approval.");
             }
         } catch (error) {
             toast.error("Sync error: " + error.message);
@@ -337,7 +353,8 @@ export default function CreateSalePage() {
 
         setTimeout(async () => {
             try {
-                await downloadInvoice('invoice-template', `Invoice-${completedSale.salesRefId[0]}.pdf`);
+                const customerName = selectedCustomer?.name || 'Customer';
+                await downloadInvoice('invoice-template', `${customerName}'s Invoice.pdf`);
                 toast.success("Invoice downloaded successfully");
                 router.push('/sales');
             } catch (error) {
@@ -457,9 +474,9 @@ export default function CreateSalePage() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <IconLayoutDashboard className="h-4 w-4 text-primary" />
-                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sales Terminal</span>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">Sales Terminal</span>
                             </div>
-                            <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Create Sale</h1>
+                            <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">Create Sale</h1>
                         </div>
                     </div>
 
@@ -472,13 +489,7 @@ export default function CreateSalePage() {
                             <IconDownload className="h-4 w-4" />
                             Draft
                         </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            className="h-11 px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider gap-2 shadow-lg shadow-primary/20 transition-all rounded-lg active:scale-95"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? "Syncing..." : "Finish Sale"}
-                        </Button>
+
                     </div>
                 </div>
             </div>
@@ -796,11 +807,7 @@ export default function CreateSalePage() {
                                         <IconReceipt2 className="h-4 w-4" />
                                         Billed Cart Details
                                     </CardTitle>
-                                    {errors.cart && (
-                                        <Badge variant="destructive" className="text-[9px] font-black uppercase tracking-widest animate-pulse border-none px-4 py-1">
-                                            {errors.cart}
-                                        </Badge>
-                                    )}
+
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <div className="overflow-x-auto">
@@ -858,7 +865,7 @@ export default function CreateSalePage() {
                                                                     <IconClipboardList className="h-10 w-10 text-muted-foreground" />
                                                                 </div>
                                                                 <div className="space-y-1">
-                                                                    <p className="text-base font-black text-foreground uppercase tracking-widest">Cart is Empty</p>
+                                                                    <p className="text-base font-black text-foreground uppercase tracking-widest">Bill is Empty</p>
                                                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Add items using the entry form above</p>
                                                                 </div>
                                                             </div>
@@ -1105,14 +1112,23 @@ export default function CreateSalePage() {
                                     <h2 className="text-2xl font-black text-foreground mb-2">Sales Request Sent to Admin</h2>
                                     <p className="text-muted-foreground text-sm mb-8 italic">Your sales request has been successfully sent to the admin for approval.</p>
 
-                                    <Button
-                                        className="w-full h-12 bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg"
-                                        onClick={() => {
-                                            router.push('/sales');
-                                        }}
-                                    >
-                                        Go Back
-                                    </Button>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Button
+                                            variant="outline"
+                                            className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
+                                            onClick={() => router.push('/sales')}
+                                        >
+                                            <IconLayoutDashboard className="h-4 w-4" />
+                                            Go to Sales
+                                        </Button>
+                                        <Button
+                                            className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-primary/20"
+                                            onClick={() => window.location.reload()}
+                                        >
+                                            <IconPlus className="h-4 w-4" />
+                                            Add New Sale
+                                        </Button>
+                                    </div>
                                 </>
                             )}
                         </Card>

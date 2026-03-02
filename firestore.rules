@@ -21,49 +21,25 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Admins Collection Rules
-    match /admins/{adminId} {
-      allow read: if isAuthenticated();
-      allow update: if isAuthenticated() && isOwner(adminId);
-      allow delete: if isAdmin();
-      allow create: if isAuthenticated();
-    }
-
-    // Services Collection Rules
-    match /services/{serviceId} {
-      allow read, write: if isAuthenticated();
+    // Helper to check if the user is an admin
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Sales Collection Rules
     match /sales/{saleId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && (isOwner(resource.data.createdBy) || isAdmin());
+      
+      // Staff can only edit or delete if the sale request is still pending. 
+      // Admins can edit or delete any sale record.
       allow update, delete: if isAuthenticated() && (
-        isOwner(resource.data.createdBy) || 
-        isOwner(resource.data.staffId) || 
+        (isOwner(resource.data.createdBy) && resource.data.verificationStatus == 'Pending') || 
         isAdmin()
       );
-    }
-
-    // Customers Collection Rules
-    match /customers/{customerId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // Expenses Collection Rules
-    match /expenses/{expenseId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // Notifications Collection Rules
-    match /notifications/{notificationId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // Metrics Collection Rules
-    match /metrics/{metricId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      
+      // Allow create if the new document's creator matches the requesting user's UID
+      allow create: if isAuthenticated() && isOwner(request.resource.data.createdBy);
     }
 
     // Default deny for other collections

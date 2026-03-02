@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
+import { format } from "date-fns"
 import {
     Dialog,
     DialogContent,
@@ -21,18 +22,22 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { IconCalendar } from "@tabler/icons-react"
+import { cn } from "@/lib/utils"
 import { createExpense, updateExpense } from "@/lib/firebase/collections"
 import { useAuth } from "@/contexts/AuthContext"
+
+const toLocalDateStr = (date = new Date()) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
 
 const formSchema = z.object({
     title: z.string().min(2, "Title is required"),
@@ -51,7 +56,7 @@ export function ExpenseModal({ isOpen, onOpenChange, expense = null, admins = []
         defaultValues: {
             title: "",
             amount: "",
-            date: new Date().toISOString().split('T')[0],
+            date: toLocalDateStr(),
             remarks: "",
         },
     })
@@ -61,14 +66,14 @@ export function ExpenseModal({ isOpen, onOpenChange, expense = null, admins = []
             form.reset({
                 title: expense.title,
                 amount: expense.amount.toString(),
-                date: new Date(expense.date).toISOString().split('T')[0],
+                date: toLocalDateStr(new Date(expense.date)),
                 remarks: expense.remarks || "",
             })
         } else {
             form.reset({
                 title: "",
                 amount: "",
-                date: new Date().toISOString().split('T')[0],
+                date: toLocalDateStr(),
                 remarks: "",
             })
         }
@@ -137,15 +142,47 @@ export function ExpenseModal({ isOpen, onOpenChange, expense = null, admins = []
                             <FormField
                                 control={form.control}
                                 name="date"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Date</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
+                                render={({ field }) => {
+                                    const selectedDate = field.value ? new Date(field.value + 'T00:00:00') : undefined;
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>Date</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            className={cn(
+                                                                "w-full justify-start text-left font-semibold text-xs h-9 px-3 border-input bg-background hover:bg-muted/50",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            <IconCalendar className="mr-2 h-3.5 w-3.5 opacity-60" />
+                                                            {selectedDate ? format(selectedDate, "dd - M - yyyy") : "Select date"}
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <CalendarComponent
+                                                        mode="single"
+                                                        selected={selectedDate}
+                                                        onSelect={(date) => {
+                                                            if (date) {
+                                                                const y = date.getFullYear();
+                                                                const m = String(date.getMonth() + 1).padStart(2, '0');
+                                                                const d = String(date.getDate()).padStart(2, '0');
+                                                                field.onChange(`${y}-${m}-${d}`);
+                                                            }
+                                                        }}
+                                                        disabled={(date) => date > new Date()}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    );
+                                }}
                             />
                         </div>
                         <FormField

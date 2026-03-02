@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bell, Check, Clock, CheckCircle2, AlertCircle, XCircle, Trash2 } from "lucide-react"
+import { Bell, Clock, CheckCircle2, AlertCircle, XCircle, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import {
     subscribeToNotifications,
@@ -26,43 +26,41 @@ export function NotificationBell() {
     const [notifications, setNotifications] = React.useState([]);
     const [open, setOpen] = React.useState(false);
 
+    // Track processed IDs to avoid duplicate toasts
+    const seenIdsRef = React.useRef(new Set());
+
     React.useEffect(() => {
         if (!authUser) return;
-        const unsub = subscribeToNotifications(authUser.uid, setNotifications);
+
+        let isFirstSnapshot = true;
+
+        const unsub = subscribeToNotifications(authUser.uid, (newNotifications) => {
+            if (isFirstSnapshot) {
+                // Initial load — mark all existing notifications as seen, no toasts
+                newNotifications.forEach(n => seenIdsRef.current.add(n.id));
+                isFirstSnapshot = false;
+            } else {
+                // Real-time update — toast only genuinely new unread notifications
+                newNotifications.forEach(n => {
+                    if (seenIdsRef.current.has(n.id)) return;
+                    seenIdsRef.current.add(n.id);
+                    if (!n.isRead) {
+                        toast(n.title, {
+                            description: n.message,
+                            action: n.actionUrl ? {
+                                label: "View",
+                                onClick: () => handleNotificationClick(n),
+                            } : undefined,
+                            icon: <Bell className="size-4 text-primary" />,
+                        });
+                    }
+                });
+            }
+            setNotifications(newNotifications);
+        });
+
         return () => unsub();
     }, [authUser]);
-
-    // Track previously seen notification IDs to avoid duplicate toasts
-    const seenIdsRef = React.useRef(new Set());
-    const isInitialLoadRef = React.useRef(true);
-
-    React.useEffect(() => {
-        if (notifications.length > 0) {
-            // On initial load, mark existing notifications as "seen" so we don't toast them all
-            if (isInitialLoadRef.current) {
-                notifications.forEach(n => seenIdsRef.current.add(n.id));
-                isInitialLoadRef.current = false;
-                return;
-            }
-
-            // Find new unread notifications
-            const newUnread = notifications.filter(n => !n.isRead && !seenIdsRef.current.has(n.id));
-
-            newUnread.forEach(n => {
-                toast(n.title, {
-                    description: n.message,
-                    action: n.actionUrl ? {
-                        label: "View",
-                        onClick: () => {
-                            handleNotificationClick(n);
-                        }
-                    } : undefined,
-                    icon: <Bell className="size-4 text-primary" />,
-                });
-                seenIdsRef.current.add(n.id);
-            });
-        }
-    }, [notifications]);
 
     const unreadCount = React.useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
 

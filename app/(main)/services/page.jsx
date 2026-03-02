@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { getAllServices, createService, updateService, deleteService, subscribeToSales } from "@/lib/firebase";
 
 // Reusable components
+import { SectionCards } from "@/components/section-cards";
 import { ServiceModal } from "@/components/services/service-modal";
 import { ServicesTable } from "@/components/services/services-table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -320,15 +321,34 @@ export default function ServicesPage() {
         return matchesSearch;
     });
 
+    const stats = [
+        {
+            label: "Total Services",
+            value: services.length,
+            icon: <IconPackage />,
+            description: "All registered service offerings"
+        },
+        {
+            label: "Active Services",
+            value: services.filter(s => s.isActive).length,
+            icon: <IconCircleCheckFilled />,
+            description: "Available for customers"
+        },
+        {
+            label: "Inactive Services",
+            value: services.filter(s => !s.isActive).length,
+            icon: <IconCircleXFilled />,
+            description: "Hidden from public view"
+        }
+    ];
+
     // Show loading state
     if (loading || isLoadingData) {
         return (
-            <div className="@container/main flex flex-1 flex-col gap-2">
-                <div className="flex items-center justify-center h-screen">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p className="text-muted-foreground">Loading services...</p>
-                    </div>
+            <div className="flex items-center justify-center h-screen bg-background text-foreground">
+                <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-xs font-medium animate-pulse">Loading Services...</p>
                 </div>
             </div>
         );

@@ -9,7 +9,9 @@ import {
     IconUser,
     IconEye,
     IconChevronDown,
-    IconTrash
+    IconTrash,
+    IconPencil,
+    IconDownload
 } from "@tabler/icons-react"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
@@ -24,6 +26,16 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DataTable } from "@/components/data-table"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export const schema = z.object({
     id: z.string(),
@@ -51,28 +63,26 @@ export function SalesTable({
     onReuseSale,
     userRole = 'staff'
 }) {
+    const [deletingSale, setDeletingSale] = React.useState(null);
+
     const columns = React.useMemo(() => {
         const isAdmin = userRole?.trim().toLowerCase() === 'admin';
 
         const baseColumns = [
             {
-                id: "select",
-                header: ({ table }) => (
-                    <div className="flex items-center justify-center">
-                        <Checkbox
-                            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                            aria-label="Select all" />
-                    </div>
-                ),
-                cell: ({ row }) => (
-                    <div className="flex items-center justify-center">
-                        <Checkbox
-                            checked={row.getIsSelected()}
-                            onCheckedChange={(value) => row.toggleSelected(!!value)}
-                            aria-label="Select row" />
-                    </div>
-                ),
+                accessorKey: "salesRefId",
+                header: "Invoice ID",
+                cell: ({ row }) => {
+                    const refId = Array.isArray(row.original.salesRefId)
+                        ? row.original.salesRefId[0]
+                        : row.original.salesRefId;
+
+                    return (
+                        <div className="font-mono font-bold text-[10px] text-primary">
+                            {refId || "N/A"}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: "createdAt",
@@ -88,16 +98,25 @@ export function SalesTable({
                 ),
                 cell: ({ row }) => {
                     const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
-                    return <div className="text-nowrap">{date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
+                    return (
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-bold text-foreground">
+                                {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                            </span>
+                            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-widest leading-none">
+                                {date.toLocaleDateString('en-IN', { year: 'numeric' })}
+                            </span>
+                        </div>
+                    );
                 },
             },
             {
                 accessorKey: "customerName",
                 header: "Customer",
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-2">
-                        <IconUser className="size-4 text-muted-foreground" />
-                        <span className="font-medium">{row.original.customerName || "Unknown"}</span>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-sm text-foreground">{row.original.customerName || "Unknown"}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tighter">Client Registry</span>
                     </div>
                 ),
             },
@@ -105,8 +124,13 @@ export function SalesTable({
                 accessorKey: "staffName",
                 header: "Staff",
                 cell: ({ row }) => (
-                    <div className="text-muted-foreground">
-                        {row.original.staffName || "Unknown"}
+                    <div className="flex items-center gap-2">
+                        <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase">
+                            {(row.original.staffName || "S")[0]}
+                        </div>
+                        <span className="text-xs font-bold text-muted-foreground/80">
+                            {row.original.staffName || "Staff"}
+                        </span>
                     </div>
                 ),
             },
@@ -123,8 +147,8 @@ export function SalesTable({
                     </Button>
                 ),
                 cell: ({ row }) => (
-                    <div className="font-medium">
-                        ₹{row.original.totalAmount?.toFixed(2)}
+                    <div className="font-bold text-sm tracking-tight text-foreground">
+                        ₹{row.original.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                 ),
             },
@@ -141,8 +165,8 @@ export function SalesTable({
                     </Button>
                 ),
                 cell: ({ row }) => (
-                    <div className="font-medium text-muted-foreground">
-                        ₹{row.original.paidAmount?.toFixed(2)}
+                    <div className="font-bold text-sm tracking-tight text-muted-foreground/80">
+                        ₹{row.original.paidAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                 ),
             },
@@ -257,16 +281,35 @@ export function SalesTable({
                 // 1. Specialized logic for Staff Pending Requests
                 if (!isAdmin && vStatus === "Pending") {
                     return (
-                        <div className="flex justify-end pr-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onViewDetails?.(sale)}
-                                className="h-8 text-xs font-semibold text-muted-foreground hover:text-foreground"
-                            >
-                                <IconEye className="size-3.5 mr-1" />
-                                View Details
-                            </Button>
+                        <div className="flex items-center justify-end gap-2 pr-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                                        size="icon">
+                                        <IconDotsVertical className="size-4" />
+                                        <span className="sr-only">Open menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[160px] font-semibold text-xs">
+                                    <DropdownMenuItem onClick={() => onViewDetails?.(sale)} className="gap-2">
+                                        <IconEye className="size-3.5 text-muted-foreground" />
+                                        View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onEditSale?.(sale)} className="gap-2">
+                                        <IconPencil className="size-3.5 text-muted-foreground" />
+                                        Edit Request
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive font-bold gap-2"
+                                        onClick={() => setDeletingSale(sale)}
+                                    >
+                                        <IconTrash className="size-3.5" />
+                                        Delete Request
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     );
                 }
@@ -283,7 +326,7 @@ export function SalesTable({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => onDeleteSale?.(sale)}
+                                onClick={() => setDeletingSale(sale)}
                                 className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
                                 title="Delete Record"
                             >
@@ -306,10 +349,30 @@ export function SalesTable({
                                     <span className="sr-only">Open menu</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 font-semibold text-xs">
-                                <DropdownMenuItem onClick={() => onViewDetails?.(sale)}>View Details</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onEditSale?.(sale)}>Edit Sale</DropdownMenuItem>
-                                <DropdownMenuItem className="text-primary" onClick={() => onDownloadInvoice?.(sale)}>Download Invoice</DropdownMenuItem>
+                            <DropdownMenuContent align="end" className="w-[160px] font-semibold text-xs">
+                                <DropdownMenuItem onClick={() => onViewDetails?.(sale)} className="gap-2">
+                                    <IconEye className="size-3.5 text-muted-foreground" />
+                                    View Details
+                                </DropdownMenuItem>
+                                {isAdmin && (
+                                    <DropdownMenuItem onClick={() => onEditSale?.(sale)} className="gap-2">
+                                        <IconPencil className="size-3.5 text-muted-foreground" />
+                                        Edit Sale
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem className="text-primary gap-2" onClick={() => onDownloadInvoice?.(sale)}>
+                                    <IconDownload className="size-3.5" />
+                                    Download Invoice
+                                </DropdownMenuItem>
+                                {isAdmin && (
+                                    <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive font-bold gap-2"
+                                        onClick={() => setDeletingSale(sale)}
+                                    >
+                                        <IconTrash className="size-3.5" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -322,17 +385,44 @@ export function SalesTable({
 
 
     return (
-        <DataTable
-            data={data}
-            columns={columns}
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            onSearchChange={onSearchChange}
-            searchPlaceholder={searchPlaceholder}
-            enableReordering={false}
-            addLabel={addLabel}
-            onAddClick={onAddClick}
-        />
+        <>
+            <DataTable
+                data={data}
+                columns={columns}
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={onTabChange}
+                onSearchChange={onSearchChange}
+                searchPlaceholder={searchPlaceholder}
+                enableReordering={false}
+                addLabel={addLabel}
+                onAddClick={onAddClick}
+            />
+
+            <AlertDialog open={!!deletingSale} onOpenChange={() => setDeletingSale(null)}>
+                <AlertDialogContent className="rounded-2xl border-border bg-card">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold tracking-tight">Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground pt-2">
+                            Are you sure you want to remove this sale record? This action cannot be undone and will permanently delete the transaction data from the database.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 gap-3">
+                        <AlertDialogCancel className="rounded-xl font-semibold text-xs h-11 border-border">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (deletingSale) {
+                                    onDeleteSale?.(deletingSale);
+                                    setDeletingSale(null);
+                                }
+                            }}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl font-semibold text-xs h-11 px-6"
+                        >
+                            Delete Record
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

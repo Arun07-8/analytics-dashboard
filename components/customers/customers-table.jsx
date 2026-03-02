@@ -6,12 +6,13 @@ import {
     IconUser,
     IconPhone,
     IconMail,
-    IconEye
+    IconEye,
+    IconTrash,
+    IconPencil
 } from "@tabler/icons-react"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,6 +20,16 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DataTable } from "@/components/data-table"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export const schema = z.object({
     id: z.string(),
@@ -38,28 +49,14 @@ export function CustomersTable({
     searchPlaceholder = "Search customers...",
     tabs = [],
     activeTab,
-    onTabChange
+    onTabChange,
+    onDeleteCustomer,
+    onEditCustomer
 }) {
+    const [deletingCustomer, setDeletingCustomer] = React.useState(null);
+
     const columns = [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <div className="flex items-center justify-center">
-                    <Checkbox
-                        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all" />
-                </div>
-            ),
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center">
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row" />
-                </div>
-            ),
-        },
+
         {
             accessorKey: "name",
             header: "Customer Name",
@@ -128,9 +125,22 @@ export function CustomersTable({
                                 <span className="sr-only">Open menu</span>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-32">
-                            <DropdownMenuItem onClick={() => onViewOrders(row.original)}>View Orders</DropdownMenuItem>
-                            <DropdownMenuItem>Edit Profile</DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="w-[160px] font-semibold text-xs">
+                            <DropdownMenuItem onClick={() => onViewOrders(row.original)} className="gap-2">
+                                <IconEye className="size-3.5 text-muted-foreground" />
+                                View Orders
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onEditCustomer?.(row.original)} className="gap-2">
+                                <IconPencil className="size-3.5 text-muted-foreground" />
+                                Edit Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => setDeletingCustomer(row.original)}
+                                className="text-destructive focus:text-destructive font-bold gap-2"
+                            >
+                                <IconTrash className="size-3.5 focus:text-destructive" />
+                                Delete
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -139,17 +149,44 @@ export function CustomersTable({
     ]
 
     return (
-        <DataTable
-            data={data}
-            columns={columns}
-            enableReordering={false}
-            addLabel={addLabel}
-            onAddClick={onAddClick}
-            onSearchChange={onSearchChange}
-            searchPlaceholder={searchPlaceholder}
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-        />
+        <>
+            <DataTable
+                data={data}
+                columns={columns}
+                enableReordering={false}
+                addLabel={addLabel}
+                onAddClick={onAddClick}
+                onSearchChange={onSearchChange}
+                searchPlaceholder={searchPlaceholder}
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={onTabChange}
+            />
+
+            <AlertDialog open={!!deletingCustomer} onOpenChange={() => setDeletingCustomer(null)}>
+                <AlertDialogContent className="rounded-2xl border-border bg-card text-foreground">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold tracking-tight">Remove Customer?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-medium text-muted-foreground pt-2">
+                            Are you sure you want to remove <span className="text-foreground font-bold">{deletingCustomer?.name}</span>? This will archive the customer record and hide them from the registry. Past sales history will be preserved.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6 gap-3">
+                        <AlertDialogCancel className="rounded-xl font-semibold text-xs h-11 border-border">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                if (deletingCustomer) {
+                                    onDeleteCustomer?.(deletingCustomer);
+                                    setDeletingCustomer(null);
+                                }
+                            }}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl font-semibold text-xs h-11 px-6"
+                        >
+                            Delete Customer
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     )
 }

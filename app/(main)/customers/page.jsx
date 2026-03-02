@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { getAllCustomers, getAllSales, createCustomer, getCustomerByMobile, getCustomerByEmail, getAllAdmins } from "@/lib/firebase/collections";
+import { getAllCustomers, getAllSales, createCustomer, updateCustomer, getCustomerByMobile, getCustomerByEmail, getAllAdmins, deleteCustomer } from "@/lib/firebase/collections";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,8 @@ export default function CustomersPage() {
     // Modal states
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState('add');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Customer Form State
@@ -202,19 +203,43 @@ export default function CustomersPage() {
         setIsOrdersModalOpen(true);
     };
 
-    const handleAddCustomer = async (e) => {
+    const handleDeleteCustomer = async (customer) => {
+        try {
+            await deleteCustomer(customer.id);
+            toast.success(`${customer.name} removed successfully`);
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting customer:", error);
+            toast.error("Failed to delete customer");
+        }
+    };
+    const handleEditCustomer = (customer) => {
+        setCustomerFormData({
+            ...customer,
+            id: customer.id
+        });
+        setModalMode('edit');
+        setIsModalOpen(true);
+    };
+
+    const handleSubmitCustomer = async (e) => {
         e.preventDefault();
         const errors = {};
         if (!customerFormData.name.trim()) errors.name = "Full Name is required";
-        if (!customerFormData.mobile.trim()) {
-            errors.mobile = "Mobile Number is required";
-        } else if (!/^\+?[\d\s-]{10,}$/.test(customerFormData.mobile)) {
+
+        const hasMobile = customerFormData.mobile?.trim();
+        const hasEmail = customerFormData.email?.trim();
+
+        if (!hasMobile && !hasEmail) {
+            errors.mobile = "Either Mobile or Email is required";
+            errors.email = "Either Mobile or Email is required";
+        }
+
+        if (hasMobile && !/^\+?[\d\s-]{10,}$/.test(customerFormData.mobile)) {
             errors.mobile = "Invalid mobile number format";
         }
 
-        if (!customerFormData.email.trim()) {
-            errors.email = "Email Address is required";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerFormData.email)) {
+        if (hasEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerFormData.email)) {
             errors.email = "Invalid email format";
         }
 
@@ -225,18 +250,39 @@ export default function CustomersPage() {
 
         try {
             setIsSubmitting(true);
-            const mobileExists = await getCustomerByMobile(customerFormData.mobile);
-            if (mobileExists) {
-                setCustomerErrors(prev => ({ ...prev, mobile: "Mobile number already exists" }));
-                return;
+
+            // Uniqueness check
+            if (hasMobile) {
+                const mobileExists = await getCustomerByMobile(customerFormData.mobile);
+                if (mobileExists && (modalMode === 'add' || mobileExists.id !== customerFormData.id)) {
+                    setCustomerErrors(prev => ({ ...prev, mobile: "Mobile number already exists" }));
+                    setIsSubmitting(false);
+                    return;
+                }
             }
-            await createCustomer(customerFormData);
-            toast.success("Customer added successfully");
-            setIsAddModalOpen(false);
+            if (hasEmail) {
+                const emailExists = await getCustomerByEmail(customerFormData.email);
+                if (emailExists && (modalMode === 'add' || emailExists.id !== customerFormData.id)) {
+                    setCustomerErrors(prev => ({ ...prev, email: "Email address already exists" }));
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+
+            if (modalMode === 'add') {
+                await createCustomer(customerFormData);
+                toast.success("Customer added successfully");
+            } else {
+                const { id, ...data } = customerFormData;
+                await updateCustomer(id, data);
+                toast.success("Customer profile updated");
+            }
+
+            setIsModalOpen(false);
             setCustomerFormData(initialCustomerFormData);
             fetchData();
         } catch (error) {
-            toast.error("Failed to add customer");
+            toast.error(modalMode === 'add' ? "Failed to add customer" : "Failed to update customer");
         } finally {
             setIsSubmitting(false);
         }
@@ -255,34 +301,58 @@ export default function CustomersPage() {
     }
 
     return (
-        <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                <div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Customer Management</h1>
-                        <p className="text-muted-foreground text-sm">View and manage all your clients</p>
+        <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </div>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                            Customer Registry
+                        </span>
                     </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
-                            <IconUserPlus className="h-4 w-4" />
-                            New Customer
-                        </Button>
-                    </div>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Customer Management
+                    </h1>
+                    <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        View and manage all your clients
+                    </p>
                 </div>
-
-                <SectionCards cards={stats} />
-
-                <div className="px-4 lg:px-6">
-                    <CustomersTable
-                        data={filteredCustomers}
-                        onViewOrders={handleViewOrders}
-                        onAddClick={() => setIsAddModalOpen(true)}
-                        onSearchChange={setSearchQuery}
-                        tabs={customerTabs}
-                        activeTab={activeTab}
-                        onTabChange={setActiveTab}
-                    />
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                        onClick={() => {
+                            setCustomerFormData(initialCustomerFormData);
+                            setModalMode('add');
+                            setIsModalOpen(true);
+                        }}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
+                    >
+                        <IconUserPlus className="size-4" />
+                        New Customer
+                    </Button>
                 </div>
+            </div>
+
+            <SectionCards cards={stats} />
+
+            <div className="space-y-4 pt-4">
+                <CustomersTable
+                    data={filteredCustomers}
+                    onViewOrders={handleViewOrders}
+                    onAddClick={() => {
+                        setCustomerFormData(initialCustomerFormData);
+                        setModalMode('add');
+                        setIsModalOpen(true);
+                    }}
+                    onSearchChange={setSearchQuery}
+                    tabs={customerTabs}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    onDeleteCustomer={handleDeleteCustomer}
+                    onEditCustomer={handleEditCustomer}
+                />
             </div>
 
             <CustomerOrdersModal
@@ -293,15 +363,15 @@ export default function CustomersPage() {
             />
 
             <CustomerModal
-                isOpen={isAddModalOpen}
-                onOpenChange={setIsAddModalOpen}
-                mode="add"
+                isOpen={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                mode={modalMode}
                 formData={customerFormData}
                 onInputChange={(e) => setCustomerFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                onSubmit={handleAddCustomer}
+                onSubmit={handleSubmitCustomer}
                 isLoading={isSubmitting}
                 errors={customerErrors}
-                onCancel={() => setIsAddModalOpen(false)}
+                onCancel={() => setIsModalOpen(false)}
             />
         </div>
     );

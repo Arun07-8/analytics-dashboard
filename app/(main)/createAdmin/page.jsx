@@ -181,23 +181,37 @@ export default function CreateAdminPage() {
     }
 
     return (
-        <div className="flex flex-1 items-center justify-center p-4 md:p-8">
-            <div className="w-full max-w-md space-y-4">
-                <div className="flex flex-col gap-1 mb-6">
-                    <h1 className="text-2xl font-bold tracking-tight">Admin Management</h1>
-                    <p className="text-muted-foreground text-sm">Add a new administrative user to give them access to the dashboard.</p>
+        <div className="flex flex-1 items-center justify-center p-4 md:p-8 transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+            <div className="w-full max-w-lg space-y-6">
+                <div className="space-y-2 text-center flex flex-col items-center mb-8">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </div>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                            Admin Panel
+                        </span>
+                    </div>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Admin Management
+                    </h1>
+                    <p className="text-sm text-muted-foreground font-medium max-w-xs mx-auto">
+                        Add a new administrative user to grant them access to the dashboard.
+                    </p>
                 </div>
 
-                <Card className="border-border/50 shadow-sm">
-                    <CardHeader className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-primary/10 p-2.5 rounded-xl">
+                <Card className="relative overflow-hidden group border-border/40 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20 bg-card">
+                    <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                    <CardHeader className="space-y-1 pb-4">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                            <div className="bg-primary/10 p-3 rounded-xl ring-1 ring-inset ring-primary/20 flex-shrink-0">
                                 <IconUserPlus className="h-6 w-6 text-primary" />
                             </div>
-                            <div>
-                                <CardTitle className="text-xl">Create New Admin</CardTitle>
-                                <CardDescription>
-                                    Enter details to create a new user account
+                            <div className="space-y-1">
+                                <CardTitle className="text-xl font-bold tracking-tight text-foreground">Create New Admin</CardTitle>
+                                <CardDescription className="text-xs font-medium text-muted-foreground">
+                                    Enter details to register a new system administrator
                                 </CardDescription>
                             </div>
                         </div>
@@ -205,7 +219,7 @@ export default function CreateAdminPage() {
                     <form onSubmit={handleSubmit}>
                         <CardContent className="space-y-5 pt-2">
                             <div className="space-y-2">
-                                <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
+                                <Label htmlFor="name" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Full Name</Label>
                                 <Input
                                     id="name"
                                     name="name"
@@ -213,14 +227,14 @@ export default function CreateAdminPage() {
                                     value={formData.name}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    className={`h-10 ${errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                    className={`h-10 text-sm font-medium bg-background border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:border-primary/40 transition-all shadow-sm ${errors.name ? 'border-destructive focus-visible:ring-destructive/30 focus-visible:border-destructive' : 'hover:border-primary/30'}`}
                                 />
                                 {errors.name && (
-                                    <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+                                    <p className="text-xs font-medium text-destructive mt-1">{errors.name}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+                                <Label htmlFor="email" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Email Address</Label>
                                 <Input
                                     id="email"
                                     name="email"
@@ -229,36 +243,39 @@ export default function CreateAdminPage() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    className={`h-10 ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                    className={`h-10 text-sm font-medium bg-background border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:border-primary/40 transition-all shadow-sm ${errors.email ? 'border-destructive focus-visible:ring-destructive/30 focus-visible:border-destructive' : 'hover:border-primary/30'}`}
                                 />
                                 {errors.email && (
-                                    <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+                                    <p className="text-xs font-medium text-destructive mt-1">{errors.email}</p>
                                 )}
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-2">
-                                    <Label htmlFor="role" className="text-sm font-medium">Assign Role</Label>
+                                    <Label htmlFor="role" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Assign Role</Label>
                                     <Select
                                         value={formData.role}
                                         onValueChange={handleRoleChange}
                                     >
-                                        <SelectTrigger id="role" className="h-10">
+                                        <SelectTrigger id="role" className="h-10 text-sm font-medium bg-background border-border/60 rounded-lg hover:border-primary/30 focus:ring-1 focus:ring-primary/30 transition-all shadow-sm">
                                             <SelectValue placeholder="Select role" />
                                         </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="admin">
+                                        <SelectContent className="rounded-xl border-border/40 shadow-lg">
+                                            <SelectItem value="admin" className="text-xs font-medium focus:bg-primary/5 focus:text-primary rounded-md cursor-pointer transition-colors py-2">
                                                 <div className="flex items-center gap-2">
-                                                    <IconShieldCheck className="h-4 w-4 text-primary" />
-                                                    <span>Admin</span>
+                                                    <IconShieldCheck className="h-4 w-4 text-emerald-500" />
+                                                    <span className="font-bold">Admin</span>
                                                 </div>
                                             </SelectItem>
-                                            <SelectItem value="staff">Staff</SelectItem>
+                                            <SelectItem value="staff" className="text-xs font-medium focus:bg-primary/5 focus:text-primary rounded-md cursor-pointer transition-colors py-2">Staff Member</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="password" title="At least 6 characters" className="text-sm font-medium">Set Password</Label>
+                                        <Label htmlFor="password" title="At least 6 characters" className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
+                                            Set Password
+                                            <span className="text-[10px] font-medium opacity-50 lowercase tracking-normal bg-muted px-1.5 py-0.5 rounded">Min 6 chars</span>
+                                        </Label>
                                         <div className="relative">
                                             <Input
                                                 id="password"
@@ -269,21 +286,23 @@ export default function CreateAdminPage() {
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 onBlur={handleBlur}
-                                                className={`h-10 pr-9 ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                                className={`h-10 pr-9 text-sm font-medium bg-background border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:border-primary/40 transition-all shadow-sm ${errors.password ? 'border-destructive focus-visible:ring-destructive/30 focus-visible:border-destructive' : 'hover:border-primary/30'}`}
                                             />
                                             <div
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/50 hover:text-primary transition-colors p-1"
                                                 onClick={() => setShowPassword(!showPassword)}
                                             >
                                                 {showPassword ? <IconEyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
                                             </div>
                                         </div>
                                         {errors.password && (
-                                            <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+                                            <p className="text-xs font-medium text-destructive mt-1">{errors.password}</p>
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="confirmPassword" title="Must match password" className="text-sm font-medium">Confirm Password</Label>
+                                        <Label htmlFor="confirmPassword" title="Must match password" className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
+                                            Confirm Password
+                                        </Label>
                                         <div className="relative">
                                             <Input
                                                 id="confirmPassword"
@@ -293,35 +312,38 @@ export default function CreateAdminPage() {
                                                 value={formData.confirmPassword}
                                                 onChange={handleChange}
                                                 onBlur={handleBlur}
-                                                className={`h-10 pr-9 ${errors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                                className={`h-10 pr-9 text-sm font-medium bg-background border-border/60 rounded-lg focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:border-primary/40 transition-all shadow-sm ${errors.confirmPassword ? 'border-destructive focus-visible:ring-destructive/30 focus-visible:border-destructive' : 'hover:border-primary/30'}`}
                                             />
                                             <div
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground/50 hover:text-primary transition-colors p-1"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                             >
                                                 {showConfirmPassword ? <IconEyeOff className="h-4 w-4" /> : <IconEye className="h-4 w-4" />}
                                             </div>
                                         </div>
                                         {errors.confirmPassword && (
-                                            <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>
+                                            <p className="text-xs font-medium text-destructive mt-1">{errors.confirmPassword}</p>
                                         )}
                                     </div>
                                 </div>
                             </div>
                         </CardContent>
-                        <CardFooter className="pt-4">
+                        <CardFooter className="pt-2 pb-6 px-6">
                             <Button
                                 type="submit"
-                                className="w-full h-11 text-base font-semibold transition-all active:scale-[0.98]"
+                                className="w-full h-11 text-sm font-bold tracking-wide transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98] rounded-xl"
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <div className="flex items-center gap-2">
                                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                                        <span>Creating Account...</span>
+                                        <span>Securing Credentials...</span>
                                     </div>
                                 ) : (
-                                    'Create Admin Account'
+                                    <div className="flex items-center gap-2">
+                                        <span>Create Administrator</span>
+                                        <IconShieldCheck className="h-4 w-4 opacity-70" />
+                                    </div>
                                 )}
                             </Button>
                         </CardFooter>

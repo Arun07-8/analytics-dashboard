@@ -6,7 +6,7 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SalesTable } from "@/components/sales/sales-table"
 import { SectionCards } from "@/components/section-cards"
 import { Button } from "@/components/ui/button";
-import { IconUserPlus, IconPlus } from "@tabler/icons-react";
+import { IconUserPlus, IconPlus, IconReceipt, IconCash, IconClock, IconListCheck } from "@tabler/icons-react";
 import { CustomerModal } from "@/components/customers/customer-modal";
 import { SaleDetailsModal } from "@/components/sales/sale-details-modal";
 import {
@@ -115,17 +115,10 @@ export default function Page() {
   useEffect(() => {
     if (!user) return;
 
-    // The Sales page is for personal record tracking. 
-    // Both Admins and Staff see ONLY their own records here.
+    // Personal Record Tracking: Both Admins and Staff see ONLY their own records here.
     let filterConstraints = {
       createdBy: user.uid
     };
-
-    // Requirement: "Admin Sales Page -> Show only approved sales records"
-    const isAdmin = user.role?.trim().toLowerCase() === 'admin';
-    if (isAdmin) {
-      filterConstraints.isVerified = true;
-    }
 
     setLoadingData(true);
     const unsubscribe = subscribeToSales(filterConstraints, (salesData) => {
@@ -164,7 +157,7 @@ export default function Page() {
         ...sale,
         createdAtDate: date, // Keep a real Date object for filtering
         customerName: customerMap.get(sale.customerId) || 'Unknown Customer',
-        staffName: adminMap.get(sale.createdBy) || "Unknown Staff",
+        staffName: adminMap.get(sale.createdBy) || sale.staffName || "Unknown Staff",
         staffEmail: sale.staffEmail || '',
         status: mappedStatus,
         verificationStatus: sale.verificationStatus || (sale.isVerified ? "Approved" : "Pending"),
@@ -296,25 +289,13 @@ export default function Page() {
     const verifiedPeriodSales = periodSales.filter(s => s.isVerified !== false && s.verificationStatus !== 'Rejected');
     // My All-Time Stats (Verified Only)
     const myTotalSalesAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPaidAmountAllTime = verifiedSales.reduce((acc, s) => acc + (s.status === 'paid' ? (Number(s.totalAmount) || 0) : (Number(s.paidAmount) || 0)), 0);
-    const myPendingAmountAllTime = verifiedSales.reduce((acc, s) => acc + (s.status === 'unpaid' ? (Number(s.totalAmount) - (Number(s.paidAmount) || 0)) : 0), 0);
+    const myPaidRevenueAllTime = verifiedSales.reduce((acc, s) => acc + (Number(s.paidAmount) || 0), 0);
+    const myPendingAmountAllTime = verifiedSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
+
     // My Period Stats (Verified Only)
     const myTotalSalesPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
-    const myPaidAmountPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (s.status === 'paid' ? (Number(s.totalAmount) || 0) : (Number(s.paidAmount) || 0)), 0);
-    const myPendingAmountPeriod = verifiedPeriodSales.reduce((acc, s) => acc + (s.status === 'unpaid' ? (Number(s.totalAmount) - (Number(s.paidAmount) || 0)) : 0), 0);
-
-    const getDynamicPrefix = () => {
-      if (dateFilter === 'today') return "Today's ";
-      if (dateFilter === 'yesterday') return "Yesterday's ";
-      if (dateFilter === 'week') return "Weekly ";
-      if (dateFilter === 'month') return "Monthly ";
-      if (dateFilter === 'last6months') return "6-Month ";
-      if (dateFilter === 'year') return "Yearly ";
-      if (dateFilter === 'specific-day') return "Selected Date ";
-      if (dateFilter === 'custom') return "Selected Range ";
-      if (dateFilter === 'all') return "Total ";
-      return "Selected Period ";
-    };
+    const myPaidRevenuePeriod = verifiedPeriodSales.reduce((acc, s) => acc + (Number(s.paidAmount) || 0), 0);
+    const myPendingAmountPeriod = verifiedPeriodSales.filter(s => s.status === 'unpaid').reduce((acc, s) => acc + (Number(s.totalAmount) - (Number(s.paidAmount) || 0)), 0);
 
     return [
       {
@@ -322,28 +303,30 @@ export default function Page() {
         value: myTotalSalesAllTime,
         prefix: "₹",
         isCurrency: true,
-        description: "All-time Gross value (Paid + Unpaid)"
+        icon: <IconReceipt className="size-4" />,
+        description: "Gross value (Paid + Unpaid)"
       },
       {
-        label: "Paid Amount",
-        value: myPaidAmountAllTime,
+        label: "My Paid Amount",
+        value: dateFilter === 'all' ? myPaidRevenueAllTime : myPaidRevenuePeriod,
         prefix: "₹",
         isCurrency: true,
-        description: "All-time Total Collected"
+        icon: <IconCash className="size-4" />,
+        description: "Only confirmed payments"
       },
       {
         label: "Balance Amount",
         value: myPendingAmountAllTime,
         prefix: "₹",
         isCurrency: true,
-        description: "All-time Outstanding balance"
+        icon: <IconClock className="size-4" />,
+        description: "Outstanding balance"
       },
       {
-        label: `${getDynamicPrefix()}Revenue`,
-        value: myPaidAmountPeriod,
-        prefix: "₹",
-        isCurrency: true,
-        description: `Revenue in selected period`
+        label: "Transactions",
+        value: periodSales.length,
+        icon: <IconListCheck className="size-4" />,
+        description: "Orders in current view"
       }
     ];
   }, [salesWithDetails, periodSales, dateFilter]);
@@ -383,7 +366,7 @@ export default function Page() {
           d.setMinutes(0, 0, 0); // Round to the nearest hour
           const iso = d.toISOString();
           if (data[iso]) { // Only add if it falls within the initialized 24 hours
-            data[iso].revenue += Number(sale.totalAmount) || 0;
+            data[iso].revenue += Number(sale.paidAmount) || 0;
             data[iso].volume += 1;
           }
         }
@@ -403,8 +386,13 @@ export default function Page() {
         fillEnd.setHours(23, 59, 59, 999);
       } else if (dateFilter === 'week') {
         fillStart = new Date(now);
-        fillStart.setDate(now.getDate() - now.getDay());
+        const day = fillStart.getDay();
+        const diff = fillStart.getDate() - day + (day === 0 ? -6 : 1);
+        fillStart.setDate(diff);
         fillStart.setHours(0, 0, 0, 0);
+        fillEnd = new Date(fillStart);
+        fillEnd.setDate(fillStart.getDate() + 6);
+        fillEnd.setHours(23, 59, 59, 999);
       } else if (dateFilter === 'month') {
         fillStart = new Date(now.getFullYear(), now.getMonth(), 1);
       } else if (dateFilter === 'year') {
@@ -450,7 +438,7 @@ export default function Page() {
       verifiedPeriodSales.forEach(sale => {
         const dStr = sale.createdAtDate.toISOString().split('T')[0];
         if (!data[dStr]) data[dStr] = { date: dStr, revenue: 0, volume: 0 };
-        data[dStr].revenue += Number(sale.totalAmount) || 0;
+        data[dStr].revenue += Number(sale.paidAmount) || 0;
         data[dStr].volume += 1;
       });
     }
@@ -493,10 +481,8 @@ export default function Page() {
     // Give state a moment to update and render the template
     setTimeout(async () => {
       try {
-        const refId = Array.isArray(previewSaleData.salesRefId)
-          ? previewSaleData.salesRefId[0]
-          : previewSaleData.salesRefId;
-        const success = await downloadInvoice('dashboard-invoice-template', `Invoice-${refId || previewSaleData.id}.pdf`);
+        const customerName = customers.find(c => c.id === previewSaleData?.customerId)?.name || 'Customer';
+        const success = await downloadInvoice('dashboard-invoice-template', `${customerName}'s Invoice.pdf`);
         if (success) {
           toast.success("Invoice downloaded successfully");
         } else {
@@ -597,12 +583,10 @@ export default function Page() {
 
   if (loading || loadingData) {
     return (
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
+      <div className="flex items-center justify-center h-screen bg-background text-foreground">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-xs font-medium animate-pulse">Loading Sales Data...</p>
         </div>
       </div>
     );
@@ -613,171 +597,184 @@ export default function Page() {
   }
 
   return (
-    <div className="@container/main flex flex-1 flex-col gap-2">
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Sales Dashboard</h1>
-            <p className="text-xs text-muted-foreground">Monitor and manage your business performance</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-card border rounded-lg pl-3 h-10 shadow-sm">
-              <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="yesterday">Yesterday</SelectItem>
-                    <SelectItem value="week">This Week</SelectItem>
-                    <SelectItem value="month">This Month</SelectItem>
-                    <SelectItem value="last6months">Last 6 Months</SelectItem>
-                    <SelectItem value="year">This Year</SelectItem>
-                    <SelectItem value="specific-day">Specific Date</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+    <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </div>
-
-            {dateFilter === 'specific-day' && (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
-                        !fromDate && "text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
-                      {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
-                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={fromDate}
-                      onSelect={setFromDate}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            {dateFilter === 'custom' && (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                {/* From Date Popover */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
-                        !fromDate && "text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
-                      {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
-                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={fromDate}
-                      onSelect={handleFromDateSelect}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <div className="h-4 w-[1px] bg-border" />
-
-                {/* To Date Popover */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border shadow-sm rounded-lg",
-                        !toDate && "text-muted-foreground"
-                      )}
-                    >
-                      <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
-                      {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
-                      <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={toDate}
-                      onSelect={handleToDateSelect}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            <Button
-              onClick={() => router.push('/sales/create')}
-              className="flex items-center gap-2 w-full sm:w-auto"
-            >
-              <IconPlus className="h-4 w-4" />Create Sale
-            </Button>
-            <Button
-              onClick={() => setIsCustomerModalOpen(true)}
-              className="flex items-center gap-2 w-full sm:w-auto"
-              variant="outline"
-            >
-              <IconUserPlus className="h-4 w-4" />
-              Add Customer
-            </Button>
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+              Sales Terminal
+            </span>
           </div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Sales Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+            Monitor and manage your business performance
+          </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
+            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
+            <Select value={dateFilter} onValueChange={setDateFilter}>
+              <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="last6months">Last 6 Months</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="specific-day">Specific Date</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
 
+          {dateFilter === 'specific-day' && (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      !fromDate && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
+                    {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
+                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fromDate}
+                    onSelect={setFromDate}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {dateFilter === 'custom' && (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+              {/* From Date Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      !fromDate && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
+                    {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={fromDate}
+                    onSelect={handleFromDateSelect}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <div className="h-4 w-[1px] bg-border/50" />
+
+              {/* To Date Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      !toDate && "text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
+                    {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
+                    <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={toDate}
+                    onSelect={handleToDateSelect}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          <Button
+            onClick={() => router.push('/sales/create')}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all w-full sm:w-auto"
+          >
+            <IconPlus className="size-4 mr-2" />
+            Create Sale
+          </Button>
+          <Button
+            onClick={() => setIsCustomerModalOpen(true)}
+            variant="outline"
+            className="font-semibold text-sm h-10 px-6 rounded-xl shadow-sm border-border/50 hover:bg-muted/50 hover:border-border active:scale-95 transition-all w-full sm:w-auto"
+          >
+            <IconUserPlus className="size-4 mr-2" />
+            Add Customer
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6">
         <SectionCards cards={stats} />
 
-        <div className="px-4 lg:px-6">
-          <ChartAreaInteractive
-            data={chartData}
-            timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter === 'week' ? 'this-week' : dateFilter}
-            onTimeRangeChange={(val) => {
-              if (val === 'this-month') setDateFilter('month');
-              else if (val === 'this-year') setDateFilter('year');
-              else if (val === 'this-week') setDateFilter('week');
-              else setDateFilter(val);
-            }}
-          />
-        </div>
 
-        <div className="px-4 lg:px-6">
-          <SalesTable
-            data={filteredSales}
-            tabs={salesTabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder="Search customer, staff or ref..."
-            onAddClick={() => router.push('/sales/create')}
-            onViewDetails={handleViewDetails}
-            onEditSale={handleEditSale}
-            onDownloadInvoice={handleDownloadInvoice}
-            onDeleteSale={handleDeleteSale}
-            userRole={user?.role}
-          />
-        </div>
+        <ChartAreaInteractive
+          data={chartData}
+          timeRange={dateFilter === 'month' ? 'this-month' : dateFilter === 'year' ? 'this-year' : dateFilter}
+          onTimeRangeChange={(val) => {
+            if (val === 'this-month') setDateFilter('month');
+            else if (val === 'this-year') setDateFilter('year');
+            else setDateFilter(val);
+          }}
+        />
+
+      </div>
+
+      <div className="space-y-4 pt-4">
+        <SalesTable
+          data={filteredSales}
+          tabs={salesTabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search customer, staff or ref..."
+          onAddClick={() => router.push('/sales/create')}
+          onViewDetails={handleViewDetails}
+          onEditSale={handleEditSale}
+          onDownloadInvoice={handleDownloadInvoice}
+          onDeleteSale={handleDeleteSale}
+          userRole={user?.role}
+        />
       </div>
 
       {/* Hidden Invoice Template for PDF generation */}
