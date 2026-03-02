@@ -112,6 +112,7 @@ export default function Page() {
       if (range === "this-week") return new Date(startOfThisWeek.getTime() - 7 * 86400000);
       if (range === "this-month") return new Date(now.getFullYear(), now.getMonth() - 1, 1);
       if (range === "this-year") return new Date(now.getFullYear() - 1, 0, 1);
+      if (range === "all") return new Date(0);
       return new Date(0);
     };
 
@@ -566,6 +567,7 @@ export default function Page() {
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-border/40 shadow-lg p-1.5">
                   <SelectGroup>
+                    <SelectItem value="all" className="text-xs font-bold rounded-lg py-2">All Time</SelectItem>
                     <SelectItem value="today" className="text-xs font-bold rounded-lg py-2">Today</SelectItem>
                     <SelectItem value="yesterday" className="text-xs font-bold rounded-lg py-2">Yesterday</SelectItem>
                     <SelectItem value="this-week" className="text-xs font-bold rounded-lg py-2">This Week</SelectItem>
