@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
+export const SectionCards = React.memo(function SectionCards({ cards = [], equalWidth = false }) {
   if (!cards.length) return null;
 
   const gridCols = {
@@ -23,13 +23,22 @@ export const SectionCards = React.memo(function SectionCards({ cards = [] }) {
     9: 'xl:grid-cols-9 lg:grid-cols-9',
   };
 
+  const equalGridCols = {
+    2: 'sm:grid-cols-2',
+    3: 'sm:grid-cols-2 lg:grid-cols-3',
+    4: 'sm:grid-cols-2 lg:grid-cols-4',
+    5: 'sm:grid-cols-2 lg:grid-cols-5',
+  };
+
   const totalSlots = cards.length + 1;
-  const gridClass = gridCols[totalSlots] || 'xl:grid-cols-9 lg:grid-cols-9';
+  const gridClass = equalWidth
+    ? (equalGridCols[cards.length] || 'sm:grid-cols-2 lg:grid-cols-4')
+    : (gridCols[totalSlots] || 'xl:grid-cols-9 lg:grid-cols-9');
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full ${gridClass}`}>
+    <div className={`grid grid-cols-1 gap-4 md:gap-6 w-full ${gridClass}`}>
       {cards.map((card, index) => {
-        const isHighlight = index === 0;
+        const isHighlight = !equalWidth && index === 0;
         return (
           <Card key={index} className={`relative overflow-hidden group border-border/40 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.02),0_1px_2px_0_rgba(0,0,0,0.04)] transition-all duration-300 ${isHighlight ? 'xl:col-span-2' : ''}`}>
             <CardHeader className="p-5 flex flex-col justify-between h-full space-y-5">

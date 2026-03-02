@@ -4,27 +4,28 @@ import { useState, useEffect, useMemo } from 'react';
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
     IconPackage,
     IconCircleCheckFilled,
     IconCircleXFilled,
     IconAlertTriangle,
-    IconTrendingUp,
     IconStar,
-    IconChevronDown,
+    IconPlus,
+    IconCalendar,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { getAllServices, createService, updateService, deleteService, subscribeToSales } from "@/lib/firebase";
 
 // Reusable components
 import { SectionCards } from "@/components/section-cards";
 import { ServiceModal } from "@/components/services/service-modal";
 import { ServicesTable } from "@/components/services/services-table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IconCalendar, IconChartBar } from "@tabler/icons-react";
 
 // Mark this page as dynamic to prevent static generation
 export const dynamic = 'force-dynamic';
@@ -339,6 +340,12 @@ export default function ServicesPage() {
             value: services.filter(s => !s.isActive).length,
             icon: <IconCircleXFilled />,
             description: "Hidden from public view"
+        },
+        {
+            label: "Top Sales Service",
+            value: topPerformer.name,
+            icon: <IconStar />,
+            description: `${topPerformer.count} interactions`
         }
     ];
 
@@ -360,121 +367,123 @@ export default function ServicesPage() {
     }
 
     return (
-        <div className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
-            {/* Stats Cards - Matching Dashboard SectionCards style */}
-            <div
-                className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-                <Card className="@container/card relative overflow-hidden">
-                    <CardHeader>
-                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total Services</CardDescription>
-                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                            {services.length}
-                        </CardTitle>
-                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-primary/10">
-                            <IconPackage className="size-6 text-primary" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
-                        <div className="line-clamp-1 flex gap-2 font-medium">
-                            Full catalog <IconPackage className="size-4" />
-                        </div>
-                        <div className="text-muted-foreground">
-                            All registered service offerings
-                        </div>
-                    </CardContent>
-                </Card>
+        <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-700">
 
-                <Card className="@container/card relative overflow-hidden">
-                    <CardHeader>
-                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Active Services</CardDescription>
-                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-green-600">
-                            {services.filter(s => s.isActive).length}
-                        </CardTitle>
-                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-green-500/10">
-                            <IconCircleCheckFilled className="size-6 text-green-600" />
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                         </div>
-                    </CardHeader>
-                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
-                        <div className="line-clamp-1 flex gap-2 font-medium">
-                            Currently live <IconTrendingUp className="size-4 text-green-600" />
-                        </div>
-                        <div className="text-muted-foreground">
-                            Available for customers
-                        </div>
-                    </CardContent>
-                </Card>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                            Service Catalog
+                        </span>
+                    </div>
+                    <h1 className="text-3xl font-bold tracking-tight leading-none text-foreground">
+                        Service Management
+                    </h1>
+                    <p className="text-sm text-muted-foreground font-medium">
+                        Manage your service offerings and track performance
+                    </p>
+                </div>
 
-                <Card className="@container/card relative overflow-hidden">
-                    <CardHeader>
-                        <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Inactive Services</CardDescription>
-                        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-orange-600">
-                            {services.filter(s => !s.isActive).length}
-                        </CardTitle>
-                        <div className="absolute top-4 right-4 p-2 rounded-lg bg-orange-500/10">
-                            <IconCircleXFilled className="size-6 text-orange-600" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
-                        <div className="line-clamp-1 flex gap-2 font-medium">
-                            Service pause <IconCircleXFilled className="size-4 text-orange-600" />
-                        </div>
-                        <div className="text-muted-foreground">
-                            Hidden from public view
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Period Selector */}
+                    <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
+                        <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
+                        <Select value={usagePeriod} onValueChange={setUsagePeriod}>
+                            <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Time</SelectItem>
+                                <SelectItem value="today">Today</SelectItem>
+                                <SelectItem value="yesterday">Yesterday</SelectItem>
+                                <SelectItem value="this-week">This Week</SelectItem>
+                                <SelectItem value="this-month">This Month</SelectItem>
+                                <SelectItem value="this-year">This Year</SelectItem>
+                                <SelectItem value="specific-day">Specific Date</SelectItem>
+                                <SelectItem value="custom">Custom Range</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                <Card className="@container/card relative overflow-hidden ring-1 ring-primary/20 bg-primary/[0.02]">
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardDescription className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Top Performer</CardDescription>
-                            <Badge variant="outline" className="text-[9px] uppercase font-bold border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/5">
-                                {usagePeriod === 'all' ? 'Lifetime' : usagePeriod.replace('-', ' ')}
-                            </Badge>
+                    {usagePeriod === 'specific-day' && (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("h-10 text-xs font-semibold bg-card border-border/50 rounded-xl shadow-sm px-3", !fromDate && "text-muted-foreground")}>
+                                    <IconCalendar className="mr-2 h-3.5 w-3.5 opacity-50" />
+                                    {fromDate ? format(fromDate, "dd MMM yyyy") : "Select Date"}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <CalendarComponent mode="single" selected={fromDate} onSelect={setFromDate} disabled={(d) => d > new Date()} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    )}
+
+                    {usagePeriod === 'custom' && (
+                        <div className="flex items-center gap-2">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("h-10 text-xs font-semibold bg-card border-border/50 rounded-xl shadow-sm px-3", !fromDate && "text-muted-foreground")}>
+                                        <span className="text-muted-foreground mr-2">From</span>
+                                        {fromDate ? format(fromDate, "dd/MM/yy") : "Select"}
+                                        <IconCalendar className="ml-2 h-3.5 w-3.5 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="end">
+                                    <CalendarComponent mode="single" selected={fromDate} onSelect={setFromDate} disabled={(d) => d > new Date()} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("h-10 text-xs font-semibold bg-card border-border/50 rounded-xl shadow-sm px-3", !toDate && "text-muted-foreground")}>
+                                        <span className="text-muted-foreground mr-2">To</span>
+                                        {toDate ? format(toDate, "dd/MM/yy") : "Select"}
+                                        <IconCalendar className="ml-2 h-3.5 w-3.5 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="end">
+                                    <CalendarComponent mode="single" selected={toDate} onSelect={setToDate} disabled={(d) => d > new Date()} initialFocus />
+                                </PopoverContent>
+                            </Popover>
                         </div>
-                        <CardTitle className="text-xl font-bold tabular-nums @[250px]/card:text-2xl text-primary mt-1 truncate">
-                            {topPerformer.name.toUpperCase()}
-                        </CardTitle>
-                        <div className="absolute top-12 right-4 opacity-30 drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]">
-                            <IconStar style={{ color: '#FFD700', fill: '#FFD700' }} className="size-12" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-col items-start gap-1.5 text-sm pt-0">
-                        <div className="line-clamp-1 flex gap-2 font-black text-primary">
-                            {topPerformer.count} <span className="font-medium text-muted-foreground">Interactions</span>
-                        </div>
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60 focus:bg-primary/10 px-1 rounded transition-colors italic">
-                            Linked to Graph Scale
-                        </div>
-                    </CardContent>
-                </Card>
+                    )}
+
+                    <Button
+                        onClick={() => setIsAddDialogOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                    >
+                        <IconPlus className="size-4 mr-2" />
+                        Add Service
+                    </Button>
+                </div>
             </div>
 
-            {/* Services Table Content - Fixed 5 Rows Limit */}
-            <ServicesTable
-                data={filteredServices}
-                pageSize={5}
-                usageData={usageDataFiltered}
-                usagePeriod={usagePeriod}
-                onUsagePeriodChange={setUsagePeriod}
-                fromDate={fromDate}
-                setFromDate={setFromDate}
-                toDate={toDate}
-                setToDate={setToDate}
-                onEdit={openEditDialog}
-                onDelete={openDeleteDialog}
-                onAdd={() => setIsAddDialogOpen(true)}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                servicesCount={{
-                    active: services.filter(s => s.isActive).length,
-                    inactive: services.filter(s => !s.isActive).length
-                }}
-            />
+            <div className="space-y-6">
+                <SectionCards cards={stats} equalWidth />
 
-            {/* Reusable Modals */}
+                <ServicesTable
+                    data={filteredServices}
+                    pageSize={5}
+                    usageData={usageDataFiltered}
+                    onEdit={openEditDialog}
+                    onDelete={openDeleteDialog}
+                    onAdd={() => setIsAddDialogOpen(true)}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    servicesCount={{
+                        active: services.filter(s => s.isActive).length,
+                        inactive: services.filter(s => !s.isActive).length
+                    }}
+                />
+            </div>
+
             <ServiceModal
                 isOpen={isAddDialogOpen}
                 onOpenChange={setIsAddDialogOpen}
@@ -503,7 +512,6 @@ export default function ServicesPage() {
                 }}
             />
 
-            {/* Delete Confirmation Dialog */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

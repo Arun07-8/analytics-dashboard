@@ -12,22 +12,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { ChartBarMixed } from "@/components/ui/Bar Chart "
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { IconCalendar } from "@tabler/icons-react"
-import { toast } from "sonner"
 export function ServicesTable({
     data,
     usageData,
-    usagePeriod,
-    onUsagePeriodChange,
-    fromDate,
-    setFromDate,
-    toDate,
-    setToDate,
     onEdit,
     onDelete,
     onAdd,
@@ -120,131 +107,10 @@ export function ServicesTable({
     ];
 
     return (
-        <div className="space-y-6 px-4 lg:px-6 mt-6 pb-20">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <div className="size-1.5 rounded-full bg-primary animate-pulse" />
-                        <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/80">Live Performance</h3>
-                    </div>
-                    <p className="text-xl font-bold tracking-tight text-foreground">Service Analytics</p>
-                </div>
-                <div className="flex items-center gap-3 bg-muted/50 p-1.5 rounded-2xl border border-border/50">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 pl-2">Period</span>
-                    <Select value={usagePeriod} onValueChange={onUsagePeriodChange}>
-                        <SelectTrigger className="w-[130px] h-8 rounded-xl border-none bg-background shadow-sm text-[10px] font-bold uppercase tracking-wider focus:ring-1 focus:ring-primary/20">
-                            <SelectValue placeholder="Select Period" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-border shadow-2xl">
-                            <SelectItem value="today" className="text-[10px] font-bold uppercase">Today</SelectItem>
-                            <SelectItem value="yesterday" className="text-[10px] font-bold uppercase">Yesterday</SelectItem>
-                            <SelectItem value="this-week" className="text-[10px] font-bold uppercase">This Week</SelectItem>
-                            <SelectItem value="this-month" className="text-[10px] font-bold uppercase">This Month</SelectItem>
-                            <SelectItem value="this-year" className="text-[10px] font-bold uppercase">This Year</SelectItem>
-                            <SelectItem value="all" className="text-[10px] font-bold uppercase">All Time</SelectItem>
-                            <SelectItem value="specific-day" className="text-[10px] font-bold uppercase">Specific Date</SelectItem>
-                            <SelectItem value="custom" className="text-[10px] font-bold uppercase italic">Custom Range</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {usagePeriod === 'specific-day' && (
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn(
-                                        "h-8 justify-start text-left font-bold text-[9px] uppercase bg-background px-3 border-none shadow-sm rounded-xl",
-                                        !fromDate && "text-muted-foreground"
-                                    )}
-                                >
-                                    {fromDate ? format(fromDate, "dd MMM yyyy") : <span>Date</span>}
-                                    <IconCalendar className="ml-2 h-3 w-3 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 rounded-2xl border-border shadow-2xl" align="end">
-                                <CalendarComponent
-                                    mode="single"
-                                    selected={fromDate}
-                                    onSelect={setFromDate}
-                                    disabled={(date) => date > new Date()}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    )}
-
-                    {usagePeriod === 'custom' && (
-                        <div className="flex items-center gap-2">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "h-8 justify-start text-left font-bold text-[9px] uppercase bg-background px-3 border-none shadow-sm rounded-xl",
-                                            !fromDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        {fromDate ? format(fromDate, "dd/MM") : <span>From</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 rounded-2xl border-border shadow-2xl" align="end">
-                                    <CalendarComponent
-                                        mode="single"
-                                        selected={fromDate}
-                                        onSelect={(date) => {
-                                            setFromDate(date);
-                                            if (date && toDate && date > toDate) {
-                                                setToDate(date);
-                                                toast.info("Adjusted 'To' date");
-                                            }
-                                        }}
-                                        disabled={(date) => date > new Date()}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-
-                            <span className="text-[10px] text-muted-foreground">-</span>
-
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "h-8 justify-start text-left font-bold text-[9px] uppercase bg-background px-3 border-none shadow-sm rounded-xl",
-                                            !toDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        {toDate ? format(toDate, "dd/MM") : <span>To</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 rounded-2xl border-border shadow-2xl" align="end">
-                                    <CalendarComponent
-                                        mode="single"
-                                        selected={toDate}
-                                        onSelect={(date) => {
-                                            setToDate(date);
-                                            if (date && fromDate && date < fromDate) {
-                                                setFromDate(date);
-                                                toast.info("Adjusted 'From' date");
-                                            }
-                                        }}
-                                        disabled={(date) => date > new Date()}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    )}
-                </div>
-            </div>
-
+        <div className="space-y-6 pb-20">
             <ChartBarMixed data={usageData} />
 
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-primary/60">Active Inventory (Top 5)</h3>
-                </div>
                 <DataTable
                     data={data}
                     columns={columns}

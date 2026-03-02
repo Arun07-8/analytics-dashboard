@@ -33,7 +33,7 @@ export function ChartBarMixed({ data = [] }) {
     const chartHeight = Math.max(240, barCount * 60 + 40);
 
     return (
-        <Card className="border-none bg-white dark:bg-[#09090b] shadow-xl overflow-hidden relative group transition-all duration-300">
+        <Card className="border-none bg-white dark:bg-[#09090b] overflow-hidden relative group transition-all duration-300">
             {/* Sales Page Atmosphere Glows */}
             <div className="absolute top-0 right-0 size-64 bg-emerald-600/[0.03] dark:bg-emerald-600/5 blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 size-64 bg-indigo-600/[0.03] dark:bg-indigo-600/5 blur-[120px] pointer-events-none" />

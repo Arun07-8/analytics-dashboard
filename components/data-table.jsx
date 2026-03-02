@@ -270,12 +270,6 @@ export function DataTable({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            {onAddClick && (
-              <Button onClick={onAddClick} className="h-10 text-xs font-bold gap-2 px-5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all">
-                <IconPlus className="size-4" />
-                <span className="hidden @xl/main:inline">{addLabel}</span>
-              </Button>
-            )}
           </div>
         </div>
       </div>
