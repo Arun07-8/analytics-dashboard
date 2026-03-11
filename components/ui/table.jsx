@@ -9,10 +9,10 @@ function Table({
   ...props
 }) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div data-slot="table-container" className="relative w-full overflow-hidden sm:overflow-x-auto">
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn("w-full caption-bottom text-sm flex flex-col sm:table", className)}
         {...props} />
     </div>
   );
@@ -25,7 +25,7 @@ function TableHeader({
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      className={cn("[&_tr]:border-b hidden sm:table-header-group", className)}
       {...props} />
   );
 }
@@ -37,7 +37,7 @@ function TableBody({
   return (
     <tbody
       data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
+      className={cn("[&_tr:last-child]:border-0 flex flex-col sm:table-row-group gap-4 sm:gap-0 py-4 sm:py-0 px-2 sm:px-0", className)}
       {...props} />
   );
 }
@@ -62,7 +62,8 @@ function TableRow({
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        "hover:bg-muted/50 data-[state=selected]:bg-muted transition-colors",
+        "flex flex-col sm:table-row border border-border/60 sm:border-y sm:border-x-0 rounded-xl sm:rounded-none bg-card sm:bg-transparent shadow-sm sm:shadow-none mb-4 sm:mb-0 sm:border-b last:mb-0",
         className
       )}
       {...props} />
@@ -92,7 +93,8 @@ function TableCell({
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "p-2 align-middle whitespace-normal sm:whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "flex items-center justify-between sm:table-cell py-3 sm:py-2 px-4 sm:px-2 border-b border-border/40 sm:border-0 last:border-0",
         className
       )}
       {...props} />

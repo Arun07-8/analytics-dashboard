@@ -186,7 +186,7 @@ export default function Page() {
     let verifiedSales = allSalesWithDate.filter(s => s.isVerified === true);
 
     // Filter by selected staff if admin and not 'all'
-    if (user.role === 'admin' && selectedStaffId !== 'all') {
+    if (user?.role === 'admin' && selectedStaffId !== 'all') {
       verifiedSales = verifiedSales.filter(s => s.createdBy === selectedStaffId);
     }
 
@@ -508,39 +508,40 @@ export default function Page() {
   }
 
   return (
-    <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
+    <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full overflow-x-hidden transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
       {/* Premium Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
-        <div className="space-y-2">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2 border-b border-border/40">
+        <div className="space-y-1 md:space-y-2 text-left">
           <div className="flex items-center gap-2">
             <div className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </div>
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+            <span className="text-[10px] md:text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
               Overview
             </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h1 className="text-[22px] md:text-4xl font-bold text-foreground tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
             FoxonHub Dashboard
           </h1>
-          <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-muted-foreground/10">
+          <p className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-2">
+            <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-muted-foreground ring-1 ring-inset ring-muted-foreground/10">
               {user?.role === 'admin' ? 'Master Administrator' : 'Staff Member'}
             </span>
-            <span className="h-1 w-1 rounded-full bg-border" />
-            <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            <span className="h-0.5 w-0.5 rounded-full bg-border" />
+            <span className="hidden sm:inline">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            <span className="sm:hidden">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center bg-background border border-border/60 rounded-xl shadow-sm p-1.5 gap-1.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center bg-background border border-border/60 rounded-xl shadow-sm p-1.5 gap-1.5 w-full">
             {user?.role?.trim().toLowerCase() === 'admin' && (
               <>
-                <div className="flex items-center pl-3 pr-1">
+                <div className="flex items-center justify-between sm:justify-start px-3 py-1 sm:py-0">
                   <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest mr-3">Member</span>
                   <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
-                    <SelectTrigger className="bg-muted/50 border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none h-8 px-3 w-[140px] shadow-none rounded-lg hover:bg-muted transition-colors">
+                    <SelectTrigger className="bg-muted/50 border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none h-8 px-3 w-[140px] sm:w-[130px] shadow-none rounded-lg hover:bg-muted transition-colors">
                       <SelectValue placeholder="All Members" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-border/40 shadow-2xl p-1.5">
@@ -555,11 +556,12 @@ export default function Page() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="h-4 w-[1px] bg-border/60 mx-1" />
+                <div className="hidden sm:block h-4 w-[1px] bg-border/60 mx-1" />
+                <div className="sm:hidden h-[1px] w-full bg-border/40 my-0.5" />
               </>
             )}
 
-            <div className="flex items-center pl-3 pr-1">
+            <div className="flex items-center justify-between sm:justify-start px-3 py-1 sm:py-0">
               <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest mr-3">Timeline</span>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger className="bg-muted/50 border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none h-8 px-3 w-[130px] shadow-none rounded-lg hover:bg-muted transition-colors">

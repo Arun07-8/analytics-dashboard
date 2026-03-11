@@ -89,7 +89,7 @@ export function SalesTable({
                 header: ({ column }) => (
                     <Button
                         variant="ghost"
-                        className="p-0 hover:bg-transparent -ml-2"
+                        className="p-0 hover:bg-transparent -ml-2 hidden md:flex"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Date
@@ -99,7 +99,7 @@ export function SalesTable({
                 cell: ({ row }) => {
                     const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
                     return (
-                        <div className="flex flex-col">
+                        <div className="flex flex-col hidden md:flex">
                             <span className="text-[11px] font-bold text-foreground">
                                 {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                             </span>
@@ -122,9 +122,9 @@ export function SalesTable({
             },
             {
                 accessorKey: "staffName",
-                header: "Staff",
+                header: () => <div className="hidden lg:block">Staff</div>,
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 hidden lg:flex">
                         <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase">
                             {(row.original.staffName || "S")[0]}
                         </div>
@@ -157,7 +157,7 @@ export function SalesTable({
                 header: ({ column }) => (
                     <Button
                         variant="ghost"
-                        className="p-0 hover:bg-transparent -ml-2"
+                        className="p-0 hover:bg-transparent -ml-2 hidden sm:flex"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Paid
@@ -165,7 +165,7 @@ export function SalesTable({
                     </Button>
                 ),
                 cell: ({ row }) => (
-                    <div className="font-bold text-sm tracking-tight text-muted-foreground/80">
+                    <div className="font-bold text-sm tracking-tight text-muted-foreground/80 hidden sm:block">
                         ₹{row.original.paidAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                 ),
@@ -193,13 +193,13 @@ export function SalesTable({
             },
             {
                 accessorKey: "status",
-                header: "Status",
+                header: () => <div className="hidden md:block">Status</div>,
                 cell: ({ row }) => {
                     const status = row.original.status?.toLowerCase() || (row.original.closed ? "paid" : "unpaid");
                     const isPaid = status === "paid" || status === "closed";
 
                     return (
-                        <Badge variant="outline" className="text-muted-foreground px-1.5 gap-1">
+                        <Badge variant="outline" className="text-muted-foreground px-1.5 gap-1 hidden md:flex w-fit">
                             {isPaid ? (
                                 <>
                                     <IconCircleCheckFilled className="size-3 fill-green-500 text-green-500" />

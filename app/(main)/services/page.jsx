@@ -370,31 +370,31 @@ export default function ServicesPage() {
         <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-700">
 
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
-                <div className="space-y-2">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <div className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                         </div>
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                        <span className="text-[10px] md:text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
                             Service Catalog
                         </span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight leading-none text-foreground">
+                    <h1 className="text-[22px] md:text-3xl font-bold tracking-tight leading-none text-foreground">
                         Service Management
                     </h1>
-                    <p className="text-sm text-muted-foreground font-medium">
+                    <p className="text-xs md:text-sm text-muted-foreground font-medium">
                         Manage your service offerings and track performance
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     {/* Period Selector */}
-                    <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
-                        <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
+                    <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm w-full sm:w-auto">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider shrink-0 border-r pr-3 h-full flex items-center">Period</span>
                         <Select value={usagePeriod} onValueChange={setUsagePeriod}>
-                            <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
+                            <SelectTrigger className="bg-transparent border-none text-[12px] font-extrabold focus:ring-0 cursor-pointer outline-none h-full px-2 w-full sm:w-[130px] shadow-none">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -413,7 +413,7 @@ export default function ServicesPage() {
                     {usagePeriod === 'specific-day' && (
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("h-10 text-xs font-semibold bg-card border-border/50 rounded-xl shadow-sm px-3", !fromDate && "text-muted-foreground")}>
+                                <Button variant="outline" className={cn("h-10 text-[12px] font-bold bg-card border-border/50 rounded-xl shadow-sm px-3 w-full sm:w-auto", !fromDate && "text-muted-foreground")}>
                                     <IconCalendar className="mr-2 h-3.5 w-3.5 opacity-50" />
                                     {fromDate ? format(fromDate, "dd MMM yyyy") : "Select Date"}
                                 </Button>
@@ -425,11 +425,11 @@ export default function ServicesPage() {
                     )}
 
                     {usagePeriod === 'custom' && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 text-xs font-semibold bg-card border-border/50 rounded-xl shadow-sm px-3", !fromDate && "text-muted-foreground")}>
-                                        <span className="text-muted-foreground mr-2">From</span>
+                                    <Button variant="outline" className={cn("h-10 text-[12px] font-bold bg-card border-border/50 rounded-xl shadow-sm px-3 w-full sm:w-auto", !fromDate && "text-muted-foreground")}>
+                                        <span className="text-muted-foreground mr-2 font-extrabold uppercase text-[10px] tracking-wider">From</span>
                                         {fromDate ? format(fromDate, "dd/MM/yy") : "Select"}
                                         <IconCalendar className="ml-2 h-3.5 w-3.5 opacity-50" />
                                     </Button>
@@ -440,8 +440,8 @@ export default function ServicesPage() {
                             </Popover>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("h-10 text-xs font-semibold bg-card border-border/50 rounded-xl shadow-sm px-3", !toDate && "text-muted-foreground")}>
-                                        <span className="text-muted-foreground mr-2">To</span>
+                                    <Button variant="outline" className={cn("h-10 text-[12px] font-bold bg-card border-border/50 rounded-xl shadow-sm px-3 w-full sm:w-auto", !toDate && "text-muted-foreground")}>
+                                        <span className="text-muted-foreground mr-2 font-extrabold uppercase text-[10px] tracking-wider">To</span>
                                         {toDate ? format(toDate, "dd/MM/yy") : "Select"}
                                         <IconCalendar className="ml-2 h-3.5 w-3.5 opacity-50" />
                                     </Button>
@@ -455,7 +455,7 @@ export default function ServicesPage() {
 
                     <Button
                         onClick={() => setIsAddDialogOpen(true)}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all w-full sm:w-auto"
                     >
                         <IconPlus className="size-4 mr-2" />
                         Add Service

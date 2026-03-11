@@ -62,14 +62,14 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
         </CardHeader>
 
         <CardContent className="px-2 md:px-4 pt-4 sm:pt-6 pb-6">
-          <div className="relative h-[320px] w-full">
-            <ChartContainer config={chartConfig} className="h-full w-full">
+          <div className="relative h-[250px] sm:h-[320px] w-full">
+            <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
               <AreaChart
                 data={isEmpty ? [
                   { date: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(), revenue: 0, volume: 0 },
                   { date: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(), revenue: 0, volume: 0 }
                 ] : data}
-                margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+                margin={{ top: 10, right: isMobile ? 0 : 10, left: isMobile ? 0 : 10, bottom: 0 }}
               >
                 <defs>
                   <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -91,8 +91,8 @@ export const ChartAreaInteractive = React.memo(function ChartAreaInteractive({ d
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={12}
-                  minTickGap={30}
+                  tickMargin={isMobile ? 8 : 12}
+                  minTickGap={isMobile ? 15 : 30}
                   tickFormatter={(value) => {
                     const date = new Date(value);
                     if (timeRange === 'today' || timeRange === 'yesterday' || timeRange === 'specific-day') {

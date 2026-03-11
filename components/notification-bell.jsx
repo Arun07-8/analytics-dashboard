@@ -25,6 +25,12 @@ export function NotificationBell() {
     const router = useRouter();
     const [notifications, setNotifications] = React.useState([]);
     const [open, setOpen] = React.useState(false);
+    const [showAllMobile, setShowAllMobile] = React.useState(false);
+
+    // Reset mobile expansion when closed
+    React.useEffect(() => {
+        if (!open) setShowAllMobile(false);
+    }, [open]);
 
     // Track processed IDs to avoid duplicate toasts
     const seenIdsRef = React.useRef(new Set());
@@ -154,20 +160,25 @@ export function NotificationBell() {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[380px] p-0 rounded-2xl border-border shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <DropdownMenuContent
+                align="end"
+                sideOffset={12}
+                alignOffset={-45}
+                className="w-60 sm:w-[380px] p-0 rounded-2xl border-border shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300"
+            >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 bg-muted/30 border-b border-border/50">
+                <div className="flex items-center justify-between px-3.5 py-2 bg-muted/30 border-b border-border/50">
                     <div>
-                        <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
-                        <p className="text-[10px] font-medium text-muted-foreground mt-0.5">
-                            {unreadCount > 0 ? `${unreadCount} unread messages` : 'All caught up'}
+                        <h3 className="text-[12px] font-bold text-foreground">Notifications</h3>
+                        <p className="text-[8px] font-medium text-muted-foreground mt-0.5">
+                            {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
                         </p>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllRead}
-                                className="text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                                className="text-[9px] font-bold text-primary hover:text-primary/80 transition-colors"
                             >
                                 Mark All Read
                             </button>
@@ -175,7 +186,7 @@ export function NotificationBell() {
                         {notifications.length > 0 && (
                             <button
                                 onClick={handleClearAll}
-                                className="text-[10px] font-semibold text-destructive hover:text-destructive/80 transition-colors"
+                                className="text-[9px] font-bold text-destructive hover:text-destructive/80 transition-colors"
                             >
                                 Clear All
                             </button>
@@ -184,24 +195,24 @@ export function NotificationBell() {
                 </div>
 
                 {/* Notifications List */}
-                <div className="max-h-[420px] overflow-y-auto scrollbar-none">
+                <div className="max-h-[350px] sm:max-h-[420px] overflow-y-auto scrollbar-none">
                     {notifications.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center px-8">
-                            <div className="size-16 rounded-full bg-muted/50 flex items-center justify-center mb-4 ring-1 ring-border/50">
-                                <Bell className="h-8 w-8 text-muted-foreground/30" />
+                        <div className="flex flex-col items-center justify-center py-8 text-center px-5">
+                            <div className="size-10 rounded-full bg-muted/50 flex items-center justify-center mb-2.5 ring-1 ring-border/50">
+                                <Bell className="h-5 w-5 text-muted-foreground/30" />
                             </div>
-                            <p className="text-sm font-bold text-foreground">No notifications</p>
-                            <p className="text-xs text-muted-foreground mt-1 font-medium">When you receive updates about your sales, they will appear here.</p>
+                            <p className="text-[11px] font-bold text-foreground">Empty</p>
                         </div>
                     ) : (
                         <div className="divide-y divide-border/30">
-                            {notifications.map((n) => (
+                            {notifications.map((n, i) => (
                                 <div
                                     key={n.id}
                                     onClick={() => handleNotificationClick(n)}
                                     className={cn(
-                                        "group flex gap-4 px-5 py-5 cursor-pointer transition-all relative overflow-hidden",
-                                        !n.isRead ? "bg-primary/[0.03] hover:bg-primary/[0.06]" : "bg-card hover:bg-muted/30"
+                                        "group flex gap-2.5 px-3.5 py-2.5 cursor-pointer transition-all relative overflow-hidden",
+                                        !n.isRead ? "bg-primary/[0.03] hover:bg-primary/[0.06]" : "bg-card hover:bg-muted/30",
+                                        !showAllMobile && i >= 3 ? "hidden sm:flex" : ""
                                     )}
                                 >
                                     <div className="shrink-0 mt-0.5 relative z-10">
@@ -212,20 +223,20 @@ export function NotificationBell() {
                                             <p className={cn("text-xs leading-tight transition-all", !n.isRead ? "font-black text-foreground" : "font-semibold text-muted-foreground")}>
                                                 {n.title}
                                             </p>
-                                            <span className="text-[9px] font-semibold text-muted-foreground shrink-0 tabular-nums bg-muted px-1.5 py-0.5 rounded leading-none">
+                                            <span className="text-[9px] font-semibold text-muted-foreground shrink-0 tabular-nums bg-muted px-1.5 py-0.5 rounded leading-none mr-7 sm:mr-0 z-10 relative">
                                                 {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
                                             </span>
                                         </div>
-                                        <p className="text-[11px] leading-relaxed text-muted-foreground font-medium line-clamp-2 pr-4">
+                                        <p className="text-[11px] leading-relaxed text-muted-foreground font-medium line-clamp-none sm:line-clamp-2 pr-8 sm:pr-4">
                                             {n.message}
                                         </p>
                                     </div>
 
                                     {/* Action Buttons */}
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 z-20">
                                         <button
                                             onClick={(e) => handleDeleteOne(e, n.id)}
-                                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all bg-background/60 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none shadow-sm sm:shadow-none"
                                             title="Delete"
                                         >
                                             <Trash2 className="h-3.5 w-3.5" />
@@ -238,6 +249,16 @@ export function NotificationBell() {
                                     )}
                                 </div>
                             ))}
+                            {notifications.length > 3 && !showAllMobile && (
+                                <div className="sm:hidden w-full flex justify-center p-3 bg-muted/10">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setShowAllMobile(true); }}
+                                        className="text-[11px] font-bold text-primary hover:text-primary/80 transition-colors"
+                                    >
+                                        View {notifications.length - 3} More
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -126,10 +126,30 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
+    width: 100%;
+    min-height: 100dvh;
+    position: relative;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    /* Force 0 padding/margin to prevent Radix UI dropdown jump */
+    padding-right: 0px !important;
+    margin-right: 0px !important;
+  }
+
+  /* Specific Fix for Radix UI / Shadcn Dropdown & Select Jump */
+  [data-scroll-locked],
+  body[style*="pointer-events: none"] {
+    padding-right: 0px !important;
+    margin-right: 0px !important;
+    overflow: hidden !important;
   }
 
   /* Premium Hover Interactions */
@@ -157,5 +177,14 @@
   /* Button UI Polishing */
   button {
     @apply transition-all duration-200 active:scale-95;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

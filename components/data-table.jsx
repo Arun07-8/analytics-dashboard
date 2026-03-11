@@ -92,8 +92,17 @@ function DraggableRow({
         transition: transition,
       }}>
       {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        <TableCell key={cell.id} className="mobile-card-row py-3 px-4 sm:py-4 sm:px-3 md:px-6 w-full sm:w-auto overflow-hidden">
+          <span className="mobile-label-view sm:hidden font-extrabold text-[10px] uppercase tracking-widest text-muted-foreground mr-2 sm:mr-4 text-left whitespace-nowrap flex items-center flex-shrink-0 w-[110px] sm:w-[140px]">
+            {(() => {
+              const header = cell.getContext().table.getFlatHeaders().find(h => h.column.id === cell.column.id);
+              if (!header) return null;
+              return flexRender(header.column.columnDef.header, header.getContext());
+            })()}
+          </span>
+          <div className="text-right sm:text-left flex-1 flex justify-end sm:block overflow-hidden relative z-10">
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </div>
         </TableCell>
       ))}
     </TableRow>
@@ -198,29 +207,35 @@ export function DataTable({
     <Tabs value={currentTab} onValueChange={onTabChange} className="w-full flex flex-col gap-6">
       <div className="flex flex-col @4xl/main:flex-row @4xl/main:items-center justify-between gap-4">
         {tabs.length > 0 && (
-          <div className="inline-flex items-center p-1 bg-muted/40 rounded-xl border border-border/40 w-fit">
-            {tabs.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => onTabChange?.(tab.value)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap",
-                  currentTab === tab.value
-                    ? "bg-card text-foreground shadow-sm ring-1 ring-border/10"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {tab.label}
-                {tab.badge && (
-                  <span className={cn(
-                    "px-1.5 py-0.5 rounded-full text-[10px] tracking-tight",
-                    currentTab === tab.value ? "bg-primary text-primary-foreground" : "bg-muted-foreground/20 text-muted-foreground"
-                  )}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="overflow-x-auto max-w-full no-scrollbar pb-1">
+            <div className="inline-flex items-center p-1 bg-muted/40 rounded-xl border border-border/40 w-fit">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => onTabChange?.(tab.value)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap",
+                    currentTab === tab.value
+                      ? "bg-card text-foreground shadow-sm ring-1 ring-border/10"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {tab.label}
+                  {tab.badge > 0 && (
+                    <span
+                      className={cn(
+                        "px-1.5 py-0.5 rounded-full text-[10px] tracking-tight",
+                        currentTab === tab.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted-foreground/20 text-muted-foreground"
+                      )}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -277,7 +292,64 @@ export function DataTable({
       <TabsContent
         value={currentTab}
         className="relative flex flex-col gap-6 p-0 outline-none">
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.02),0_1px_2px_0_rgba(0,0,0,0.04)]">
+
+        {/* Mobile ONLY Styles to guarantee desktop remains absolutely untouched */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+          @media (max-width: 639px) {
+            /* Unhide all missing data in mobile cards */
+            .mobile-card-row .hidden {
+              display: flex !important;
+            }
+            .mobile-card-row .md\\:block, 
+            .mobile-card-row .lg\\:block {
+              display: flex !important;
+              align-items: center;
+              flex-wrap: wrap;
+            }
+            .mobile-card-row .lg\\:flex, 
+            .mobile-card-row .md\\:flex {
+              display: flex !important;
+            }
+            
+            /* Clean up the mapped mobile header label (strip icons and buttons) */
+            .mobile-label-view button,
+            .mobile-label-view .hover\\:bg-transparent {
+              pointer-events: none !important;
+              background: transparent !important;
+              padding: 0 !important;
+              height: auto !important;
+              font-weight: 800 !important;
+              text-transform: uppercase !important;
+              font-size: 10px !important;
+              color: inherit !important;
+            }
+            .mobile-label-view svg {
+              display: none !important;
+            }
+            
+            /* Make pagination rows per page visible & structured */
+            .mobile-pagination {
+              flex-direction: column !important;
+              gap: 16px !important;
+              margin-top: 8px !important;
+              width: 100% !important;
+            }
+            .mobile-pagination > .hidden,
+            .mobile-pagination > .lg\\:flex {
+              display: flex !important;
+              width: 100% !important;
+              justify-content: space-between !important;
+            }
+            .mobile-pagination .ml-auto {
+              width: 100% !important;
+              justify-content: space-between !important;
+              margin: 0 !important;
+            }
+          }
+        `}} />
+
+        <div className="overflow-x-auto no-scrollbar rounded-2xl border border-border/50 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.02),0_1px_2px_0_rgba(0,0,0,0.04)]">
           {enableReordering ? (
             <DndContext
               collisionDetection={closestCenter}
@@ -290,7 +362,7 @@ export function DataTable({
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
                       {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id} className="h-11 text-[11px] font-extrabold text-foreground uppercase tracking-widest px-6" colSpan={header.colSpan}>
+                        <TableHead key={header.id} className="h-11 text-[11px] font-extrabold text-foreground uppercase tracking-widest px-3 md:px-6" colSpan={header.colSpan}>
                           {header.isPlaceholder
                             ? null
                             : flexRender(header.column.columnDef.header, header.getContext())}
@@ -322,7 +394,7 @@ export function DataTable({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id} className="hover:bg-transparent border-0">
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} className="h-11 text-[11px] font-extrabold text-foreground uppercase tracking-widest px-6" colSpan={header.colSpan}>
+                      <TableHead key={header.id} className="h-11 text-[11px] font-extrabold text-foreground uppercase tracking-widest px-3 md:px-6" colSpan={header.colSpan}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header, header.getContext())}
@@ -336,8 +408,17 @@ export function DataTable({
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="group border-border/40 hover:bg-muted/20">
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="py-4 px-6 border-0">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        <TableCell key={cell.id} className="mobile-card-row py-3 px-4 sm:py-4 sm:px-3 md:px-6 w-full sm:w-auto overflow-hidden">
+                          <span className="mobile-label-view sm:hidden font-extrabold text-[10px] uppercase tracking-widest text-muted-foreground mr-2 sm:mr-4 text-left whitespace-nowrap flex items-center flex-shrink-0 w-[110px] sm:w-[140px]">
+                            {(() => {
+                              const header = cell.getContext().table.getFlatHeaders().find(h => h.column.id === cell.column.id);
+                              if (!header) return null;
+                              return flexRender(header.column.columnDef.header, header.getContext());
+                            })()}
+                          </span>
+                          <div className="text-right sm:text-left flex-1 flex justify-end sm:block overflow-hidden relative z-10">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </div>
                         </TableCell>
                       ))}
                     </TableRow>
@@ -358,7 +439,7 @@ export function DataTable({
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
           </div>
-          <div className="flex w-full items-center gap-8 lg:w-fit">
+          <div className="mobile-pagination flex w-full items-center gap-8 lg:w-fit">
             <div className="hidden items-center gap-2 lg:flex">
               <Label htmlFor="rows-per-page" className="text-sm font-medium">
                 Rows per page

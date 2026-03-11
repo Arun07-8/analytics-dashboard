@@ -33,9 +33,9 @@ export function ServicesTable({
         },
         {
             accessorKey: "description",
-            header: "Description",
+            header: () => <div className="hidden md:block">Description</div>,
             cell: ({ row }) => (
-                <div className="max-w-xs truncate text-muted-foreground">
+                <div className="max-w-xs truncate text-muted-foreground hidden md:block">
                     {row.original.description || <span className="text-muted-foreground/40 italic">No description</span>}
                 </div>
             ),
@@ -63,9 +63,9 @@ export function ServicesTable({
         },
         {
             accessorKey: "createdAt",
-            header: "Created At",
+            header: () => <div className="hidden lg:block">Created At</div>,
             cell: ({ row }) => (
-                <span className="text-sm text-muted-foreground font-medium">
+                <span className="text-sm text-muted-foreground font-medium hidden lg:block">
                     {new Date(row.original.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',

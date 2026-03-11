@@ -30,7 +30,7 @@ export function DynamicBreadcrumb() {
 
     return (
         <Breadcrumb className="hidden md:flex">
-            <BreadcrumbList className="flex items-center">
+            <BreadcrumbList className="flex items-center flex-wrap gap-y-1">
                 <BreadcrumbItem>
                     <BreadcrumbLink asChild>
                         <Link href="/dashboard" className="transition-colors hover:text-foreground">Dashboard</Link>
