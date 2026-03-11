@@ -598,29 +598,29 @@ export default function Page() {
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
-        <div className="space-y-2">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2 border-b border-border/40">
+        <div className="space-y-1 md:space-y-2">
           <div className="flex items-center gap-2">
             <div className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </div>
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+            <span className="text-[10px] md:text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
               Sales Terminal
             </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h1 className="text-[22px] md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
             Sales Dashboard
           </h1>
-          <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+          <p className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-2">
             Monitor and manage your business performance
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm">
-            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 border-r pr-3 h-full flex items-center">Period</span>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex items-center gap-2 bg-card border border-border/50 rounded-xl pl-3 h-10 shadow-sm w-full sm:w-auto">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider shrink-0 border-r pr-3 h-full flex items-center">Period</span>
             <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer outline-none h-full px-2 w-[130px] shadow-none">
+              <SelectTrigger className="bg-transparent border-none text-[12px] font-extrabold focus:ring-0 cursor-pointer outline-none h-full px-2 w-full sm:w-[130px] shadow-none">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -640,17 +640,17 @@ export default function Page() {
           </div>
 
           {dateFilter === 'specific-day' && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300 w-full sm:w-auto">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      "h-10 justify-start text-left font-bold text-[12px] bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all w-full",
                       !fromDate && "text-muted-foreground"
                     )}
                   >
-                    <span className="text-xs font-semibold text-muted-foreground mr-3">Date</span>
+                    <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider mr-3">Date</span>
                     {fromDate ? format(fromDate, "dd MMM yyyy") : <span className="opacity-50">Select Date</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                   </Button>
@@ -669,18 +669,18 @@ export default function Page() {
           )}
 
           {dateFilter === 'custom' && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300 w-full sm:w-auto">
               {/* From Date Popover */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      "h-10 justify-start text-left font-bold text-[12px] bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all w-full sm:w-auto",
                       !fromDate && "text-muted-foreground"
                     )}
                   >
-                    <span className="text-xs font-semibold text-muted-foreground mr-3">From</span>
+                    <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider mr-3">From</span>
                     {fromDate ? format(fromDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                   </Button>
@@ -696,7 +696,7 @@ export default function Page() {
                 </PopoverContent>
               </Popover>
 
-              <div className="h-4 w-[1px] bg-border/50" />
+              <div className="hidden sm:block h-4 w-[1px] bg-border/50" />
 
               {/* To Date Popover */}
               <Popover>
@@ -704,11 +704,11 @@ export default function Page() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-10 justify-start text-left font-semibold text-xs bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all",
+                      "h-10 justify-start text-left font-bold text-[12px] bg-card pl-3 pr-4 border border-border/50 shadow-sm rounded-xl hover:bg-muted/50 hover:border-border transition-all w-full sm:w-auto",
                       !toDate && "text-muted-foreground"
                     )}
                   >
-                    <span className="text-xs font-semibold text-muted-foreground mr-3">To</span>
+                    <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider mr-3">To</span>
                     {toDate ? format(toDate, "dd/MM/yy") : <span className="opacity-50">Select</span>}
                     <IconCalendar className="ml-auto h-3.5 w-3.5 opacity-50" />
                   </Button>

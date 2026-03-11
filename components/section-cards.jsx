@@ -36,11 +36,11 @@ export const SectionCards = React.memo(function SectionCards({ cards = [], equal
     : (gridCols[totalSlots] || 'xl:grid-cols-9 lg:grid-cols-9');
 
   return (
-    <div className={`grid grid-cols-1 gap-4 md:gap-6 w-full ${gridClass}`}>
+    <div className={`grid grid-cols-2 sm:grid-cols-2 gap-4 md:gap-6 w-full ${gridClass}`}>
       {cards.map((card, index) => {
         const isHighlight = !equalWidth && index === 0;
         return (
-          <Card key={index} className={`relative overflow-hidden group border-border/40 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.02),0_1px_2px_0_rgba(0,0,0,0.04)] transition-all duration-300 ${isHighlight ? 'xl:col-span-2' : ''}`}>
+          <Card key={index} className={`relative overflow-hidden group border-border/40 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.02),0_1px_2px_0_rgba(0,0,0,0.04)] transition-all duration-300 ${isHighlight ? 'col-span-2 xl:col-span-2' : ''}`}>
             <CardHeader className="p-5 flex flex-col justify-between h-full space-y-5">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3.5">
@@ -68,7 +68,7 @@ export const SectionCards = React.memo(function SectionCards({ cards = [], equal
 
               <div className="pt-1">
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-3xl lg:text-4xl font-bold tabular-nums tracking-tighter ${typeof card.value === 'number' && card.value < 0 ? 'text-red-500' : 'text-foreground'}`}>
+                  <span className={`text-lg sm:text-2xl lg:text-4xl font-bold tabular-nums tracking-tighter ${typeof card.value === 'number' && card.value < 0 ? 'text-red-500' : 'text-foreground'}`}>
                     {card.prefix || ""}{typeof card.value === 'number' ? card.value.toLocaleString(undefined, {
                       minimumFractionDigits: card.isCurrency ? (card.value % 1 === 0 ? 0 : 2) : 0,
                       maximumFractionDigits: card.isCurrency ? 2 : 0

@@ -302,32 +302,32 @@ export default function CustomersPage() {
 
     return (
         <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full transition-all duration-700 animate-in fade-in slide-in-from-bottom-2">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
-                <div className="space-y-2">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2 border-b border-border/40">
+                <div className="space-y-1 md:space-y-2">
                     <div className="flex items-center gap-2">
                         <div className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                         </div>
-                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
+                        <span className="text-[10px] md:text-[11px] font-bold text-muted-foreground uppercase tracking-widest font-mono">
                             Customer Registry
                         </span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    <h1 className="text-[22px] md:text-4xl font-bold tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
                         Customer Management
                     </h1>
-                    <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                    <p className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-2">
                         View and manage all your clients
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <Button
                         onClick={() => {
                             setCustomerFormData(initialCustomerFormData);
                             setModalMode('add');
                             setIsModalOpen(true);
                         }}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 px-6 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2 w-full sm:w-auto"
                     >
                         <IconUserPlus className="size-4" />
                         New Customer

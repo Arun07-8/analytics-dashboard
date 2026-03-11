@@ -79,27 +79,27 @@ export function CustomersTable({
         },
         {
             accessorKey: "email",
-            header: "Email",
+            header: () => <div className="hidden md:block">Email</div>,
             cell: ({ row }) => (
                 row.original.email ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex items-center gap-2 text-muted-foreground hidden md:flex">
                         <IconMail className="size-3.5" />
                         <span>{row.original.email}</span>
                     </div>
-                ) : <span className="text-muted-foreground/40 italic">N/A</span>
+                ) : <span className="text-muted-foreground/40 italic hidden md:block">N/A</span>
             ),
         },
         {
             accessorKey: "place",
-            header: "Location",
-            cell: ({ row }) => <span className="text-muted-foreground">{row.original.place || row.original.city || "N/A"}</span>,
+            header: () => <div className="hidden lg:block">Location</div>,
+            cell: ({ row }) => <span className="text-muted-foreground hidden lg:block">{row.original.place || row.original.city || "N/A"}</span>,
         },
         {
             accessorKey: "createdAt",
-            header: "Joined Date",
+            header: () => <div className="hidden md:block">Joined Date</div>,
             cell: ({ row }) => {
                 const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
-                return <div className="text-muted-foreground text-sm">{date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
+                return <div className="text-muted-foreground text-sm hidden md:block">{date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</div>
             },
         },
         {

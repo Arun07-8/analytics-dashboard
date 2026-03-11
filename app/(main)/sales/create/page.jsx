@@ -264,74 +264,85 @@ export default function CreateSalePage() {
 
         setIsSubmitting(true);
         try {
-            const staffId = user?.uid;
-
-            if (!staffId) {
-                toast.error("Auth session expired. Please login again.");
+            const currentUserId = user?.uid;
+            if (!currentUserId) {
+                toast.error("Session expired. Please sign in again.");
                 setIsSubmitting(false);
                 return;
             }
 
-            const userEmail = user?.email?.toLowerCase().trim();
-            const matchedAdmin = admins.find(a => a.email?.toLowerCase().trim() === userEmail);
-            const staffName = matchedAdmin?.name || user?.displayName || (user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)) || 'Staff';
-            const staffEmail = user?.email || '';
+            // Robust admin list resolution
+            let recipients = admins;
+            if (!recipients || recipients.length === 0) {
+                try {
+                    recipients = await getAllAdmins();
+                } catch (err) {
+                    console.error("Admin resolution failed:", err);
+                }
+            }
+
+            const staffName = user.name || user.displayName || 'Staff Member';
+            const currentTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const currentDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
             const saleData = {
                 customerId: selectedCustomer.id,
-                staffId: staffId,
+                staffId: currentUserId,
                 staffName: staffName,
-                staffEmail: staffEmail,
+                staffEmail: user.email || '',
                 services: selectedServices,
                 totalAmount: Number(totalAmount),
                 paidAmount: Number(paidAmount) || 0,
                 excessAmount: Number(totalAmount) - (Number(paidAmount) || 0),
                 salesRefId: [salesRefId],
-                createdByRole: user?.role?.trim().toLowerCase() === 'admin' ? 'admin' : 'staff',
+                createdByRole: (user.role || 'staff').trim().toLowerCase() === 'admin' ? 'admin' : 'staff',
             };
 
             const docId = await createSale(saleData);
             setCompletedSale({ ...saleData, id: docId });
             setErrors({});
 
-            const currentUserId = user.uid || user.id;
+            // Filtering for active administrators only, with backwards compatibility for old schemas
+            let adminRecipients = recipients.filter(acc =>
+                acc.role?.trim().toLowerCase() === 'admin' && acc.isDeleted !== true
+            );
 
-            if (user?.role?.trim().toLowerCase() === 'admin') {
-                // Admin creates sale: Notify all OTHER Admins only
-                const otherAdmins = admins.filter(acc =>
-                    (acc.uid !== currentUserId && acc.id !== currentUserId) &&
-                    acc.role?.trim().toLowerCase() === 'admin' &&
-                    !acc.isDeleted
-                );
+            if (adminRecipients.length === 0) {
+                try {
+                    const { getDocs, collection } = await import('firebase/firestore');
+                    const { db } = await import('@/lib/firebase/config');
+                    const adminSnap = await getDocs(collection(db, 'admins'));
+                    adminRecipients = adminSnap.docs
+                        .map(d => ({ id: d.id, ...d.data() }))
+                        .filter(a => a.role?.trim().toLowerCase() === 'admin' && a.isDeleted !== true);
+                } catch (fallbackErr) {
+                    console.error("Fallback admin resolution failed:", fallbackErr);
+                }
+            }
 
-                const broadcastPromises = otherAdmins.map(admin => createNotification({
-                    userId: admin.uid || admin.id,
-                    title: "New Company Sale",
-                    message: `${staffName} (Admin) recorded a new sale of ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
+            if (user.role?.trim().toLowerCase() === 'admin') {
+                // Admin recording: Notify other admins
+                const otherAdmins = adminRecipients.filter(a => a.id !== currentUserId && a.uid !== currentUserId);
+                const promises = otherAdmins.map(admin => createNotification({
+                    userId: admin.uid || admin.id, // id is docId (Auth UID)
+                    title: "System: Sale Recorded",
+                    message: `${staffName} (Admin) recorded a sale of ₹${Number(totalAmount).toLocaleString('en-IN')} on ${currentDate}.`,
                     type: "info",
                     actionUrl: "/sales"
                 }));
-                await Promise.all(broadcastPromises);
-
-                toast.success("Sale synchronized and Admins notified");
+                await Promise.all(promises);
+                toast.success("Entry synchronized.");
             } else {
-                // Staff creates request: Notify all ADMINS for approval
-                const actualAdmins = admins.filter(acc =>
-                    acc.role?.trim().toLowerCase() === 'admin' &&
-                    (acc.uid !== currentUserId && acc.id !== currentUserId) &&
-                    !acc.isDeleted
-                );
-
-                const notificationPromises = actualAdmins.map(admin => createNotification({
+                // Staff submission: Notify ALL admins for verification
+                const promises = adminRecipients.map(admin => createNotification({
                     userId: admin.uid || admin.id,
-                    title: "New Sales Request",
-                    message: `${staffName} has submitted a new sales request for ₹${Number(totalAmount).toLocaleString('en-IN')} for ${selectedCustomer?.name}.`,
+                    title: "Action Required: Sales Request",
+                    message: `${staffName} submitted a sales request of ₹${Number(totalAmount).toLocaleString('en-IN')} on ${currentDate} at ${currentTime}. Reference: ${salesRefId}`,
                     type: "warning",
                     actionUrl: "/sales-requests"
                 }));
-                await Promise.all(notificationPromises);
-
-                toast.success("Sales request has been sent for approval.");
+                await Promise.all(promises);
+                toast.success("Request sent to Admin panel.");
             }
         } catch (error) {
             toast.error("Sync error: " + error.message);
@@ -459,37 +470,36 @@ export default function CreateSalePage() {
     return (
         <div className="min-h-screen bg-background transition-colors duration-300">
             {/* Professional Navigation - Theme Aware */}
-            <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm px-4 py-4 sm:px-10">
-                <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-6">
+            <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm px-4 py-3 sm:py-4 sm:px-10">
+                <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+                    <div className="flex items-center gap-4 md:gap-6">
                         <Button
                             variant="outline"
                             size="icon"
                             onClick={() => router.back()}
-                            className="h-10 w-10 border-border hover:bg-accent transition-colors shrink-0"
+                            className="h-9 w-9 md:h-10 md:w-10 border-border hover:bg-accent transition-colors shrink-0"
                         >
-                            <IconArrowLeft className="h-5 w-5 text-muted-foreground" />
+                            <IconArrowLeft className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                         </Button>
                         <div className="h-10 w-[1px] bg-border hidden md:block" />
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <IconLayoutDashboard className="h-4 w-4 text-primary" />
+                                <IconLayoutDashboard className="h-3 w-3 md:h-4 md:w-4 text-primary" />
                                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">Sales Terminal</span>
                             </div>
-                            <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">Create Sale</h1>
+                            <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight leading-none">Create Sale</h1>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 md:gap-4">
                         <div className="hidden lg:flex flex-col items-end px-4 py-1 border-r border-border">
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Session</span>
                             <span className="text-sm font-bold text-foreground">{user?.displayName || user?.email?.split('@')[0] || 'Operator'}</span>
                         </div>
-                        <Button variant="ghost" onClick={handleDownloadInvoice} className="h-11 px-5 text-muted-foreground hover:text-foreground font-semibold gap-2 transition-colors">
+                        <Button variant="ghost" onClick={handleDownloadInvoice} className="h-10 md:h-11 px-4 md:px-5 text-muted-foreground hover:text-foreground font-semibold gap-2 transition-colors text-xs md:text-sm flex-1 md:flex-none">
                             <IconDownload className="h-4 w-4" />
                             Draft
                         </Button>
-
                     </div>
                 </div>
             </div>
@@ -898,11 +908,11 @@ export default function CreateSalePage() {
                                             <div className="h-[1px] flex-1 bg-background/20" />
                                         </div>
                                         <div className="mt-6 flex items-baseline gap-1">
-                                            <span className="text-2xl font-black text-primary">₹</span>
-                                            <span className="text-6xl font-black tracking-tighter">
+                                            <span className="text-xl sm:text-2xl font-black text-primary">₹</span>
+                                            <span className="text-4xl sm:text-6xl font-black tracking-tighter">
                                                 {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                             </span>
-                                            <span className="text-2xl font-black opacity-30">.{((totalAmount % 1) * 100).toFixed(0).padStart(2, '0')}</span>
+                                            <span className="text-xl sm:text-2xl font-black opacity-30">.{((totalAmount % 1) * 100).toFixed(0).padStart(2, '0')}</span>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -1069,66 +1079,73 @@ export default function CreateSalePage() {
             {/* Success Overlay instead of direct redirect */}
             {
                 completedSale && !isInvoicePreviewOpen && (
-                    <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-500">
-                        <Card className="max-w-md w-full border-border shadow-2xl rounded-2xl p-8 text-center animate-in zoom-in-95 duration-500">
+                    <div className="fixed inset-0 z-[100] bg-background/40 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500">
+                        <Card className="max-w-md w-full border-border/60 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] rounded-[2rem] p-6 sm:p-10 text-center animate-in zoom-in-95 slide-in-from-bottom-10 duration-700 bg-card/95 backdrop-blur-xl">
                             {user?.role?.trim().toLowerCase() === 'admin' ? (
                                 <>
-                                    <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto mb-6">
-                                        <IconUserCheck className="h-10 w-10" />
+                                    <div className="relative mx-auto mb-8">
+                                        <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mx-auto relative z-10 shadow-inner">
+                                            <IconUserCheck className="h-10 w-10" />
+                                        </div>
+                                        <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full scale-150 opacity-30 animate-pulse" />
                                     </div>
-                                    <h2 className="text-2xl font-black text-foreground mb-2">Sale Completed!</h2>
-                                    <p className="text-muted-foreground text-sm mb-8 italic">The transaction for <span className="text-foreground font-bold">{selectedCustomer?.name}</span> has been securely synced.</p>
+                                    <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-3 tracking-tight">Record Synchronized!</h2>
+                                    <p className="text-muted-foreground text-sm mb-10 leading-relaxed font-medium"> The sale for <span className="text-foreground font-extrabold underline decoration-emerald-500/30 underline-offset-4">{selectedCustomer?.name}</span> has been securely committed to the ledger.</p>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4">
                                         <Button
                                             variant="outline"
-                                            className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
+                                            className="h-12 sm:h-14 font-black uppercase tracking-widest text-[10px] gap-2 rounded-2xl w-full border-border/80 hover:bg-emerald-50 transition-all hover:text-emerald-700"
                                             onClick={() => router.push('/sales')}
                                         >
                                             <IconLayoutDashboard className="h-4 w-4" />
-                                            Go to Dashboard
+                                            Dashboard
                                         </Button>
                                         <Button
-                                            className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-emerald-500/20"
+                                            className="h-12 sm:h-14 bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-2xl shadow-xl shadow-emerald-500/20 w-full transition-all active:scale-95"
                                             onClick={handleGenerateInvoice}
                                         >
                                             <IconDownload className="h-4 w-4" />
-                                            Download Invoice
+                                            Get Invoice
                                         </Button>
                                     </div>
                                     <Button
                                         variant="link"
-                                        className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-primary transition-colors"
+                                        className="mt-8 text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground/40 hover:text-emerald-600 transition-all"
                                         onClick={() => window.location.reload()}
                                     >
-                                        Start New Transaction
+                                        + Start New Transaction
                                     </Button>
                                 </>
                             ) : (
                                 <>
-                                    <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6">
-                                        <IconClipboardList className="h-10 w-10" />
+                                    <div className="relative mx-auto mb-8">
+                                        <div className="h-20 w-20 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 mx-auto relative z-10">
+                                            <IconClipboardList className="h-10 w-10" />
+                                        </div>
+                                        <div className="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full scale-150 opacity-20 animate-pulse" />
                                     </div>
-                                    <h2 className="text-2xl font-black text-foreground mb-2">Sales Request Sent to Admin</h2>
-                                    <p className="text-muted-foreground text-sm mb-8 italic">Your sales request has been successfully sent to the admin for approval.</p>
+                                    <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-3 tracking-tight">Request Logged!</h2>
+                                    <p className="text-muted-foreground text-sm mb-10 leading-relaxed font-medium">Your sales entry has been dispatched to administrators for real-time verification.</p>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2 sm:gap-4">
                                         <Button
                                             variant="outline"
-                                            className="h-12 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl"
+                                            className="h-12 sm:h-14 font-black uppercase tracking-widest text-[10px] gap-2 rounded-2xl w-full border-border/80 hover:bg-orange-50 transition-all hover:text-orange-700"
                                             onClick={() => router.push('/sales')}
                                         >
                                             <IconLayoutDashboard className="h-4 w-4" />
-                                            Go to Sales
+                                            View Sales
                                         </Button>
                                         <Button
-                                            className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-primary/20"
+                                            className="h-12 sm:h-14 bg-orange-500 hover:bg-orange-600 text-white font-black uppercase tracking-widest text-[10px] gap-2 rounded-2xl shadow-xl shadow-orange-500/20 w-full transition-all active:scale-95"
                                             onClick={() => window.location.reload()}
                                         >
                                             <IconPlus className="h-4 w-4" />
-                                            Add New Sale
+                                            Add Another
                                         </Button>
                                     </div>
+                                    <p className="mt-8 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/30">Reference: {salesRefId}</p>
                                 </>
                             )}
                         </Card>

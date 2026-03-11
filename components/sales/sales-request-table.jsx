@@ -77,12 +77,12 @@ export function SalesRequestTable({
         },
         {
             accessorKey: "product",
-            header: "Product Detail",
+            header: () => <div className="hidden md:block">Product Detail</div>,
             cell: ({ row }) => {
                 const services = row.original.services || [];
                 const productNames = services.map(s => s.name).join(", ");
                 return (
-                    <div className="text-[11px] font-semibold text-muted-foreground truncate max-w-[180px]" title={productNames}>
+                    <div className="text-[11px] font-semibold text-muted-foreground truncate max-w-[180px] hidden md:block" title={productNames}>
                         {productNames || "N/A"}
                     </div>
                 );
@@ -102,9 +102,9 @@ export function SalesRequestTable({
         },
         {
             accessorKey: "staffName",
-            header: "Requested By",
+            header: () => <div className="hidden lg:block">Requested By</div>,
             cell: ({ row }) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 hidden lg:flex">
                     <div className="size-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase">
                         {(row.original.staffName || "S")[0]}
                     </div>
@@ -116,11 +116,11 @@ export function SalesRequestTable({
         },
         {
             accessorKey: "createdAt",
-            header: "Request Date",
+            header: () => <div className="hidden md:block">Request Date</div>,
             cell: ({ row }) => {
                 const date = row.original.createdAt?.toDate ? row.original.createdAt.toDate() : new Date(row.original.createdAt);
                 return (
-                    <div className="flex flex-col">
+                    <div className="flex flex-col hidden md:flex">
                         <span className="text-[11px] font-bold text-foreground">
                             {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                         </span>
@@ -136,23 +136,23 @@ export function SalesRequestTable({
             header: () => <div className="text-right pr-4">Approvals</div>,
             cell: ({ row }) => {
                 return (
-                    <div className="flex items-center justify-end gap-2 pr-2">
+                    <div className="flex items-center justify-end gap-1 sm:gap-2 pr-0 sm:pr-2 flex-nowrap w-full overflow-x-auto no-scrollbar pb-1">
                         <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all font-bold text-[11px] gap-1.5 rounded-lg"
+                            className="h-7 sm:h-8 px-2 sm:px-3 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all font-bold text-[10px] sm:text-[11px] gap-1 sm:gap-1.5 rounded-md sm:rounded-lg"
                             onClick={() => onAccept(row.original)}
                         >
-                            <IconCheck className="size-3.5" />
+                            <IconCheck className="size-3 sm:size-3.5" />
                             Accept
                         </Button>
                         <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500 hover:text-white transition-all font-bold text-[11px] gap-1.5 rounded-lg"
+                            className="h-7 sm:h-8 px-2 sm:px-3 bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500 hover:text-white transition-all font-bold text-[10px] sm:text-[11px] gap-1 sm:gap-1.5 rounded-md sm:rounded-lg"
                             onClick={() => onDecline(row.original)}
                         >
-                            <IconX className="size-3.5" />
+                            <IconX className="size-3 sm:size-3.5" />
                             Decline
                         </Button>
 
@@ -195,6 +195,7 @@ export function SalesRequestTable({
                 enableReordering={false}
                 onSearchChange={setSearchTerm}
                 searchPlaceholder="Search sale ID, customer or staff..."
+                initialPageSize={5}
             />
 
             <AlertDialog open={!!deletingSale} onOpenChange={() => setDeletingSale(null)}>

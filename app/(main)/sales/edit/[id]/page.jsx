@@ -320,31 +320,31 @@ export default function EditSalePage() {
     return (
         <div className="min-h-screen bg-background transition-colors duration-300">
             {/* Professional Navigation */}
-            <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm px-4 py-4 sm:px-10">
-                <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-6">
+            <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm px-4 py-3 sm:py-4 sm:px-10">
+                <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+                    <div className="flex items-center gap-4 md:gap-6">
                         <Button
                             variant="outline"
                             size="icon"
                             onClick={() => router.push(from === 'dashboard' ? '/dashboard' : '/sales')}
-                            className="h-10 w-10 border-border hover:bg-accent transition-colors shrink-0"
+                            className="h-9 w-9 md:h-10 md:w-10 border-border hover:bg-accent transition-colors shrink-0"
                         >
-                            <IconArrowLeft className="h-5 w-5 text-muted-foreground" />
+                            <IconArrowLeft className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                         </Button>
                         <div className="h-10 w-[1px] bg-border hidden md:block" />
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <IconLayoutDashboard className="h-4 w-4 text-primary" />
+                                <IconLayoutDashboard className="h-3 w-3 md:h-4 md:w-4 text-primary" />
                                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] font-mono">Sales Terminal</span>
                             </div>
-                            <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">Edit Sale</h1>
+                            <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight leading-none">Edit Sale</h1>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                         <Button
                             onClick={handleSubmit}
-                            className="h-11 px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider gap-2 shadow-lg shadow-primary/20 transition-all rounded-lg active:scale-95"
+                            className="h-10 md:h-11 px-6 md:px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider gap-2 shadow-lg shadow-primary/20 transition-all rounded-lg active:scale-95 text-xs md:text-sm flex-1 md:flex-none"
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? "Updating..." : "Update Sale"}
