@@ -48,7 +48,7 @@ export function SiteHeader() {
 
   return (
     <header
-      className="sticky top-0 z-40 flex h-14 md:h-12 w-full shrink-0 items-center justify-between border-b bg-background/80 backdrop-blur-md transition-all ease-linear px-4 md:px-6">
+      className="sticky top-0 z-40 flex h-14 md:h-12 w-full shrink-0 items-center justify-between rounded-t-2xl border-b bg-background/80 backdrop-blur-md transition-all ease-linear px-4 md:px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="-ml-1 h-9 w-9" />
         <div className="flex items-center gap-2 ml-1">
@@ -59,12 +59,12 @@ export function SiteHeader() {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <NotificationBell />
-
         {/* Desktop Theme Toggle */}
         <div className="hidden md:block">
           <ModeToggle />
         </div>
+        
+        <NotificationBell />
 
         {/* Mobile Profile Menu (Replaces theme toggle on mobile) */}
         <div className="md:hidden">
