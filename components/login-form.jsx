@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLoading } from '@/contexts/LoadingContext';
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +23,7 @@ export function LoginForm({
   ...props
 }) {
   const router = useRouter();
+  const { setIsLoading } = useLoading();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -61,6 +63,7 @@ export function LoginForm({
       return;
     }
 
+    setIsLoading(true); // Global loader
     setLoading(true);
 
     try {
@@ -111,6 +114,7 @@ export function LoginForm({
 
       // 🛡️ Show ONLY toast, NO console.error to avoid Next.js dev box
       toast.error('❌ ' + errorMessage);
+      setIsLoading(false); // Hide on error
     } finally {
       setLoading(false);
     }
@@ -122,7 +126,7 @@ export function LoginForm({
     <form onSubmit={handleLogin} className={cn("flex flex-col gap-6", className)} {...props}>
       <FieldGroup>
         <div className="flex flex-col gap-2 text-left mb-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Sign in to Foxon Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Sign in to your Dashboard</h1>
           <p className="text-muted-foreground text-sm">
             Please enter your details to access your account.
           </p>

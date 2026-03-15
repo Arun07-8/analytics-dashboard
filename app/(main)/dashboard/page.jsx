@@ -522,7 +522,7 @@ export default function Page() {
             </span>
           </div>
           <h1 className="text-[22px] md:text-4xl font-bold text-foreground tracking-tight leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-            FoxonHub Dashboard
+            Analytics Dashboard Overview
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-2">
             <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 md:py-1 text-[10px] md:text-xs font-bold text-muted-foreground ring-1 ring-inset ring-muted-foreground/10">

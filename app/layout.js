@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LoadingProvider } from "@/contexts/LoadingContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "FoxonHub Dashboard",
-  description: "Modern dashboard for FoxonHub",
+  title: "Analytics Dashboard",
+  description: "Modern analytics dashboard overview",
 };
 
 export default function RootLayout({ children }) {
@@ -30,13 +31,15 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
-            <Toaster
-              position="top-right"
-              richColors
-              closeButton
-              duration={2000}
-            />
+            <LoadingProvider>
+              {children}
+              <Toaster
+                position="top-right"
+                richColors
+                closeButton
+                duration={2000}
+              />
+            </LoadingProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

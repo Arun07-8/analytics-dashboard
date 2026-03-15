@@ -223,7 +223,7 @@ export default function CreateAdminPage() {
                                 <Input
                                     id="name"
                                     name="name"
-                                    placeholder="e.g. Shibili"
+                                    placeholder="e.g. John Doe"
                                     value={formData.name}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
@@ -239,7 +239,7 @@ export default function CreateAdminPage() {
                                     id="email"
                                     name="email"
                                     type="email"
-                                    placeholder="admin@foxonhub.com"
+                                    placeholder="admin@example.com"
                                     value={formData.email}
                                     onChange={handleChange}
                                     onBlur={handleBlur}

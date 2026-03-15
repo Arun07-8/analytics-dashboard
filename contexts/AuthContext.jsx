@@ -53,14 +53,6 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-muted border-t-primary"></div>
-      </div>
-    )
-  }
-
   return (
     <AuthContext.Provider value={{ user, loading }}>
       {children}

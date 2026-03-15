@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
+import { useLoading } from "@/contexts/LoadingContext"
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -38,8 +39,10 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+  const { setIsLoading } = useLoading()
 
   const handleLogout = async () => {
+    setIsLoading(true);
     try {
       await signOut(auth)
 
@@ -58,6 +61,7 @@ export function NavUser({
     } catch (error) {
       console.error("Logout error:", error)
       toast.error("❌ Failed to logout")
+      setIsLoading(false);
     }
   }
 

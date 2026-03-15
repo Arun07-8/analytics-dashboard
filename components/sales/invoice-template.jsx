@@ -134,8 +134,8 @@ function ContinuationHeader({ invoiceNo, pageNum }) {
     return (
         <div className="flex justify-between items-center mb-8 pb-5 border-b border-slate-100">
             <img
-                src="/Foxon Final Logo-01.png"
-                alt="Foxon Career Hub Logo"
+                src="/Untitled_design__1_-removebg-preview.png"
+                alt="Company Logo"
                 className="h-28 w-auto object-contain -mt-6"
             />
             <div className="text-right">
@@ -157,12 +157,12 @@ function InvoiceFooter({ staffName }) {
             <div className="flex justify-between items-end mb-8">
                 {/* Payment Terms */}
                 <div className="max-w-[260px]">
-        
+
                     <p className="text-[12px] text-slate-500 font-medium leading-relaxed mb-2">
-                       “We appreciate your continued trust in us!, just let us know — we’re happy to help.”
+                        “We appreciate your continued trust in us!, just let us know — we’re happy to help.”
                     </p>
                     <p className="text-[11px] text-slate-400 font-medium">
-                        foxonhub@gmail.com · +91 9072 121 714
+                        agency@example.com · +91 0000 000 000
                     </p>
                 </div>
 
@@ -189,7 +189,7 @@ function InvoiceFooter({ staffName }) {
                 <p className="text-[13px] font-black text-white uppercase tracking-[0.25em] mb-1">
                     Thank You For Your Business!
                 </p>
-               
+
             </div>
 
             {/* Digital Validity Notice */}
@@ -252,8 +252,8 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                                 {/* HEADER */}
                                 <div className="flex justify-between items-center mb-6 -mt-14">
                                     <img
-                                        src="/Foxon Final Logo-01.png"
-                                        alt="Foxon Career Hub Logo"
+                                        src="/your_logo-removebg-preview.png"
+                                        alt="Company Logo"
                                         className="h-80 w-auto object-contain -ml-14"
                                     />
                                     <div className="text-right">
@@ -300,9 +300,9 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                                         <div className="w-[3px] h-10 bg-[#ff5722] rounded-full shrink-0" />
                                         <div>
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.18em] mb-1.5">From</p>
-                                            <p className="text-[15px] font-black text-[#ff5722]">Foxon Career Hub</p>
+                                            <p className="text-[15px] font-black text-[#ff5722]">Agency Analytics</p>
                                             <p className="text-[12px] text-slate-500 font-medium">
-                                                Malappuram, Kerala - 676523 · foxonhub@gmail.com · +91 9072 121 714
+                                                Main Street, City · agency@example.com
                                             </p>
                                         </div>
                                     </div>
@@ -330,7 +330,7 @@ export const InvoiceTemplate = ({ sale, customer, admins = [] }) => {
                             </div>
                         )}
 
-                        {isLastPage && <InvoiceFooter staffName={"Fayis U"} />}
+                        {isLastPage && <InvoiceFooter staffName={staffName} />}
 
                         {totalPages > 1 && <PageNumber current={pageIndex + 1} total={totalPages} />}
 

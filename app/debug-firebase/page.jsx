@@ -27,7 +27,7 @@ export default function DebugFirebasePage() {
       </div>
       <div className="mt-4">
         <p className="font-semibold">Expected Project ID:</p>
-        <p className="text-green-600">foxonhub-dashboard</p>
+        <p className="text-green-600">dashboard-database</p>
       </div>
     </div>
   );

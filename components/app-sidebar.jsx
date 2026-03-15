@@ -128,12 +128,17 @@ export function AppSidebar({ ...props }) {
       <SidebarHeader>
         <SidebarMenu className="gap-2">
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild className="h-14 mb-4 p-0 hover:bg-transparent focus-visible:ring-0">
-              <Link href="/" className="flex h-full w-full items-center justify-start px-3">
+            <SidebarMenuButton size="lg" asChild className="h-24 mb-4 p-0 hover:bg-transparent focus-visible:ring-0">
+              <Link href="/" className="flex h-full w-full items-center justify-center">
                 <img
-                  src="/Foxon Final Logo-02.png"
-                  alt="FoxonHub Logo"
-                  className="h-25 pl-4 w-full object-contain object-left dark:brightness-0 dark:invert"
+                  src="/your logo (1)-Photoroom.png"
+                  alt="Company Logo"
+                  className="h-22 w-auto object-contain dark:hidden -ml-0.5"
+                />
+                <img
+                  src="/Untitled_design-removebg-preview.png"
+                  alt="Company Logo"
+                  className="h-22 w-auto object-contain hidden dark:block -ml-0.5"
                 />
               </Link>
             </SidebarMenuButton>
@@ -152,7 +157,15 @@ export function AppSidebar({ ...props }) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={filteredNavMain} />
+        {(!loading && role) ? (
+          <NavMain items={filteredNavMain} />
+        ) : (
+          <div className="px-6 py-4 space-y-4">
+            <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded" />
+            <div className="h-4 w-1/2 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded" />
+            <div className="h-4 w-2/3 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded" />
+          </div>
+        )}
         {role === "admin" && (
           <SidebarMenu className="px-3 pb-4">
             <SidebarMenuItem>
