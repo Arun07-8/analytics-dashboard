@@ -10,7 +10,6 @@ const adminData = {
   name: "Admin Name",
   email: "admin@example.com",
   role: "admin",
-  attendance: [],
   createdAt: admin.firestore.Timestamp.now(),
   updatedAt: admin.firestore.Timestamp.now(),
 };

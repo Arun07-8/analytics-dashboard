@@ -483,6 +483,38 @@ export default function Page() {
     }, 500);
   }, [previewSaleData]);
 
+  const handleSendInvoice = useCallback(async (sale) => {
+    try {
+      const customer = customers.find(c => c.id === sale.customerId);
+      if (!customer?.email) {
+        toast.error("Customer email is missing. Please update details in Customers section.");
+        return;
+      }
+
+      const promise = fetch('/api/send-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saleId: sale.id,
+          customerId: sale.customerId
+        }),
+      }).then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send invoice');
+        return data;
+      });
+
+      toast.promise(promise, {
+        loading: 'Dispatching invoice email...',
+        success: `Invoice sent successfully to ${customer.email}`,
+        error: (err) => `Email failed: ${err.message}`,
+      });
+    } catch (error) {
+      console.error("Dashboard send error:", error);
+      toast.error("An unexpected error occurred");
+    }
+  }, [customers]);
+
   const handleDeleteSale = useCallback(async (sale) => {
     try {
       await deleteSale(sale.id);
@@ -649,6 +681,7 @@ export default function Page() {
           onViewDetails={handleViewDetails}
           onEditSale={handleEditSale}
           onDownloadInvoice={handleDownloadInvoice}
+          onSendInvoice={handleSendInvoice}
           onDeleteSale={handleDeleteSale}
         />
       </div>

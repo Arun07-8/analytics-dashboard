@@ -23,6 +23,7 @@ import {
   IconPlus,
   IconUserPlus,
   IconClipboardList,
+  IconClock,
 } from "@tabler/icons-react"
 
 import { ExpenseModal } from "@/components/expenses/expense-modal"
@@ -76,9 +77,21 @@ const data = {
       icon: IconUsers,
     },
     {
+      title: "Attendance",
+      url: "/attendance",
+      icon: IconClock,
+      role: "staff",
+    },
+    {
       title: "Create Admin",
       url: "/createAdmin",
       icon: IconUserPlus,
+      role: "admin",
+    },
+    {
+      title: "Attendance",
+      url: "/attendance-analytics",
+      icon: IconClock,
       role: "admin",
     },
   ],
@@ -103,7 +116,7 @@ export function AppSidebar({ ...props }) {
 
       // Requirement: Staff can access Sales, Services, and Customers
       if (role === "staff") {
-        const allowedForStaff = ["Sales", "Services", "Customers"]
+        const allowedForStaff = ["Sales", "Services", "Customers", "Attendance"]
         if (!allowedForStaff.includes(item.title)) {
           return false
         }

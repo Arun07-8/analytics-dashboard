@@ -126,6 +126,8 @@ export function DataTable({
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
   showColumnsButton = true,
   initialPageSize = 10,
+  children,
+  leftContent,
 }) {
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -206,38 +208,41 @@ export function DataTable({
   return (
     <Tabs value={currentTab} onValueChange={onTabChange} className="w-full flex flex-col gap-6">
       <div className="flex flex-col @4xl/main:flex-row @4xl/main:items-center justify-between gap-4">
-        {tabs.length > 0 && (
-          <div className="overflow-x-auto max-w-full no-scrollbar pb-1">
-            <div className="inline-flex items-center p-1 bg-muted/40 rounded-xl border border-border/40 w-fit">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => onTabChange?.(tab.value)}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap",
-                    currentTab === tab.value
-                      ? "bg-card text-foreground shadow-sm ring-1 ring-border/10"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {tab.label}
-                  {tab.badge > 0 && (
-                    <span
-                      className={cn(
-                        "px-1.5 py-0.5 rounded-full text-[10px] tracking-tight",
-                        currentTab === tab.value
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted-foreground/20 text-muted-foreground"
-                      )}
-                    >
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
+        <div className="flex flex-wrap items-center gap-4">
+          {tabs.length > 0 && (
+            <div className="overflow-x-auto max-w-full no-scrollbar pb-1">
+              <div className="inline-flex items-center p-1 bg-muted/40 rounded-xl border border-border/40 w-fit">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => onTabChange?.(tab.value)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap",
+                      currentTab === tab.value
+                        ? "bg-card text-foreground shadow-sm ring-1 ring-border/10"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tab.label}
+                    {tab.badge > 0 && (
+                      <span
+                        className={cn(
+                          "px-1.5 py-0.5 rounded-full text-[10px] tracking-tight",
+                          currentTab === tab.value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted-foreground/20 text-muted-foreground"
+                        )}
+                      >
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+          {leftContent}
+        </div>
 
         <div className="flex items-center gap-3 ml-auto w-full @4xl/main:w-auto">
           {onSearchChange && (

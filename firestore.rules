@@ -42,6 +42,13 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isOwner(request.resource.data.createdBy);
     }
 
+    // Attendance Collection Rules
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.staffId) || isAdmin());
+      allow update: if isAuthenticated() && (isOwner(resource.data.staffId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.staffId);
+    }
+
     // Default deny for other collections
     match /{document=**} {
       allow read, write: if false;
