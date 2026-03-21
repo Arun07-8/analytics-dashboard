@@ -11,7 +11,8 @@ import {
     IconChevronDown,
     IconTrash,
     IconPencil,
-    IconDownload
+    IconDownload,
+    IconMail
 } from "@tabler/icons-react"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
@@ -59,6 +60,7 @@ export function SalesTable({
     onViewDetails,
     onEditSale,
     onDownloadInvoice,
+    onSendInvoice,
     onDeleteSale,
     onReuseSale,
     userRole = 'staff'
@@ -364,6 +366,13 @@ export function SalesTable({
                                     <IconDownload className="size-3.5" />
                                     Download Invoice
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                    className="text-indigo-600 gap-2 font-bold" 
+                                    onClick={() => onSendInvoice?.(sale)}
+                                >
+                                    <IconMail className="size-3.5" />
+                                    Send Invoice
+                                </DropdownMenuItem>
                                 {isAdmin && (
                                     <DropdownMenuItem
                                         className="text-destructive focus:text-destructive font-bold gap-2"
@@ -381,7 +390,7 @@ export function SalesTable({
         });
 
         return baseColumns;
-    }, [onViewDetails, onEditSale, onDownloadInvoice, onDeleteSale, userRole, activeTab]);
+    }, [onViewDetails, onEditSale, onDownloadInvoice, onSendInvoice, onDeleteSale, userRole, activeTab]);
 
 
     return (

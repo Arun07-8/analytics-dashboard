@@ -15,7 +15,6 @@ export async function POST(req) {
             name,
             email,
             role: role?.trim().toLowerCase() || "admin",
-            attendance: [],
             isDeleted: false,
             createdAt: new Date(),
             updatedAt: new Date(),

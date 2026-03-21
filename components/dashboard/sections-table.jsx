@@ -10,7 +10,8 @@ import {
     IconLayoutColumns,
     IconChevronDown,
     IconPencil,
-    IconTrash
+    IconTrash,
+    IconMail
 } from "@tabler/icons-react"
 
 import { cn } from "@/lib/utils"
@@ -185,6 +186,13 @@ const columns = [
                                 <IconCircleCheckFilled className="size-3.5" />
                                 Download Invoice
                             </DropdownMenuItem>
+                            <DropdownMenuItem 
+                                className="text-sm font-bold text-indigo-600 cursor-pointer rounded-md focus:bg-indigo-50/50 transition-colors py-2 gap-2" 
+                                onClick={() => meta?.onSendInvoice?.(sale)}
+                            >
+                                <IconMail className="size-3.5" />
+                                Send Invoice
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-border/40 my-1" />
                             <DropdownMenuItem
                                 className="text-sm font-bold text-destructive cursor-pointer rounded-md focus:bg-destructive/5 focus:text-destructive transition-colors py-2 gap-2"
@@ -201,7 +209,7 @@ const columns = [
     },
 ];
 
-export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSale, onDownloadInvoice, onDeleteSale }) {
+export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSale, onDownloadInvoice, onSendInvoice, onDeleteSale }) {
     const [searchTerm, setSearchTerm] = React.useState("");
     const [staffFilter, setStaffFilter] = React.useState("all");
     const [statusFilter, setStatusFilter] = React.useState("all");
@@ -351,6 +359,7 @@ export function DashboardTable({ data = [], admins = [], onViewDetails, onEditSa
                     onViewDetails,
                     onEditSale,
                     onDownloadInvoice,
+                    onSendInvoice,
                     onDeleteSale: (sale) => setDeletingSale(sale),
                 }}
             />

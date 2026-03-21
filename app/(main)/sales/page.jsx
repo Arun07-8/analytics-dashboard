@@ -500,6 +500,40 @@ export default function Page() {
   };
 
 
+  const handleSendInvoice = async (sale) => {
+    try {
+      const customer = customers.find(c => c.id === sale.customerId);
+      if (!customer?.email) {
+        toast.error("Customer email is missing. Please update customer details first.");
+        return;
+      }
+
+      const promise = fetch('/api/send-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saleId: sale.id,
+          customerId: sale.customerId
+        }),
+      }).then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send invoice');
+        return data;
+      });
+
+      toast.promise(promise, {
+        loading: 'Preparing and sending invoice email...',
+        success: 'Invoice email sent successfully to ' + customer.email,
+        error: (err) => 'Email delivery failed: ' + err.message,
+      });
+
+    } catch (error) {
+      console.error("Send invoice error:", error);
+      toast.error("An error occurred while sending the invoice");
+    }
+  };
+
+
   const handleCustomerInputChange = (e) => {
     const { name, value } = e.target;
     setCustomerFormData(prev => ({
@@ -772,6 +806,7 @@ export default function Page() {
           onViewDetails={handleViewDetails}
           onEditSale={handleEditSale}
           onDownloadInvoice={handleDownloadInvoice}
+          onSendInvoice={handleSendInvoice}
           onDeleteSale={handleDeleteSale}
           userRole={user?.role}
         />
